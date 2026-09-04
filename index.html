@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>// SOUNDRISE : INFINITY RUN</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Importmap pour Three.js moderne sans build step -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+
+    <!-- UI Overlay Minimaliste Cyber-Baroque -->
+    <div id="hud-overlay">
+      <header class="hud-header">
+        <h1 class="hud-title">// SOUNDRISE <span class="neon-sub">: INFINITY RUN</span></h1>
+        <div class="hud-badge">CYCLE 0 &bull; ENGINE READY</div>
+      </header>
+
+      <footer class="hud-footer">
+        <div class="hud-controls-hint">
+          <span class="key-hint">◄</span> <span class="key-hint">►</span> ou <span class="key-hint">Q</span> / <span class="key-hint">D</span> &bull; Glisser Souris / Tactile
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
