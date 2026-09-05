@@ -6,10 +6,7 @@
   <title>// SOUNDRISE : INFINITY RUN</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Tone.js pour la synthèse sonore et l'analyse FFT audio-réactive -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-
-  <!-- Importmap Three.js avec support officiel des Addons (UnrealBloomPass, EffectComposer) -->
+  <!-- Importmap Three.js ES6 officiel -->
   <script type="importmap">
     {
       "imports": {
@@ -23,57 +20,68 @@
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
 
-    <!-- Écran flash lors du Speed Boost (Fragment d'Infini) -->
-    <div id="speed-boost-fx"></div>
+    <!-- Écran de Démarrage Cinématographique (Geste utilisateur Web Audio) -->
+    <div id="start-screen" class="overlay-screen">
+      <div class="start-card">
+        <div class="start-badge">// MISSION SOUNDRISE</div>
+        <h1 class="start-title">// SOUNDRISE<br /><span class="start-highlight">INFINITY RUN</span></h1>
+        
+        <p class="start-narrative">
+          Nity vient d'être aspirée par un immense trou noir gravitationnel au cœur de l'univers.
+          Infi plonge à pleine vitesse dans l'horizon des événements pour la rattraper avant qu'elle ne disparaisse à jamais.
+        </p>
 
-    <!-- UI Overlay Cyber-Baroque OodaïSound -->
-    <div id="hud-overlay">
+        <div class="start-features">
+          <div class="feature-item">
+            <span class="feature-icon">✦</span>
+            <span class="feature-text">Vol Glider & rase-mottes (Race the Sun)</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">♥</span>
+            <span class="feature-text">Sillage de cœurs semé par Nity</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🎵</span>
+            <span class="feature-text">Synchronisation Web Audio 8 Cycles</span>
+          </div>
+        </div>
+
+        <button id="btn-start" class="btn-start">
+          <span class="btn-start-label">COMMENCER LA TRAVERSÉE</span>
+          <span class="btn-start-sub">[ CLIC OU TOUCHE POUR DÉMARRER ]</span>
+        </button>
+
+        <div class="start-controls-hint">
+          <span class="key-hint">▲</span> <span class="key-hint">▼</span> ou <span class="key-hint">Z</span> / <span class="key-hint">S</span> Cabrer / Piquer &bull;
+          <span class="key-hint">◄</span> <span class="key-hint">►</span> ou <span class="key-hint">Q</span> / <span class="key-hint">D</span> Virage &bull; Souris / Tactile
+        </div>
+      </div>
+    </div>
+
+    <!-- HUD en Vol Minimaliste & Épuré -->
+    <div id="hud-overlay" class="hud-overlay hidden">
       <header class="hud-header">
         <div class="hud-brand">
-          <h1 class="hud-title">// SOUNDRISE <span id="neon-accent-title" class="neon-dynamic">: INFINITY RUN</span></h1>
+          <h1 class="hud-title">// SOUNDRISE <span class="neon-title">: INFINITY RUN</span></h1>
           <!-- Sélecteur des 8 Cycles d'OodaïSound -->
           <div class="hud-cycle-selector">
             <button id="btn-prev-cycle" class="btn-cycle-nav" title="Cycle précédent">◄</button>
-            <div id="hud-cycle-name" class="cycle-tag">CYCLE 1 &bull; ÉVEIL</div>
+            <div id="hud-cycle-name" class="cycle-tag">CYCLE 1 &bull; CHUTE</div>
             <button id="btn-next-cycle" class="btn-cycle-nav" title="Cycle suivant">►</button>
           </div>
         </div>
 
         <div class="hud-header-right">
-          <!-- Panneau Audio & Fréquences Tone.js -->
-          <div class="hud-audio-panel">
-            <button id="btn-audio-toggle" class="btn-audio">
-              <span id="audio-icon">🔇</span>
-              <span id="audio-label">ACTIVER LE SON</span>
-            </button>
+          <!-- Contrôle Audio -->
+          <button id="btn-audio-toggle" class="btn-audio">
+            <span id="audio-icon">🔊</span>
+            <span id="audio-label">SON ACTIVÉ</span>
+          </button>
 
-            <!-- VU-Mètre Fréquentiel (Basses, Médiums, Aigus) -->
-            <div id="audio-freq-meter" class="audio-freq-meter" title="Analyseur FFT Tone.js">
-              <div class="freq-col">
-                <div id="freq-bar-bass" class="freq-fill freq-bass"></div>
-                <span class="freq-lbl">BAS</span>
-              </div>
-              <div class="freq-col">
-                <div id="freq-bar-mid" class="freq-fill freq-mid"></div>
-                <span class="freq-lbl">MÉD</span>
-              </div>
-              <div class="freq-col">
-                <div id="freq-bar-treble" class="freq-fill freq-treble"></div>
-                <span class="freq-lbl">AIG</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Statut Piste Audio & Progression -->
-          <div class="hud-track-status">
-            <span id="audio-mode-badge" class="badge-source">MODE SYNTHÉ</span>
-            <span id="audio-track-title" class="track-title">Piste : cycle1.mp3</span>
-          </div>
-
-          <!-- Jauge d'Énergie du Cœur d'Infi -->
+          <!-- Jauge d'Énergie Vitale du Cœur -->
           <div class="hud-heart-gauge">
             <div class="gauge-label">
-              <span class="heart-icon">♥</span> ÉNERGIE CŒUR
+              <span class="heart-icon">♥</span> ÉNERGIE VITALE
             </div>
             <div class="gauge-bar">
               <div id="heart-energy-fill" class="gauge-fill"></div>
@@ -84,12 +92,12 @@
 
       <!-- Toast / Bannière de Transition de Cycle -->
       <div id="cycle-toast" class="cycle-toast hidden">
-        <div class="cycle-toast-header">NOUVEAU CYCLE OODAÏSOUND</div>
-        <h2 id="cycle-toast-name" class="cycle-toast-name">CYCLE 1 &bull; ÉVEIL</h2>
-        <p id="cycle-toast-desc" class="cycle-toast-desc">Cyan / Violet &bull; 128 BPM</p>
+        <div class="cycle-toast-header">PROGRESSION DE L'ALBUM</div>
+        <h2 id="cycle-toast-title" class="cycle-toast-title">CYCLE 1 &bull; CHUTE</h2>
+        <p id="cycle-toast-desc" class="cycle-toast-desc">Gravité / Abysse</p>
       </div>
 
-      <!-- Télémétrie de vol (Vitesse, Altitude, Distance) -->
+      <!-- Télémétrie de vol -->
       <aside class="hud-telemetry">
         <div class="telemetry-item">
           <span class="telemetry-tag">DISTANCE</span>
@@ -97,52 +105,65 @@
         </div>
         <div class="telemetry-item">
           <span class="telemetry-tag">VITESSE</span>
-          <span id="hud-speed" class="telemetry-value">252 KM/H</span>
+          <span id="hud-speed" class="telemetry-value">245 KM/H</span>
         </div>
         <div class="telemetry-item">
-          <span class="telemetry-tag">ALTITUDE</span>
-          <span id="hud-altitude" class="telemetry-value">12 M</span>
+          <span class="telemetry-tag">CŒURS</span>
+          <span id="hud-hearts" class="telemetry-value highlight-heart">♥ 0</span>
         </div>
         <div class="telemetry-item">
-          <span class="telemetry-tag">CIBLE</span>
-          <span class="telemetry-target">NITY (HORIZON)</span>
+          <span class="telemetry-tag">CIBLE HORIZON</span>
+          <span class="telemetry-target">NITY &bull; TROU NOIR</span>
         </div>
       </aside>
 
       <footer class="hud-footer">
         <div class="hud-controls-hint">
-          <span class="key-hint">▲</span> <span class="key-hint">▼</span> ou <span class="key-hint">Z</span> / <span class="key-hint">S</span> Cabrer / Piquer &bull; 
-          <span class="key-hint">◄</span> <span class="key-hint">►</span> ou <span class="key-hint">Q</span> / <span class="key-hint">D</span> Virage &bull; Glisser Souris / Tactile 2D
+          Piquer vers le sol stabilise et accélère &bull; Monter consomme l'énergie du cœur &bull; Collecter les cœurs pour survivre
         </div>
       </footer>
     </div>
 
-    <!-- Modal Game Over Épuré Cyber-Baroque -->
+    <!-- Écran Game Over avec Score & Rangs Exclusifs SUBA -->
     <div id="game-over-modal" class="modal-overlay hidden">
       <div class="modal-card">
-        <div id="modal-glitch-bar" class="modal-glitch-bar"></div>
-        <h2 class="modal-title">// SIGNAL ROMPU</h2>
-        <div id="death-reason" class="modal-reason">IMPACT CRITIQUE &bull; AVATAR DÉSINTÉGRÉ</div>
+        <div class="modal-top-bar"></div>
+        <div class="modal-badge">// SIGNAL ROMPU</div>
+        <h2 class="modal-title">HORIZON DES ÉVÉNEMENTS</h2>
+        <div id="death-reason" class="modal-reason">IMPACT CRITIQUE &bull; STRUCTURE DÉSINTÉGRÉE</div>
 
         <div class="modal-stats">
           <div class="stat-box">
-            <span class="stat-label">DISTANCE PARCOURUE</span>
+            <span class="stat-label">DISTANCE</span>
             <span id="final-distance" class="stat-value">0 M</span>
           </div>
           <div class="stat-box">
-            <span class="stat-label">VITESSE MAXIMALE</span>
+            <span class="stat-label">VITESSE MAX</span>
             <span id="final-speed" class="stat-value">0 KM/H</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">CŒURS DE NITY</span>
+            <span id="final-hearts" class="stat-value highlight-heart">0</span>
           </div>
         </div>
 
-        <button id="btn-restart" class="btn-neon-primary">
-          <span class="btn-text">REPRENDRE LE VOL</span>
-          <span class="btn-subtext">[ ESPACE ou ENTRÉE ]</span>
+        <!-- Système de Rangs Officiel SUBA -->
+        <div class="modal-rank-container">
+          <span class="rank-label">RANG OFFICIEL ATTEINT</span>
+          <div id="final-rank-badge" class="rank-badge">SUBA</div>
+          <div id="final-score" class="rank-score">0 PTS</div>
+          <div id="final-rank-sub" class="rank-sub">BON SCORE — Belle endurance dans l'abysse gravitationnel.</div>
+        </div>
+
+        <button id="btn-restart" class="btn-restart">
+          <span class="btn-restart-text">REPRENDRE LA TRAVERSÉE</span>
+          <span class="btn-restart-sub">[ ESPACE ou ENTRÉE ]</span>
         </button>
       </div>
     </div>
   </div>
 
-  <script type="module" src="main.js"></script>
+  <!-- Point d'entrée ES6 modulaire -->
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
