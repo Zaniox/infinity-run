@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>// SOUNDRISE : INFINITY RUN</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="style.css" />
 
-  <!-- Three.js ES Modules -->
+  <!-- Importmap Three.js moderne sans build step / 100% compatible GitHub Pages -->
   <script type="importmap">
     {
       "imports": {
@@ -19,78 +19,28 @@
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
 
-    <!-- Flash visuel lors de la collecte d'orbes violettes -->
-    <div id="pickup-flash"></div>
-
-    <!-- UI Overlay Cyber-Baroque OodaïSound -->
+    <!-- UI Overlay Minimaliste : Infi vs Nity -->
     <div id="hud-overlay">
       <header class="hud-header">
         <div class="hud-brand">
-          <h1 class="hud-title">// SOUNDRISE <span class="neon-magenta">: INFINITY RUN</span></h1>
-          <div class="hud-subtitle">CYCLE 1 &bull; GLIDER WINGS</div>
+          <h1 class="hud-title">// SOUNDRISE <span class="neon-nity">: INFINITY RUN</span></h1>
+          <div class="hud-subtitle">CYCLE 1 &bull; INFI EN VOL VERS NITY</div>
         </div>
 
-        <!-- Jauge d'Énergie du Cœur Néon -->
-        <div class="hud-heart-gauge">
-          <div class="gauge-label">
-            <span class="heart-icon">♥</span> ÉNERGIE CŒUR
-          </div>
-          <div class="gauge-bar">
-            <div id="heart-energy-fill" class="gauge-fill"></div>
-          </div>
+        <div class="hud-target-badge">
+          <div class="target-dot"></div>
+          <span class="target-text">CIBLE : NITY (HORIZON)</span>
         </div>
       </header>
 
-      <!-- Télémétrie de vol (Vitesse, Altitude, Distance) -->
-      <aside class="hud-telemetry">
-        <div class="telemetry-item">
-          <span class="telemetry-tag">DISTANCE</span>
-          <span id="hud-distance" class="telemetry-value">0 M</span>
-        </div>
-        <div class="telemetry-item">
-          <span class="telemetry-tag">VITESSE</span>
-          <span id="hud-speed" class="telemetry-value">234 KM/H</span>
-        </div>
-        <div class="telemetry-item">
-          <span class="telemetry-tag">ALTITUDE</span>
-          <span id="hud-altitude" class="telemetry-value">10 M</span>
-        </div>
-      </aside>
-
       <footer class="hud-footer">
         <div class="hud-controls-hint">
-          <span class="key-hint">▲</span> <span class="key-hint">▼</span> Cabrer / Piquer &bull; 
-          <span class="key-hint">◄</span> <span class="key-hint">►</span> ou <span class="key-hint">Q</span> / <span class="key-hint">D</span> Virage &bull; Glisser Souris / Tactile 2D
+          <span class="key-hint">◄</span> <span class="key-hint">►</span> ou <span class="key-hint">Q</span> / <span class="key-hint">D</span> Virage &bull; Glisser Souris / Tactile
         </div>
       </footer>
     </div>
-
-    <!-- Modal Game Over Épuré Cyber-Baroque -->
-    <div id="game-over-modal" class="modal-overlay hidden">
-      <div class="modal-card">
-        <div class="modal-glitch-bar"></div>
-        <h2 class="modal-title">// SESSION TERMINÉE</h2>
-        <div id="death-reason" class="modal-reason">IMPACT CRITIQUE &bull; AVATAR DÉSINTÉGRÉ</div>
-
-        <div class="modal-stats">
-          <div class="stat-box">
-            <span class="stat-label">DISTANCE PARCOURUE</span>
-            <span id="final-distance" class="stat-value">0 M</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-label">VITESSE MAXIMALE</span>
-            <span id="final-speed" class="stat-value">0 KM/H</span>
-          </div>
-        </div>
-
-        <button id="btn-restart" class="btn-neon-primary">
-          <span class="btn-text">RELANCER LA COURSE</span>
-          <span class="btn-subtext">[ ESPACE ou ENTRÉE ]</span>
-        </button>
-      </div>
-    </div>
   </div>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
