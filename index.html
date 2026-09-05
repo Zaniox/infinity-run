@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>// SOUNDRISE : INFINITY RUN</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="css/style.css" />
 
-  <!-- Importmap pour Three.js moderne sans build step -->
+  <!-- Importmap pour Three.js sans bundler / 100% compatible GitHub Pages -->
   <script type="importmap">
     {
       "imports": {
@@ -19,11 +19,11 @@
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
 
-    <!-- UI Overlay Minimaliste Cyber-Baroque -->
+    <!-- Interface HUD Minimaliste -->
     <div id="hud-overlay">
       <header class="hud-header">
-        <h1 class="hud-title">// SOUNDRISE <span class="neon-sub">: INFINITY RUN</span></h1>
-        <div class="hud-badge">CYCLE 0 &bull; ENGINE READY</div>
+        <h1 class="hud-title">// SOUNDRISE <span class="neon-cyan">: INFINITY RUN</span></h1>
+        <div class="hud-badge">PHASE 1 &bull; 3D SKELETON</div>
       </header>
 
       <footer class="hud-footer">
@@ -34,6 +34,6 @@
     </div>
   </div>
 
-  <script type="module" src="src/main.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

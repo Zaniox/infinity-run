@@ -3,9 +3,9 @@ import * as THREE from 'three';
 export class InfiniteGrid {
   constructor(scene) {
     this.scene = scene;
-    this.speed = 68.0; // Vitesse de défilement vers la sphère (effet Race the Sun)
+    this.speed = 65.0; // Vitesse constante de défilement vers la caméra
 
-    // Configuration des sections de grille
+    // Dimensions de la grille
     this.trackWidth = 80;
     this.sectionLength = 240;
     this.gridWidthSegments = 40;
@@ -15,32 +15,30 @@ export class InfiniteGrid {
     this.sections = [];
 
     this.createGridSections();
-    this.createHorizonAccent();
     this.scene.add(this.group);
   }
 
   createGridSections() {
-    // Matériau filaire néon violet / magenta cyber
+    // Matériau filaire (wireframe) couleur cyan néon (#00f0ff)
     const wireMaterial = new THREE.MeshBasicMaterial({
-      color: 0xa855f7,
+      color: 0x00f0ff,
       wireframe: true,
       transparent: true,
-      opacity: 0.65
+      opacity: 0.75
     });
 
-    // Sous-couche sombre pour masquer le vide
+    // Sous-couche opaque sombre
     const baseMaterial = new THREE.MeshBasicMaterial({
-      color: 0x05010b,
+      color: 0x030108,
       polygonOffset: true,
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 1
     });
 
-    // Deux grands segments juxtaposés en Z pour une boucle infinie sans à-coup
+    // Deux grands segments juxtaposés en Z pour une boucle infinie continue
     for (let i = 0; i < 2; i++) {
       const sectionGroup = new THREE.Group();
 
-      // Géométrie de la grille
       const geom = new THREE.PlaneGeometry(
         this.trackWidth,
         this.sectionLength,
@@ -48,16 +46,18 @@ export class InfiniteGrid {
         this.gridLengthSegments
       );
 
+      // Sol sombre occultant
       const baseMesh = new THREE.Mesh(geom, baseMaterial);
       baseMesh.rotation.x = -Math.PI / 2;
       sectionGroup.add(baseMesh);
 
+      // Grille filaire cyan néon
       const wireMesh = new THREE.Mesh(geom, wireMaterial);
       wireMesh.rotation.x = -Math.PI / 2;
       wireMesh.position.y = 0.01;
       sectionGroup.add(wireMesh);
 
-      // Lignes de guidage néon magenta sur les bords de piste
+      // Bordures de guidage cyan néon intense
       this.addBorderGuides(sectionGroup);
 
       // Positionnement initial en Z
@@ -69,12 +69,12 @@ export class InfiniteGrid {
 
   addBorderGuides(parent) {
     const guideMat = new THREE.LineBasicMaterial({
-      color: 0xff2ea6,
+      color: 0x00f0ff,
       linewidth: 2
     });
 
     const halfLength = this.sectionLength / 2;
-    const borderOffsets = [-15, 15]; // Limites visuelles de la trajectoire principale
+    const borderOffsets = [-16, 16];
 
     borderOffsets.forEach((x) => {
       const points = [
@@ -87,31 +87,16 @@ export class InfiniteGrid {
     });
   }
 
-  createHorizonAccent() {
-    // Halo néon lointain au point de fuite
-    const horizonGeo = new THREE.PlaneGeometry(160, 4);
-    const horizonMat = new THREE.MeshBasicMaterial({
-      color: 0x7928ca,
-      transparent: true,
-      opacity: 0.35,
-      side: THREE.DoubleSide
-    });
-    this.horizonMesh = new THREE.Mesh(horizonGeo, horizonMat);
-    this.horizonMesh.position.set(0, 0.5, -280);
-    this.scene.add(this.horizonMesh);
-  }
-
   update(deltaTime) {
     const deltaZ = this.speed * deltaTime;
-    const resetThreshold = this.sectionLength;
 
     for (let i = 0; i < this.sections.length; i++) {
       const section = this.sections[i];
-      // Le sol avance vers la caméra (+Z) pour simuler la course du joueur vers l'avant (-Z)
+      // Le sol défile vers la caméra (+Z) à vitesse constante
       section.position.z += deltaZ;
 
-      // Quand une section dépasse derrière la caméra, on la replace devant
-      if (section.position.z >= resetThreshold) {
+      // Quand une section passe derrière la caméra, elle boucle sans couture vers l'avant
+      if (section.position.z >= this.sectionLength) {
         section.position.z -= this.sectionLength * 2;
       }
     }

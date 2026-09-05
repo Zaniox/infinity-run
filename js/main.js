@@ -21,32 +21,28 @@ class Game {
   animate() {
     requestAnimationFrame(this.animate);
 
-    // Delta time pour un mouvement fluide indépendant du framerate
     const dt = Math.min(this.clock.getDelta(), 0.1);
-
-    // Récupération de l'axe de contrôle latéral (-1 à 1)
     const inputAxis = this.inputs.getAxis();
 
-    // Mise à jour de la sphère et du défilement infini de la grille
+    // Mise à jour de la sphère et du défilement infini
     this.player.update(dt, inputAxis);
     this.grid.update(dt);
 
-    // Suivi de caméra cinématique souple (légère translation en X)
+    // Suivi souple de la caméra en X
     const playerPos = this.player.getPosition();
     const targetCamX = playerPos.x * 0.35;
     this.engine.camera.position.x += (targetCamX - this.engine.camera.position.x) * 6.0 * dt;
 
-    // Lumière ponctuelle suivant la sphère
-    if (this.engine.groundLight) {
-      this.engine.groundLight.position.x = playerPos.x;
+    // Lumière ponctuelle accompagnant le joueur
+    if (this.engine.playerLight) {
+      this.engine.playerLight.position.x = playerPos.x;
     }
 
-    // Rendu de la scène
+    // Rendu
     this.engine.render();
   }
 }
 
-// Initialisation au chargement du DOM
 window.addEventListener('DOMContentLoaded', () => {
   new Game();
 });

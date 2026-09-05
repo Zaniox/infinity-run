@@ -4,7 +4,6 @@ export class InputController {
     this.keyLeft = false;
     this.keyRight = false;
 
-    // Support tactile & souris
     this.isPointerDown = false;
     this.pointerStartX = 0;
     this.pointerDeltaX = 0;
@@ -15,6 +14,7 @@ export class InputController {
 
   initKeyboard() {
     window.addEventListener('keydown', (e) => {
+      // Flèches et touches Q/D (ou A/D)
       if (['ArrowLeft', 'KeyA', 'KeyQ'].includes(e.code)) {
         this.keyLeft = true;
       }
@@ -36,7 +36,7 @@ export class InputController {
   }
 
   initPointer() {
-    // Souris : contrôle par glissement ou position relative
+    // Gestion souris et écran tactile
     window.addEventListener('pointerdown', (e) => {
       this.isPointerDown = true;
       this.pointerStartX = e.clientX;
@@ -45,16 +45,15 @@ export class InputController {
 
     window.addEventListener('pointermove', (e) => {
       if (this.isPointerDown) {
-        // Mode glissement (drag)
-        const diff = (e.clientX - this.pointerStartX) / (window.innerWidth * 0.25);
+        // Déplacement par glissement (drag)
+        const diff = (e.clientX - this.pointerStartX) / (window.innerWidth * 0.22);
         this.pointerDeltaX = Math.max(-1, Math.min(1, diff));
         this.updateAxis();
       } else {
-        // Survol léger à la souris (sans clic) : orienter selon la moitié d'écran
+        // Suivi léger de la souris
         const normalizedX = (e.clientX / window.innerWidth) * 2 - 1;
-        // Deadzone au centre (15%)
-        if (Math.abs(normalizedX) > 0.15) {
-          const steer = (Math.abs(normalizedX) - 0.15) / 0.85;
+        if (Math.abs(normalizedX) > 0.12) {
+          const steer = (Math.abs(normalizedX) - 0.12) / 0.88;
           this.pointerDeltaX = Math.sign(normalizedX) * steer;
         } else {
           this.pointerDeltaX = 0;
