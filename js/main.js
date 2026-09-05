@@ -60,6 +60,8 @@ class GameApp {
       () => this.audio.nextTrack()
     );
 
+    window.gameApp = this;
+
     // Initialisation du premier cycle
     const track = this.audio.getCurrentTrack();
     this.onTrackChange(this.audio.currentTrackIndex, track);

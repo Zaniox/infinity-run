@@ -4,6 +4,7 @@
  * Volumes Géométriques Épurés et Transitions Atmosphériques Fluides.
  */
 import * as THREE from 'three';
+import { getSoftGlowTexture, getSparkTexture, getSmokeTexture, getStarTexture } from './particles.js';
 
 export const CYCLES_DATA = [
   {
@@ -273,31 +274,37 @@ export class World {
     this.updateActiveElement(this.currentCycleIndex);
   }
 
-  // 1. Eau : Pluie torrentielle et traînées aquatiques
+  // 1. Eau : Pluie torrentielle et traînées aquatiques aérodynamiques réalistes
   setupWaterRain() {
     this.waterRainGroup = new THREE.Group();
-    const count = 750;
-    const geo = new THREE.BufferGeometry();
-    const pos = new Float32Array(count * 3);
-    this.rainSpeeds = new Float32Array(count);
+    const count = 900;
+    this.rainGeo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 2 * 3);
+    this.rainLinesData = [];
 
     for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 80;
-      pos[i * 3 + 1] = Math.random() * 32;
-      pos[i * 3 + 2] = -Math.random() * 240 + 10;
-      this.rainSpeeds[i] = 50 + Math.random() * 35;
+      const x = (Math.random() - 0.5) * 85;
+      const y = Math.random() * 32;
+      const z = -Math.random() * 240 + 10;
+      const len = 2.5 + Math.random() * 2.2;
+      const fallSpeed = 55 + Math.random() * 30;
+
+      pos[i * 6] = x; pos[i * 6 + 1] = y; pos[i * 6 + 2] = z;
+      pos[i * 6 + 3] = x; pos[i * 6 + 4] = y - len; pos[i * 6 + 5] = z + 0.9;
+
+      this.rainLinesData.push({ x, y, z, len, fallSpeed });
     }
 
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const mat = new THREE.PointsMaterial({
-      color: 0x38bdf8,
-      size: 1.5,
+    this.rainGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const rainMat = new THREE.LineBasicMaterial({
+      color: 0x7dd3fc,
       transparent: true,
-      opacity: 0.65,
-      blending: THREE.AdditiveBlending
+      opacity: 0.60,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
-    this.rainPoints = new THREE.Points(geo, mat);
-    this.waterRainGroup.add(this.rainPoints);
+    this.rainLines = new THREE.LineSegments(this.rainGeo, rainMat);
+    this.waterRainGroup.add(this.rainLines);
     this.elementGroup.add(this.waterRainGroup);
   }
 
@@ -373,9 +380,11 @@ export class World {
 
     const mat = new THREE.PointsMaterial({
       size: 2.2,
+      map: getSparkTexture(),
       vertexColors: true,
       transparent: true,
-      opacity: 0.88,
+      opacity: 0.92,
+      depthWrite: false,
       blending: THREE.AdditiveBlending
     });
     this.emberPoints = new THREE.Points(geo, mat);
@@ -413,9 +422,11 @@ export class World {
     sparkGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
     const sparkMat = new THREE.PointsMaterial({
       color: 0xfef08a,
-      size: 2.0,
+      size: 1.8,
+      map: getSparkTexture(),
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.90,
+      depthWrite: false,
       blending: THREE.AdditiveBlending
     });
     this.sparkPoints = new THREE.Points(sparkGeo, sparkMat);
@@ -459,9 +470,11 @@ export class World {
     photonGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
     const photonMat = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 2.5,
+      size: 2.8,
+      map: getSoftGlowTexture(),
       transparent: true,
       opacity: 0.88,
+      depthWrite: false,
       blending: THREE.AdditiveBlending
     });
     this.photonPoints = new THREE.Points(photonGeo, photonMat);
@@ -490,10 +503,12 @@ export class World {
     geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
 
     const mat = new THREE.PointsMaterial({
-      size: 3.5,
+      size: 5.5,
+      map: getSmokeTexture(),
       vertexColors: true,
       transparent: true,
-      opacity: 0.75
+      opacity: 0.45,
+      depthWrite: false
     });
     this.smokePoints = new THREE.Points(geo, mat);
     this.shadowSmokeGroup.add(this.smokePoints);
@@ -563,10 +578,12 @@ export class World {
     starGeo.setAttribute('color', new THREE.BufferAttribute(sCols, 3));
 
     const starMat = new THREE.PointsMaterial({
-      size: 2.2,
+      size: 2.6,
+      map: getStarTexture(),
       vertexColors: true,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.92,
+      depthWrite: false,
       blending: THREE.AdditiveBlending
     });
     this.starPoints = new THREE.Points(starGeo, starMat);
@@ -634,17 +651,27 @@ export class World {
     const deltaZ = speed * dt;
 
     if (this.waterRainGroup.visible) {
-      const pos = this.rainPoints.geometry.attributes.position.array;
-      const count = pos.length / 3;
-      for (let i = 0; i < count; i++) {
-        pos[i * 3 + 1] -= this.rainSpeeds[i] * dt;
-        pos[i * 3 + 2] += deltaZ;
-        if (pos[i * 3 + 1] <= 0 || pos[i * 3 + 2] > 15) {
-          pos[i * 3 + 1] = 28 + Math.random() * 6;
-          pos[i * 3 + 2] = -Math.random() * 240 + 5;
+      const pos = this.rainGeo.attributes.position.array;
+      for (let i = 0; i < this.rainLinesData.length; i++) {
+        const r = this.rainLinesData[i];
+        r.y -= r.fallSpeed * dt;
+        r.z += deltaZ;
+
+        if (r.y <= 0.2 || r.z > 18) {
+          r.y = 28 + Math.random() * 6;
+          r.z = -Math.random() * 240 + 5;
+          r.x = (Math.random() - 0.5) * 85;
         }
+
+        pos[i * 6] = r.x;
+        pos[i * 6 + 1] = r.y;
+        pos[i * 6 + 2] = r.z;
+
+        pos[i * 6 + 3] = r.x;
+        pos[i * 6 + 4] = r.y - r.len;
+        pos[i * 6 + 5] = r.z + 0.9;
       }
-      this.rainPoints.geometry.attributes.position.needsUpdate = true;
+      this.rainGeo.attributes.position.needsUpdate = true;
 
     } else if (this.earthDebrisGroup.visible) {
       for (const r of this.earthRocks) {

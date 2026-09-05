@@ -5,6 +5,7 @@
  */
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { getSoftGlowTexture } from './particles.js';
 
 export class TargetManager {
   constructor(scene) {
@@ -331,8 +332,10 @@ export class TargetManager {
     this.suctionMat = new THREE.PointsMaterial({
       color: 0xd946ef,
       size: 2.6,
+      map: getSoftGlowTexture(),
       transparent: true,
       opacity: 0.75,
+      depthWrite: false,
       blending: THREE.AdditiveBlending
     });
 

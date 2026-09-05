@@ -5,6 +5,7 @@
  */
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { getSoftGlowTexture } from './particles.js';
 
 export class Player {
   constructor(scene) {
@@ -407,9 +408,11 @@ export class Player {
 
     this.disMat = new THREE.PointsMaterial({
       size: 2.2,
+      map: getSoftGlowTexture(),
       vertexColors: true,
       transparent: true,
       opacity: 0,
+      depthWrite: false,
       blending: THREE.AdditiveBlending
     });
 
