@@ -9,112 +9,128 @@ export const CYCLES_DATA = [
   {
     id: 1,
     name: "Chute",
-    subtitle: "Gravité / Abysse",
-    troll: "CHUTE CÉLESTE : Monolithes qui tombent du ciel en piqué",
-    sky: 0x05010a,
-    fog: 0x12021a,
-    ground: 0x100418,
-    monolith: 0x240838,
-    primary: 0xa855f7,
-    secondary: 0xec4899,
-    lightIntensity: 1.8,
+    subtitle: "Noir • Eau (Abysse Aquatique)",
+    element: "Eau",
+    colorName: "Noir",
+    troll: "TROMBES D'EAU ABYSSALES : Piliers noirs tombant du ciel en piqué",
+    sky: 0x020306,
+    fog: 0x040812,
+    ground: 0x02050b,
+    monolith: 0x080e18,
+    primary: 0x00f0ff,
+    secondary: 0x0284c7,
+    lightIntensity: 1.6,
     style: "falling"
   },
   {
     id: 2,
     name: "Résilience",
-    subtitle: "Terre / Métal",
-    troll: "PISTONS COULISSANTS : Portes de blindage qui se referment",
-    sky: 0x010c08,
-    fog: 0x03160e,
-    ground: 0x04140c,
-    monolith: 0x0d281a,
-    primary: 0x00ff88,
-    secondary: 0x00b4d8,
+    subtitle: "Vert & Marron • Terre (Plaques Tectoniques)",
+    element: "Terre",
+    colorName: "Vert & Marron",
+    troll: "PISTONS TELLURIQUES : Portes de terre et roche qui s'écrasent sur le beat",
+    sky: 0x080c05,
+    fog: 0x121a0a,
+    ground: 0x1c150c,
+    monolith: 0x162812,
+    primary: 0x22c55e,
+    secondary: 0xb45309,
     lightIntensity: 1.7,
     style: "sliding"
   },
   {
     id: 3,
     name: "Obsession",
-    subtitle: "Vortex / Spirale",
-    troll: "VORTEX EN ROTATION : Arches géantes tournant en hélice",
-    sky: 0x01081a,
-    fog: 0x021226,
-    ground: 0x031224,
-    monolith: 0x09264c,
-    primary: 0x00f0ff,
-    secondary: 0x3b82f6,
-    lightIntensity: 1.9,
+    subtitle: "Rouge • Feu (Brasier Magmatique)",
+    element: "Feu",
+    colorName: "Rouge",
+    troll: "ARCHES DE FEU EN VRILLE : Anneaux de lave en fusion tournant en spirale infernale",
+    sky: 0x180303,
+    fog: 0x2a0404,
+    ground: 0x200303,
+    monolith: 0x3d0606,
+    primary: 0xef4444,
+    secondary: 0xf97316,
+    lightIntensity: 2.0,
     style: "spiral"
   },
   {
     id: 4,
     name: "Amour",
-    subtitle: "Lumière / Éther",
-    troll: "LEURRE PRISMATIQUE : Faux cœurs et prismes flottants",
-    sky: 0x120412,
-    fog: 0x240d22,
-    ground: 0x1c081a,
-    monolith: 0x3d1439,
-    primary: 0xf472b6,
-    secondary: 0xfbbf24,
-    lightIntensity: 2.0,
+    subtitle: "Jaune • Électricité (Plasma & Foudre)",
+    element: "Électricité",
+    colorName: "Jaune",
+    troll: "LEURRES ÉLECTRIQUES : Prismes chargés à haute tension générant des arcs de foudre",
+    sky: 0x141202,
+    fog: 0x241d03,
+    ground: 0x1a1602,
+    monolith: 0x3a3006,
+    primary: 0xeab308,
+    secondary: 0xfef08a,
+    lightIntensity: 2.2,
     style: "decoy"
   },
   {
     id: 5,
     name: "Bonheur",
-    subtitle: "Énergie Solaire",
-    troll: "ÉRUPTIONS SOLAIRES : Nappe de lasers horizontaux à raser",
-    sky: 0x140a02,
-    fog: 0x261504,
-    ground: 0x221004,
-    monolith: 0x442208,
-    primary: 0xfbbf24,
-    secondary: 0xf97316,
-    lightIntensity: 2.1,
+    subtitle: "Blanc • Lumière (Rayonnement Céleste)",
+    element: "Lumière",
+    colorName: "Blanc",
+    troll: "LAME DE LUMIÈRE RASANTE : Nappe de lasers blancs éclatants rasant le sol",
+    sky: 0x1e2532,
+    fog: 0x334155,
+    ground: 0x242e3d,
+    monolith: 0x64748b,
+    primary: 0xffffff,
+    secondary: 0x93c5fd,
+    lightIntensity: 2.4,
     style: "solar"
   },
   {
     id: 6,
     name: "Chaos",
-    subtitle: "Entropie / Feu",
-    troll: "SÉISME D'ENTROPIE : Piliers sismiques vacillant sur les kicks",
-    sky: 0x120103,
-    fog: 0x220205,
-    ground: 0x1c0206,
-    monolith: 0x3e050c,
-    primary: 0xff003c,
-    secondary: 0xff7700,
-    lightIntensity: 1.8,
+    subtitle: "Gris • Ombre (Nébuleuse Obscure & Cendres)",
+    element: "Ombre",
+    colorName: "Gris",
+    troll: "SÉISME D'OMBRES : Piliers silhouettes gris cendre tremblant violemment sur les basses",
+    sky: 0x0a0a0a,
+    fog: 0x141414,
+    ground: 0x111111,
+    monolith: 0x262626,
+    primary: 0x94a3b8,
+    secondary: 0x475569,
+    lightIntensity: 1.5,
     style: "quake"
   },
   {
     id: 7,
     name: "Ambition",
-    subtitle: "Ascension / Cristal",
-    troll: "POUSSÉE CRISTALLINE : Aiguilles jaillissant vers le ciel",
-    sky: 0x030a16,
-    fog: 0x061628,
-    ground: 0x061426,
-    monolith: 0x103054,
-    primary: 0xe0f2fe,
-    secondary: 0x38bdf8,
-    lightIntensity: 2.0,
+    subtitle: "Bleu • Vent (Courants Supersoniques & Ciel)",
+    element: "Vent",
+    colorName: "Bleu",
+    troll: "AIGUILLES DU VENT ASCENDANT : Pics cristallins profilés jaillissant sous les bourrasques",
+    sky: 0x031024,
+    fog: 0x071e3d,
+    ground: 0x082548,
+    monolith: 0x0e3b6d,
+    primary: 0x38bdf8,
+    secondary: 0x0284c7,
+    lightIntensity: 1.9,
     style: "needles"
   },
   {
     id: 8,
     name: "Folie",
-    subtitle: "Distorsion & Feinte Finale",
-    troll: "LA FEINTE COSMIQUE : Distorsion de réalité et boucle infinie",
-    sky: 0x120114,
-    fog: 0x220226,
-    ground: 0x1a0220,
-    monolith: 0x3c0544,
-    primary: 0xe879f9,
-    secondary: 0xc084fc,
+    subtitle: "Violet • Vide / Cosmos (Distorsion & Feinte)",
+    element: "Vide ou Cosmos",
+    colorName: "Violet",
+    troll: "LA FEINTE COSMIQUE : Distorsion du vide, mirages spatiaux et boucle temporelle",
+    sky: 0x0b0118,
+    fog: 0x17022e,
+    ground: 0x140228,
+    monolith: 0x2a044e,
+    primary: 0xc084fc,
+    secondary: 0xa855f7,
     lightIntensity: 1.9,
     style: "glitch"
   }
@@ -237,6 +253,58 @@ export class World {
 
     this.groundMaterial.color.set(this.cycle.ground);
     this.monolithMaterial.color.set(this.cycle.monolith);
+
+    // Propriétés physiques et reflets selon l'élément (Eau, Terre, Feu, Électricité, Lumière, Ombre, Vent, Cosmos)
+    switch (this.cycle.element) {
+      case 'Eau': // Cycle 1 (Chute) : Noir / Eau
+        this.groundMaterial.roughness = 0.12;
+        this.groundMaterial.metalness = 0.85;
+        this.monolithMaterial.roughness = 0.2;
+        this.monolithMaterial.metalness = 0.8;
+        break;
+      case 'Terre': // Cycle 2 (Résilience) : Vert ou Marron / Terre
+        this.groundMaterial.roughness = 0.88;
+        this.groundMaterial.metalness = 0.08;
+        this.monolithMaterial.roughness = 0.75;
+        this.monolithMaterial.metalness = 0.15;
+        break;
+      case 'Feu': // Cycle 3 (Obsession) : Rouge / Feu
+        this.groundMaterial.roughness = 0.62;
+        this.groundMaterial.metalness = 0.35;
+        this.monolithMaterial.roughness = 0.45;
+        this.monolithMaterial.metalness = 0.3;
+        break;
+      case 'Électricité': // Cycle 4 (Amour) : Jaune / Électricité
+        this.groundMaterial.roughness = 0.38;
+        this.groundMaterial.metalness = 0.6;
+        this.monolithMaterial.roughness = 0.25;
+        this.monolithMaterial.metalness = 0.75;
+        break;
+      case 'Lumière': // Cycle 5 (Bonheur) : Blanc / Lumière
+        this.groundMaterial.roughness = 0.2;
+        this.groundMaterial.metalness = 0.45;
+        this.monolithMaterial.roughness = 0.18;
+        this.monolithMaterial.metalness = 0.5;
+        break;
+      case 'Ombre': // Cycle 6 (Chaos) : Gris / Ombre
+        this.groundMaterial.roughness = 0.96;
+        this.groundMaterial.metalness = 0.04;
+        this.monolithMaterial.roughness = 0.9;
+        this.monolithMaterial.metalness = 0.05;
+        break;
+      case 'Vent': // Cycle 7 (Ambition) : Bleu / Vent
+        this.groundMaterial.roughness = 0.3;
+        this.groundMaterial.metalness = 0.65;
+        this.monolithMaterial.roughness = 0.25;
+        this.monolithMaterial.metalness = 0.7;
+        break;
+      case 'Vide ou Cosmos': // Cycle 8 (Folie) : Violet / Vide ou Cosmos
+        this.groundMaterial.roughness = 0.15;
+        this.groundMaterial.metalness = 0.88;
+        this.monolithMaterial.roughness = 0.2;
+        this.monolithMaterial.metalness = 0.85;
+        break;
+    }
   }
 
   // --- LES 8 TROLLS ET OBSTACLES PAR CYCLE ---
@@ -260,11 +328,18 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 1 (Chute) : Monolithe tombant du ciel en piqué gravitationnel
+  // Troll 1 (Chute) : Monolithe tombant du ciel en piqué gravitationnel (Noir / Eau abyssale)
   spawnFallingPillar(x) {
     const w = 5.0, h = 28.0, d = 5.0;
     const geo = new THREE.BoxGeometry(w, h, d);
-    const mesh = new THREE.Mesh(geo, this.monolithMaterial);
+    const waterMat = new THREE.MeshStandardMaterial({
+      color: 0x060c18,
+      emissive: 0x001a2c,
+      emissiveIntensity: 0.6,
+      roughness: 0.12,
+      metalness: 0.85
+    });
+    const mesh = new THREE.Mesh(geo, waterMat);
     mesh.position.set(x, 48.0, this.spawnDistance); // Tombe depuis le ciel
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -276,15 +351,21 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 2 (Résilience) : Porte blindée à pistons coulissants au rythme du beat
+  // Troll 2 (Résilience) : Porte blindée à pistons coulissants (Vert & Marron / Terre)
   spawnSlidingGate(gapX) {
     const group = new THREE.Group();
     const h = 24.0, thickness = 5.0;
     const subBoxes = [];
 
+    const earthMat = new THREE.MeshStandardMaterial({
+      color: 0x1c2b18,
+      roughness: 0.85,
+      metalness: 0.12
+    });
+
     const leftW = Math.max(12, gapX + 28);
     const leftGeo = new THREE.BoxGeometry(leftW, h, thickness);
-    const leftMesh = new THREE.Mesh(leftGeo, this.monolithMaterial);
+    const leftMesh = new THREE.Mesh(leftGeo, earthMat);
     leftMesh.position.set(-leftW / 2 + gapX - 4.5, h / 2, 0);
     leftMesh.castShadow = true;
     group.add(leftMesh);
@@ -292,7 +373,7 @@ export class World {
 
     const rightW = Math.max(12, 28 - gapX);
     const rightGeo = new THREE.BoxGeometry(rightW, h, thickness);
-    const rightMesh = new THREE.Mesh(rightGeo, this.monolithMaterial);
+    const rightMesh = new THREE.Mesh(rightGeo, earthMat);
     rightMesh.position.set(rightW / 2 + gapX + 4.5, h / 2, 0);
     rightMesh.castShadow = true;
     group.add(rightMesh);
@@ -305,18 +386,26 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 3 (Obsession) : Arche tourbillonnante en rotation sur l'axe Z
+  // Troll 3 (Obsession) : Arche de magma tourbillonnante en rotation sur l'axe Z (Rouge / Feu)
   spawnSpiralArch(gapX) {
     const group = new THREE.Group();
     const size = 26.0;
 
+    const fireMat = new THREE.MeshStandardMaterial({
+      color: 0xef4444,
+      emissive: 0xdd1a00,
+      emissiveIntensity: 0.95,
+      roughness: 0.4,
+      metalness: 0.25
+    });
+
     const topGeo = new THREE.BoxGeometry(size, 4.0, 4.0);
-    const top = new THREE.Mesh(topGeo, this.monolithMaterial);
+    const top = new THREE.Mesh(topGeo, fireMat);
     top.position.y = 12;
     group.add(top);
 
     const botGeo = new THREE.BoxGeometry(size, 4.0, 4.0);
-    const bot = new THREE.Mesh(botGeo, this.monolithMaterial);
+    const bot = new THREE.Mesh(botGeo, fireMat);
     bot.position.y = -12;
     group.add(bot);
 
@@ -332,14 +421,15 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 4 (Amour) : Prisme decoy (labyrinthe de prismes d'éther)
+  // Troll 4 (Amour) : Prisme foudroyant haute-tension (Jaune / Électricité)
   spawnDecoyArch(x) {
     const geo = new THREE.OctahedronGeometry(6.5, 0);
     const mat = new THREE.MeshStandardMaterial({
-      color: 0xf472b6,
-      emissive: 0xbe185d,
-      emissiveIntensity: 0.8,
-      roughness: 0.2
+      color: 0xfacc15,
+      emissive: 0xeab308,
+      emissiveIntensity: 1.4,
+      roughness: 0.15,
+      metalness: 0.85
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(x, 5.5, this.spawnDistance);
@@ -352,15 +442,15 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 5 (Bonheur) : Nappe de rayons solaires forçant le rase-mottes
+  // Troll 5 (Bonheur) : Nappe de rayons solaires blancs rasant le sol (Blanc / Lumière)
   spawnSolarBeam() {
     const group = new THREE.Group();
     const w = 110.0, h = 1.2, d = 4.0;
     const geo = new THREE.BoxGeometry(w, h, d);
     const mat = new THREE.MeshBasicMaterial({
-      color: 0xfbbf24,
+      color: 0xffffff,
       transparent: true,
-      opacity: 0.85
+      opacity: 0.92
     });
     const beam = new THREE.Mesh(geo, mat);
     beam.position.set(0, 5.8, 0);
@@ -374,11 +464,16 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 6 (Chaos) : Piliers sismiques vacillants
+  // Troll 6 (Chaos) : Piliers sismiques vacillants d'ombre (Gris / Ombre)
   spawnQuakePillars(x) {
     const w = 5.0, h = 26.0, d = 5.0;
     const geo = new THREE.BoxGeometry(w, h, d);
-    const mesh = new THREE.Mesh(geo, this.monolithMaterial);
+    const shadowMat = new THREE.MeshStandardMaterial({
+      color: 0x242830,
+      roughness: 0.95,
+      metalness: 0.05
+    });
+    const mesh = new THREE.Mesh(geo, shadowMat);
     mesh.position.set(x, h / 2, this.spawnDistance);
     mesh.castShadow = true;
 
@@ -389,15 +484,15 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 7 (Ambition) : Aiguilles cristallines géantes jaillissant du sol
+  // Troll 7 (Ambition) : Aiguilles cristallines aérodynamiques jaillissant du sol (Bleu / Vent)
   spawnCrystalNeedle(x) {
     const r = 3.5, h = 38.0;
     const geo = new THREE.ConeGeometry(r, h, 4);
     const mat = new THREE.MeshStandardMaterial({
       color: 0x38bdf8,
       emissive: 0x0284c7,
-      emissiveIntensity: 0.9,
-      roughness: 0.1,
+      emissiveIntensity: 1.1,
+      roughness: 0.12,
       metalness: 0.8
     });
     const mesh = new THREE.Mesh(geo, mat);
@@ -411,11 +506,18 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 8 (Folie) : Monolithe glitché vacillant et instable
+  // Troll 8 (Folie) : Monolithe glitché de distorsion cosmique (Violet / Vide ou Cosmos)
   spawnGlitchMonolith(x) {
     const w = 4.5, h = 24.0, d = 4.5;
     const geo = new THREE.BoxGeometry(w, h, d);
-    const mesh = new THREE.Mesh(geo, this.monolithMaterial);
+    const cosmosMat = new THREE.MeshStandardMaterial({
+      color: 0x2c064e,
+      emissive: 0xa855f7,
+      emissiveIntensity: 0.95,
+      roughness: 0.18,
+      metalness: 0.82
+    });
+    const mesh = new THREE.Mesh(geo, cosmosMat);
     mesh.position.set(x, h / 2, this.spawnDistance);
     mesh.castShadow = true;
 

@@ -163,7 +163,7 @@ export class UIManager {
       this.cycleToastTitle.style.color = `#${cycle.primary.toString(16).padStart(6, '0')}`;
     }
     if (this.cycleToastDesc) {
-      this.cycleToastDesc.textContent = `${cycle.subtitle} • ${cycle.name}`;
+      this.cycleToastDesc.textContent = `${cycle.subtitle} — ${cycle.troll}`;
     }
 
     const hex = `#${cycle.primary.toString(16).padStart(6, '0')}`;

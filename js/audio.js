@@ -4,14 +4,14 @@
  */
 
 export const TRACKS = [
-  { id: 1, file: 'audio/Chute.mp3', name: 'Chute', cycle: 'Chute (Gravité / Abysse)', bpm: 128 },
-  { id: 2, file: 'audio/Resilience.mp3', altFile: 'audio/Résilience.mp3', name: 'Résilience', cycle: 'Résilience (Terre / Métal)', bpm: 134 },
-  { id: 3, file: 'audio/Obsession.mp3', name: 'Obsession', cycle: 'Obsession (Vortex / Spirale)', bpm: 142 },
-  { id: 4, file: 'audio/Amour.mp3', name: 'Amour', cycle: 'Amour (Lumière / Éther)', bpm: 130 },
-  { id: 5, file: 'audio/Bonheur.mp3', name: 'Bonheur', cycle: 'Bonheur (Énergie Solaire)', bpm: 136 },
-  { id: 6, file: 'audio/Chaos.mp3', name: 'Chaos', cycle: 'Chaos (Entropie / Feu)', bpm: 140 },
-  { id: 7, file: 'audio/Ambition.mp3', name: 'Ambition', cycle: 'Ambition (Ascension / Cristal)', bpm: 125 },
-  { id: 8, file: 'audio/Folie.mp3', name: 'Folie', cycle: 'Folie (Distorsion)', bpm: 146 }
+  { id: 1, file: 'audio/Chute.mp3', name: 'Chute', cycle: 'Chute (Noir — Eau)', bpm: 128 },
+  { id: 2, file: 'audio/Resilience.mp3', altFile: 'audio/Résilience.mp3', name: 'Résilience', cycle: 'Résilience (Vert & Marron — Terre)', bpm: 134 },
+  { id: 3, file: 'audio/Obsession.mp3', name: 'Obsession', cycle: 'Obsession (Rouge — Feu)', bpm: 142 },
+  { id: 4, file: 'audio/Amour.mp3', name: 'Amour', cycle: 'Amour (Jaune — Électricité)', bpm: 130 },
+  { id: 5, file: 'audio/Bonheur.mp3', name: 'Bonheur', cycle: 'Bonheur (Blanc — Lumière)', bpm: 136 },
+  { id: 6, file: 'audio/Chaos.mp3', name: 'Chaos', cycle: 'Chaos (Gris — Ombre)', bpm: 140 },
+  { id: 7, file: 'audio/Ambition.mp3', name: 'Ambition', cycle: 'Ambition (Bleu — Vent)', bpm: 125 },
+  { id: 8, file: 'audio/Folie.mp3', name: 'Folie', cycle: 'Folie (Violet — Vide / Cosmos)', bpm: 146 }
 ];
 
 export class AudioManager {
