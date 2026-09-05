@@ -41,7 +41,11 @@ export class AudioManager {
     // Détection de fin de morceau pour passage automatique au cycle suivant
     this.audioElement.addEventListener('ended', () => {
       console.log(`[Audio] Piste ${this.getCurrentTrack().name} terminée. Passage au cycle suivant.`);
-      this.nextTrack();
+      if (this.currentTrackIndex === 7 && window.gameApp && window.gameApp.state === window.gameApp.STATE_PLAYING) {
+        window.gameApp.triggerClimaxFeinte();
+      } else {
+        this.nextTrack();
+      }
     });
 
     // Fallback automatique vers fichier alternatif puis synthé si le MP3 est absent
@@ -366,7 +370,11 @@ export class AudioManager {
       this.synthTrackTimer = (this.synthTrackTimer || 0) + dt;
       if (this.mode === 'synth' && this.synthTrackTimer >= 65.0) {
         this.synthTrackTimer = 0;
-        this.nextTrack();
+        if (this.currentTrackIndex === 7 && window.gameApp && window.gameApp.state === window.gameApp.STATE_PLAYING) {
+          window.gameApp.triggerClimaxFeinte();
+        } else {
+          this.nextTrack();
+        }
       }
     }
 

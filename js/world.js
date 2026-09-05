@@ -765,10 +765,14 @@ export class World {
     this.currentCycleIndex = (index + CYCLES_DATA.length) % CYCLES_DATA.length;
     this.cycle = CYCLES_DATA[this.currentCycleIndex];
 
+    // Nettoyage immédiat des obstacles pour révéler instantanément le nouvel environnement
+    this.reset();
+
     // Transition des couleurs d'atmosphère
     this.scene.background.set(this.cycle.sky);
     this.scene.fog.color.set(this.cycle.fog);
 
+    this.sunLight.color.set(this.cycle.primary);
     this.hemiLight.color.set(this.cycle.secondary);
     this.hemiLight.groundColor.set(this.cycle.fog);
     this.sunLight.intensity = this.cycle.lightIntensity;
@@ -1158,6 +1162,220 @@ export class World {
     this.obstacles.push(obj);
   }
 
+  // --- NOUVEAUX OBSTACLES ÉLÉMENTAIRES DÉDIÉS ---
+
+  // Cycle 1 (Eau) : Aiguille hydrodynamique abyssale
+  spawnWaterSpire(x) {
+    const h = 32.0;
+    const geo = new THREE.ConeGeometry(2.8, h, 6);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x040e1c,
+      emissive: 0x00f0ff,
+      emissiveIntensity: 0.85,
+      roughness: 0.1,
+      metalness: 0.88
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, h / 2, this.spawnDistance);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    this.spawnWaterRipple(x, this.spawnDistance);
+
+    const bbox = new THREE.Box3().setFromObject(mesh);
+    const obj = { mesh, bbox, type: 'standard' };
+    this.scene.add(mesh);
+    this.obstacles.push(obj);
+  }
+
+  // Cycle 2 (Terre) : Monolithe tellurique et blocs rocheux
+  spawnEarthMonolith(x) {
+    const group = new THREE.Group();
+    const h = 26.0;
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x24180d,
+      roughness: 0.95,
+      metalness: 0.08,
+      flatShading: true
+    });
+
+    const geo = new THREE.CylinderGeometry(2.4, 3.8, h, 6);
+    const pillar = new THREE.Mesh(geo, mat);
+    pillar.position.y = h / 2;
+    pillar.castShadow = true;
+    group.add(pillar);
+
+    // Bloc rocheux suspendu
+    const rockGeo = new THREE.DodecahedronGeometry(2.2, 0);
+    const rock = new THREE.Mesh(rockGeo, mat);
+    rock.position.set((Math.random() - 0.5) * 4, h + 2.5, (Math.random() - 0.5) * 2);
+    rock.rotation.set(Math.random(), Math.random(), 0);
+    group.add(rock);
+
+    group.position.set(x, 0, this.spawnDistance);
+    const subBoxes = [
+      { mesh: pillar, box: new THREE.Box3() },
+      { mesh: rock, box: new THREE.Box3() }
+    ];
+    const obj = { mesh: group, subBoxes, type: 'standard' };
+    this.scene.add(group);
+    this.obstacles.push(obj);
+  }
+
+  // Cycle 3 (Feu) : Spire volcanique incandescente
+  spawnVolcanoSpire(x) {
+    const h = 30.0;
+    const geo = new THREE.ConeGeometry(3.2, h, 5);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x3d0606,
+      emissive: 0xef4444,
+      emissiveIntensity: 1.35,
+      roughness: 0.35,
+      metalness: 0.3
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, h / 2, this.spawnDistance);
+    mesh.castShadow = true;
+
+    const bbox = new THREE.Box3().setFromObject(mesh);
+    const obj = { mesh, bbox, type: 'standard' };
+    this.scene.add(mesh);
+    this.obstacles.push(obj);
+  }
+
+  // Cycle 4 (Électricité) : Prisme de plasma haute-tension
+  spawnPlasmaPrism(x) {
+    const h = 14.0;
+    const geo = new THREE.CylinderGeometry(2.2, 2.2, h, 3);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xfff066,
+      emissive: 0xeab308,
+      emissiveIntensity: 2.2,
+      roughness: 0.12,
+      metalness: 0.75
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, 8.5, this.spawnDistance);
+    mesh.castShadow = true;
+
+    const bbox = new THREE.Box3().setFromObject(mesh);
+    const obj = { mesh, bbox, type: 'spiral', rotSpeed: 1.8 };
+    this.scene.add(mesh);
+    this.obstacles.push(obj);
+  }
+
+  // Cycle 5 (Lumière) : Obélisque cristallin céleste
+  spawnPrismObelisk(x) {
+    const h = 32.0;
+    const geo = new THREE.CylinderGeometry(1.6, 2.8, h, 4);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0x93c5fd,
+      emissiveIntensity: 1.5,
+      roughness: 0.12,
+      metalness: 0.65
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, h / 2, this.spawnDistance);
+    mesh.rotation.y = Math.PI / 4;
+    mesh.castShadow = true;
+
+    const bbox = new THREE.Box3().setFromObject(mesh);
+    const obj = { mesh, bbox, type: 'standard' };
+    this.scene.add(mesh);
+    this.obstacles.push(obj);
+  }
+
+  // Cycle 6 (Ombre) : Éperons d'ombre bruts
+  spawnVoidSpikes(x) {
+    const group = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x151518,
+      roughness: 0.98,
+      metalness: 0.02
+    });
+    const subBoxes = [];
+
+    for (let s = 0; s < 3; s++) {
+      const h = 18.0 + s * 4.0;
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(2.0, h, 4), mat);
+      cone.position.set((s - 1) * 2.5, h / 2, (Math.random() - 0.5) * 2);
+      cone.rotation.z = (s - 1) * 0.15;
+      cone.castShadow = true;
+      group.add(cone);
+      subBoxes.push({ mesh: cone, box: new THREE.Box3() });
+    }
+
+    group.position.set(x, 0, this.spawnDistance);
+    const obj = { mesh: group, subBoxes, type: 'quake', shakePhase: Math.random() * 6 };
+    this.scene.add(group);
+    this.obstacles.push(obj);
+  }
+
+  // Cycle 7 (Vent) : Anneau de vortex supersonique
+  spawnWindVortex(x) {
+    const geo = new THREE.TorusGeometry(4.8, 1.0, 8, 20);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 1.25,
+      roughness: 0.2,
+      metalness: 0.75
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, 7.5, this.spawnDistance);
+    mesh.castShadow = true;
+
+    const bbox = new THREE.Box3().setFromObject(mesh);
+    const obj = { mesh, bbox, type: 'spiral', rotSpeed: 2.2 };
+    this.scene.add(mesh);
+    this.obstacles.push(obj);
+  }
+
+  // Cycle 8 (Cosmos) : Faille gravitationnelle stellaire
+  spawnCosmicRift(x) {
+    const group = new THREE.Group();
+    const h = 26.0;
+    const pillarMat = new THREE.MeshStandardMaterial({
+      color: 0x1e0338,
+      emissive: 0xa855f7,
+      emissiveIntensity: 1.1,
+      roughness: 0.15,
+      metalness: 0.85
+    });
+
+    const pLeft = new THREE.Mesh(new THREE.BoxGeometry(2.2, h, 2.2), pillarMat);
+    pLeft.position.set(-4.5, h / 2, 0);
+    group.add(pLeft);
+
+    const pRight = new THREE.Mesh(new THREE.BoxGeometry(2.2, h, 2.2), pillarMat);
+    pRight.position.set(4.5, h / 2, 0);
+    group.add(pRight);
+
+    // Singularity center core
+    const core = new THREE.Mesh(
+      new THREE.OctahedronGeometry(2.8, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xc084fc,
+        emissiveIntensity: 3.5,
+        roughness: 0.05
+      })
+    );
+    core.position.set(0, h * 0.55, 0);
+    group.add(core);
+
+    group.position.set(x, 0, this.spawnDistance);
+    const subBoxes = [
+      { mesh: pLeft, box: new THREE.Box3() },
+      { mesh: pRight, box: new THREE.Box3() },
+      { mesh: core, box: new THREE.Box3() }
+    ];
+    const obj = { mesh: group, subBoxes, type: 'glitch', glitchTimer: 0 };
+    this.scene.add(group);
+    this.obstacles.push(obj);
+  }
+
   // Mise à jour fluide du monde avec synchronisation audio (BPM & Bass)
   update(dt, speed, bpm, bassEnergy = 0, onCollisionCheck) {
     const deltaZ = speed * dt;
@@ -1171,18 +1389,23 @@ export class World {
       }
     }
 
-    // 2. Synchronisation de la lumière avec la basse (Kick)
-    const audioLightBoost = 1.0 + bassEnergy * 0.35;
+    // 2. Synchronisation précise de l'environnement avec la musique (Kick & BPM)
+    const bps = (bpm || 130) / 60.0;
+    const beatPhase = (time * bps * Math.PI * 2) % (Math.PI * 2);
+    const beatKick = Math.pow(Math.sin(beatPhase), 6);
+    const audioPulse = Math.max(bassEnergy, beatKick * 0.72);
+
+    const audioLightBoost = 1.0 + audioPulse * 0.45;
     this.sunLight.intensity = this.cycle.lightIntensity * audioLightBoost;
-    this.hemiLight.intensity = 0.55 * (1.0 + bassEnergy * 0.4);
+    this.hemiLight.intensity = 0.55 * (1.0 + audioPulse * 0.4);
     this.sunLight.target.position.z = -deltaZ;
 
     // 3. Animation de l'élément environnemental actif
-    this.updateElements(dt, speed, bassEnergy, time);
+    this.updateElements(dt, speed, audioPulse, time);
 
-    // 4. Cadencement des obstacles sur le BPM et les Trolls
+    // 4. Cadencement des obstacles sur le BPM et les Trolls élémentaires exclusifs
     const beatInterval = 60.0 / (bpm || 130);
-    const measureBeats = speed > 95.0 ? 2.8 : 3.6;
+    const measureBeats = speed > 95.0 ? 2.6 : 3.4;
     this.obstacleTimer += dt;
 
     if (this.obstacleTimer >= beatInterval * measureBeats) {
@@ -1192,48 +1415,49 @@ export class World {
       const lx = lanes[Math.floor(Math.random() * lanes.length)];
 
       switch (this.cycle.style) {
-        case 'falling': // Cycle 1 : Chute
+        case 'falling': // Cycle 1 : Chute (Noir / Eau)
           if (Math.random() < 0.5) this.spawnFallingPillar(lx);
-          else this.spawnMonolith(lx);
+          else this.spawnWaterSpire(lx);
           break;
 
-        case 'sliding': // Cycle 2 : Résilience
-          if (Math.random() < 0.45) this.spawnSlidingGate((Math.random() - 0.5) * 12);
-          else this.spawnMonolith(lx);
+        case 'sliding': // Cycle 2 : Résilience (Vert & Marron / Terre)
+          if (Math.random() < 0.48) this.spawnSlidingGate((Math.random() - 0.5) * 12);
+          else this.spawnEarthMonolith(lx);
           break;
 
-        case 'spiral': // Cycle 3 : Obsession
+        case 'spiral': // Cycle 3 : Obsession (Rouge / Feu)
           if (Math.random() < 0.5) this.spawnSpiralArch((Math.random() - 0.5) * 8);
-          else this.spawnMonolith(lx);
+          else this.spawnVolcanoSpire(lx);
           break;
 
         case 'tesla':
-        case 'decoy': // Cycle 4 : Amour
+        case 'decoy': // Cycle 4 : Amour (Jaune / Électricité)
           if (Math.random() < 0.55) this.spawnTeslaGate(lx);
-          else this.spawnMonolith(lx);
+          else this.spawnPlasmaPrism(lx);
           break;
 
-        case 'solar': // Cycle 5 : Bonheur
-          if (Math.random() < 0.4) this.spawnSolarBeam();
-          else this.spawnMonolith(lx);
+        case 'solar': // Cycle 5 : Bonheur (Blanc / Lumière)
+          if (Math.random() < 0.45) this.spawnSolarBeam();
+          else this.spawnPrismObelisk(lx);
           break;
 
-        case 'quake': // Cycle 6 : Chaos
-          if (Math.random() < 0.6) this.spawnQuakePillars(lx);
-          else this.spawnMonolith(lx);
+        case 'quake': // Cycle 6 : Chaos (Gris / Ombre)
+          if (Math.random() < 0.55) this.spawnQuakePillars(lx);
+          else this.spawnVoidSpikes(lx);
           break;
 
-        case 'needles': // Cycle 7 : Ambition
+        case 'needles': // Cycle 7 : Ambition (Bleu / Vent)
           if (Math.random() < 0.55) this.spawnCrystalNeedle(lx);
-          else this.spawnMonolith(lx);
+          else this.spawnWindVortex(lx);
           break;
 
-        case 'glitch': // Cycle 8 : Folie
-          this.spawnGlitchMonolith(lx);
+        case 'glitch': // Cycle 8 : Folie (Violet / Vide ou Cosmos)
+          if (Math.random() < 0.5) this.spawnGlitchMonolith(lx);
+          else this.spawnCosmicRift(lx);
           break;
 
         default:
-          this.spawnMonolith(lx);
+          this.spawnWaterSpire(lx);
           break;
       }
     }

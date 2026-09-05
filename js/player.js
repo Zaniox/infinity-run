@@ -377,8 +377,8 @@ export class Player {
     this.heartMesh.position.set(0.24, -1.18, 0.38);
     this.avatar.add(this.heartMesh);
 
-    // Lumière ponctuelle émise par le cœur
-    this.heartLight = new THREE.PointLight(0xff2ea6, 4.0, 16);
+    // Lumière ponctuelle émise par le cœur (focalisée sur le torse)
+    this.heartLight = new THREE.PointLight(0xff2ea6, 1.8, 5.0);
     this.heartLight.position.set(0.24, -1.18, 0.52);
     this.avatar.add(this.heartLight);
   }
@@ -568,7 +568,7 @@ export class Player {
     const rawBeat = Math.pow(Math.sin(beatPhase), 6) + 0.3 * Math.pow(Math.sin(beatPhase * 2 + 0.4), 6);
     const heartbeat = Math.min(1.0, rawBeat) * (0.4 + 0.6 * energyRatio) + (bassEnergy * 0.25 * energyRatio);
 
-    const lightInt = (1.2 + energyRatio * 4.0) * (0.6 + heartbeat * 0.8);
+    const lightInt = (0.9 + energyRatio * 1.5) * (0.7 + heartbeat * 0.5);
     this.heartLight.intensity = lightInt;
     this.heartMat.emissiveIntensity = (1.6 + energyRatio * 3.6) * (0.7 + heartbeat * 0.7);
     if (this.fbxHeartMaterial) {
@@ -590,12 +590,14 @@ export class Player {
     this.energy = 100.0;
     this.isDead = false;
     this.isDislocating = false;
+    this.dyingTimer = 0;
     this.boostTimer = 0;
     this.boostExtraSpeed = 0;
     this.avatar.visible = true;
     this.heartLight.visible = true;
     this.avatar.rotation.set(0, 0, 0);
-    this.group.position.set(0, this.minAltitude, 0);
+    this.group.position.set(0, 3.5, 0);
+    this.boundingSphere.center.copy(this.group.position);
     this.disMat.opacity = 0;
   }
 }

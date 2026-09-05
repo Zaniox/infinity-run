@@ -52,19 +52,25 @@
     <!-- Écran Flash Cosmique (Feinte du Cycle 8) -->
     <div id="cosmic-flash" class="cosmic-flash"></div>
 
-    <!-- MENU PRINCIPAL PLAY / ACCUEIL CINÉMATOGRAPHIQUE -->
+    <!-- MENU PRINCIPAL PLAY / ACCUEIL CINÉMATOGRAPHIQUE HAUTE DÉFINITION -->
     <div id="start-menu" class="start-menu-overlay">
       <div class="start-menu-card">
-        <div class="menu-brand-badge">// OODAÏSOUND OFFICIAL GAME</div>
+        <!-- Visualiseur Égaliseur Audio Supersonique -->
+        <div class="menu-equalizer">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <div class="menu-brand-badge">// OODAÏSOUND &bull; EXPÉRIENCE OFFICIELLE</div>
         <h1 class="menu-title">// SOUNDRISE <span class="neon-title">: INFINITY RUN</span></h1>
         <p class="menu-subtitle">ODYSSÉE GLIDER 3D &bull; RACE THE SUN FEEL &bull; SYNCHRONISATION ÉLÉMENTAIRE</p>
 
-        <!-- Sélecteur de Cycle de départ -->
+        <!-- Sélecteur de Cycle de départ Interactif -->
         <div class="menu-cycle-box">
-          <div class="menu-cycle-label">SÉLECTIONNEZ LE CYCLE DE DÉPART</div>
+          <div class="menu-cycle-label">SÉLECTION DU CYCLE DE DÉPART (1 À 8)</div>
           <div class="menu-cycle-control">
             <button id="menu-btn-prev" class="btn-cycle-nav" title="Cycle précédent">◄</button>
             <div id="menu-cycle-display" class="menu-cycle-tag">
+              <span id="menu-cycle-icon" class="menu-cycle-emoji">🌊</span>
               <span id="menu-cycle-badge" class="cycle-pill">CYCLE 1</span>
               <span id="menu-cycle-title">CHUTE &bull; NOIR (EAU)</span>
             </div>
@@ -73,18 +79,19 @@
           <div id="menu-cycle-troll" class="menu-troll-hint">TROMBES D'EAU ABYSSALES : Piliers noirs tombant du ciel en piqué</div>
         </div>
 
-        <!-- Bouton Géant JOUER / PLAY -->
+        <!-- Bouton Géant JOUER / PLAY avec Effet Shimmer -->
         <button id="btn-play-game" class="btn-play-giant">
+          <div class="btn-shimmer"></div>
           <span class="btn-play-icon">▶</span>
           <span class="btn-play-text">JOUER &bull; DÉCOLLER</span>
-          <span class="btn-play-sub">[ ESPACE ou ENTRÉE ]</span>
+          <span class="btn-play-sub">[ ESPACE ou CLIQUEZ POUR VOLER ]</span>
         </button>
 
-        <!-- Guide des Commandes -->
+        <!-- Guide des Commandes Minimaliste -->
         <div class="menu-controls-grid">
           <div class="ctrl-item"><kbd>Q</kbd> <kbd>D</kbd> ou <kbd>◄</kbd> <kbd>►</kbd> <span>Virage & Roulis</span></div>
           <div class="ctrl-item"><kbd>Z</kbd> <kbd>S</kbd> ou <kbd>▲</kbd> <kbd>▼</kbd> <span>Cabrer / Piquer</span></div>
-          <div class="ctrl-item"><span class="neon-heart">♥</span> <span>Collectez les Cœurs de Nity</span></div>
+          <div class="ctrl-item"><span class="neon-heart">♥</span> <span>Cœurs de Nity</span></div>
         </div>
       </div>
     </div>

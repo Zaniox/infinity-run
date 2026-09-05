@@ -137,11 +137,35 @@ class GameApp {
     this.ui.updateLoopCount(this.loopCount);
     this.ui.hideClimaxAlert();
 
+    // Réinitialisation des touches et axes d'entrée
+    this.keyLeft = false; this.keyRight = false;
+    this.keyUp = false; this.keyDown = false;
+    this.inputAxisX = 0; this.inputAxisY = 0;
+    this.isPointerDown = false;
+
+    // Réinitialisation du joueur, de la cible et du monde
     this.player.reset();
-    this.player.group.position.set(0, 3.5, 0);
     this.target.reset();
     this.world.reset();
 
+    // Recalibrage de la caméra en vue de poursuite
+    this.camera.position.set(0, 4.2, 9.5);
+    this.cameraTarget.set(0, 2.0, -16);
+    this.camera.lookAt(this.cameraTarget);
+    this.camera.fov = this.baseFOV;
+    this.camera.updateProjectionMatrix();
+
+    // Relance de la musique depuis le début du morceau
+    if (this.audio) {
+      if (!this.audio.isPlaying) {
+        this.audio.start();
+      } else {
+        this.audio.playTrack(this.audio.currentTrackIndex);
+      }
+    }
+
+    // Mise à jour de la télémétrie du HUD
+    this.ui.updateHUD(100, 0, this.currentSpeed, 0);
     this.state = this.STATE_PLAYING;
   }
 
@@ -304,25 +328,31 @@ class GameApp {
       });
 
       // 6. Gestion du Climax du Cycle 8 (Rattrapage de Nity & Feinte Temporelle)
+      // EXCLUSIVEMENT lié à la fin de la piste musicale de Folie (la piste doit toucher à sa fin)
       if (this.audio.currentTrackIndex === 7 && !this.isClimaxFeinteActive) {
         this.cycle8Distance += this.currentSpeed * dt;
         const trackProgress = this.audio.getTrackProgress();
+        const progress = trackProgress.progress;
 
-        // Rapprochement progressif vers Nity dès 480m ou 65% du morceau
-        const distRatio = Math.min(1.0, Math.max(0, (this.cycle8Distance - 480) / 420));
-        const audioRatio = Math.min(1.0, Math.max(0, (trackProgress.progress - 0.65) / 0.28));
-        const climaxRatio = Math.max(distRatio, audioRatio);
-
-        if (climaxRatio > 0.05) {
+        // Rapprochement progressif UNIQUEMENT dans la phase finale du morceau (derniers 14% de la piste)
+        if (progress >= 0.86) {
+          const climaxRatio = Math.min(1.0, (progress - 0.86) / 0.12);
           this.target.setClimaxDistance(climaxRatio);
           const percent = Math.min(99, Math.round(climaxRatio * 100));
-          this.ui.showClimaxAlert(`// RATTRAPAGE DE NITY EN COURS... (${percent}%)`);
-          this.player.boostExtraSpeed = Math.max(this.player.boostExtraSpeed, climaxRatio * 28.0);
+          this.ui.showClimaxAlert(`// CONTACT AVEC NITY IMMINENT • FINAL DU CYCLE (${percent}%)`);
+          this.player.boostExtraSpeed = Math.max(this.player.boostExtraSpeed, climaxRatio * 32.0);
           this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV + 16 * climaxRatio, 4 * dt);
-        }
 
-        if (climaxRatio >= 0.98) {
-          this.triggerClimaxFeinte();
+          if (climaxRatio >= 0.98 || progress >= 0.98) {
+            this.triggerClimaxFeinte();
+          }
+        } else {
+          // Pendant tout le morceau, Nity reste inaccessible à l'horizon : il faut survivre
+          this.target.setClimaxDistance(0);
+          if (this.cycle8Distance > 80) {
+            const timeRemaining = Math.max(1, Math.round(trackProgress.duration - trackProgress.currentTime));
+            this.ui.showClimaxAlert(`// SURVIVEZ JUSQU'À LA FIN DU MORCEAU POUR ATTEINDRE NITY (${timeRemaining}S)`);
+          }
         }
       }
 

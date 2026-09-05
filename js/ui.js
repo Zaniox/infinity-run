@@ -22,6 +22,7 @@ export class UIManager {
     this.btnPlayGame = document.getElementById('btn-play-game');
     this.menuBtnPrev = document.getElementById('menu-btn-prev');
     this.menuBtnNext = document.getElementById('menu-btn-next');
+    this.menuCycleIcon = document.getElementById('menu-cycle-icon');
     this.menuCycleBadge = document.getElementById('menu-cycle-badge');
     this.menuCycleTitle = document.getElementById('menu-cycle-title');
     this.menuCycleTroll = document.getElementById('menu-cycle-troll');
@@ -70,20 +71,25 @@ export class UIManager {
   bindEvents() {
     // Clic sur JOUER dans le Menu Principal
     if (this.btnPlayGame) {
-      this.btnPlayGame.addEventListener('click', () => {
+      const handlePlay = (e) => {
+        if (e) e.preventDefault();
         this.hideStartMenu();
         if (this.onStart) this.onStart();
-      });
+      };
+      this.btnPlayGame.addEventListener('click', handlePlay);
+      this.btnPlayGame.addEventListener('pointerdown', handlePlay);
     }
 
     // Sélecteur de cycle dans le Menu Principal
     if (this.menuBtnPrev) {
-      this.menuBtnPrev.addEventListener('click', () => {
+      this.menuBtnPrev.addEventListener('click', (e) => {
+        e.preventDefault();
         if (this.onPrevCycle) this.onPrevCycle();
       });
     }
     if (this.menuBtnNext) {
-      this.menuBtnNext.addEventListener('click', () => {
+      this.menuBtnNext.addEventListener('click', (e) => {
+        e.preventDefault();
         if (this.onNextCycle) this.onNextCycle();
       });
     }
@@ -110,20 +116,32 @@ export class UIManager {
       });
     }
 
-    // Bouton de redémarrage (Game Over)
+    // Bouton de redémarrage robuste (Game Over)
     if (this.btnRestart) {
-      this.btnRestart.addEventListener('click', () => {
+      const handleRestart = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         this.hideGameOver();
         if (this.onRestart) this.onRestart();
-      });
+      };
+      this.btnRestart.addEventListener('click', handleRestart);
+      this.btnRestart.addEventListener('pointerdown', handleRestart);
     }
 
     // Bouton de continuation du Troll Modal
     if (this.btnTrollContinue) {
-      this.btnTrollContinue.addEventListener('click', () => {
+      const handleTrollContinue = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         this.hideTrollModal();
         if (this.onTrollContinue) this.onTrollContinue();
-      });
+      };
+      this.btnTrollContinue.addEventListener('click', handleTrollContinue);
+      this.btnTrollContinue.addEventListener('pointerdown', handleTrollContinue);
     }
 
     // Raccourcis clavier
@@ -350,8 +368,26 @@ export class UIManager {
   }
 
   updateMenuCycle(cycle) {
+    const CYCLE_ICONS = {
+      1: '🌊',
+      2: '🌍',
+      3: '🔥',
+      4: '⚡',
+      5: '✨',
+      6: '🌑',
+      7: '🌪️',
+      8: '🌌'
+    };
+
     if (this.menuCycleBadge) {
       this.menuCycleBadge.textContent = `CYCLE ${cycle.id}`;
+      const hex = `#${cycle.primary.toString(16).padStart(6, '0')}`;
+      this.menuCycleBadge.style.borderColor = hex;
+      this.menuCycleBadge.style.color = hex;
+      this.menuCycleBadge.style.boxShadow = `0 0 12px ${hex}`;
+    }
+    if (this.menuCycleIcon) {
+      this.menuCycleIcon.textContent = CYCLE_ICONS[cycle.id] || '✨';
     }
     if (this.menuCycleTitle) {
       this.menuCycleTitle.textContent = `${cycle.name.toUpperCase()} • ${cycle.colorName.toUpperCase()} (${cycle.element.toUpperCase()})`;
