@@ -351,6 +351,41 @@ export class AudioManager {
     };
   }
 
+  // Informations de synchronisation rythmique absolue (BPM, temps, mesure, kick)
+  getBeatInfo() {
+    const track = this.getCurrentTrack();
+    const bpm = (track && track.bpm) ? track.bpm : 130;
+    const spb = 60.0 / bpm;
+    const time = (this.mode === 'mp3' && this.audioElement && !isNaN(this.audioElement.currentTime))
+      ? this.audioElement.currentTime
+      : (this.synthTrackTimer || 0);
+
+    const totalBeats = time / spb;
+    const currentBeat = Math.floor(totalBeats);
+    const beatFraction = totalBeats - currentBeat; // [0, 1)
+    const barIndex = Math.floor(currentBeat / 4);
+    const beatInBar = ((currentBeat % 4) + 4) % 4; // 0, 1, 2, 3
+
+    let isNewBeat = false;
+    if (this._lastTrackedBeat !== currentBeat) {
+      this._lastTrackedBeat = currentBeat;
+      isNewBeat = true;
+    }
+
+    return {
+      bpm,
+      spb,
+      time,
+      totalBeats,
+      currentBeat,
+      barIndex,
+      beatInBar,
+      beatFraction,
+      isNewBeat,
+      bassEnergy: this.bassEnergy
+    };
+  }
+
   toggleMute() {
     this.isMuted = !this.isMuted;
     if (this.isMuted) {

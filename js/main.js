@@ -14,6 +14,8 @@ class GameApp {
   constructor() {
     this.canvas = document.getElementById('game-canvas');
     this.clock = new THREE.Clock();
+    window.gameApp = this;
+    window.game = this;
 
     // États de jeu
     this.STATE_MENU = 'MENU';
@@ -303,10 +305,11 @@ class GameApp {
         this.audio.playCrash();
       }
 
-      // 4. Défilement du monde et des obstacles (avec réactivité aux basses)
+      // 4. Défilement du monde et des obstacles synchronisés au beat musical absolu
       const playerPos = this.player.group.position;
+      const beatInfo = this.audio.getBeatInfo();
 
-      this.world.update(dt, this.currentSpeed, currentBpm, bass, (box) => {
+      this.world.update(dt, this.currentSpeed, beatInfo, bass, (box) => {
         // Test de collision entre la sphère du joueur et la boîte d'obstacle
         if (box.intersectsSphere(this.player.boundingSphere)) {
           this.player.triggerCrash();

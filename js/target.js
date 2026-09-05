@@ -105,9 +105,14 @@ export class TargetManager {
     this.nityAvatar = new THREE.Group();
     this.nityGroup.add(this.nityAvatar);
 
+    // Conteneur orienté vers le trou noir à l'horizon (-Z)
+    this.nityModelContainer = new THREE.Group();
+    this.nityModelContainer.rotation.y = Math.PI;
+    this.nityAvatar.add(this.nityModelContainer);
+
     // Silhouette procédurale initiale (masquée dès chargement de Nity.fbx)
     this.proceduralNity = new THREE.Group();
-    this.nityAvatar.add(this.proceduralNity);
+    this.nityModelContainer.add(this.proceduralNity);
 
     // A. Tête sphérique chrome/irisée avec reflets néon (Image 2)
     const headGeo = new THREE.SphereGeometry(1.35, 32, 32);
@@ -174,7 +179,7 @@ export class TargetManager {
     this.nityRing = new THREE.Mesh(haloGeo, this.nityRingMat);
     this.nityRing.rotation.x = Math.PI / 2.4;
     this.nityRing.position.y = 1.6;
-    this.nityAvatar.add(this.nityRing);
+    this.nityModelContainer.add(this.nityRing);
 
     // E. Cœur de Nity sur la poitrine
     const heartMesh = new THREE.Mesh(this.buildHeartGeometry(), new THREE.MeshStandardMaterial({
@@ -186,7 +191,7 @@ export class TargetManager {
     heartMesh.scale.set(0.45, 0.45, 0.45);
     heartMesh.position.set(0, 1.2, 0.95);
     this.nityHeartMesh = heartMesh;
-    this.nityAvatar.add(heartMesh);
+    this.nityModelContainer.add(heartMesh);
   }
 
   loadNityFBX() {
@@ -210,7 +215,12 @@ export class TargetManager {
         this.nityFbxMaterials = [];
 
         fbx.traverse((child) => {
-          if (child.isMesh) {
+          if (child.isLight) {
+            child.visible = false;
+            child.intensity = 0;
+          } else if (child.isCamera) {
+            child.visible = false;
+          } else if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
             const name = (child.name || '').toLowerCase();
@@ -246,7 +256,7 @@ export class TargetManager {
         });
 
         this.fbxModel = fbx;
-        this.nityAvatar.add(fbx);
+        this.nityModelContainer.add(fbx);
 
         if (this.proceduralNity) {
           this.proceduralNity.visible = false;
@@ -553,6 +563,7 @@ export class TargetManager {
     this.hearts = [];
     this.heartSpawnTimer = 0;
     this.nityGroup.position.set(0, this.nityBaseY, this.nityBaseZ);
+    if (this.nityModelContainer) this.nityModelContainer.rotation.y = Math.PI;
     if (this.mirageGroup) this.mirageGroup.visible = false;
   }
 }

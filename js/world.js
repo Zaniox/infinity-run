@@ -4,7 +4,16 @@
  * Volumes Géométriques Épurés et Transitions Atmosphériques Fluides.
  */
 import * as THREE from 'three';
-import { getSoftGlowTexture, getSparkTexture, getSmokeTexture, getStarTexture } from './particles.js';
+import {
+  getSoftGlowTexture,
+  getSparkTexture,
+  getSmokeTexture,
+  getStarTexture,
+  getWaterDropletTexture,
+  getElectricZapTexture,
+  getLavaBubbleTexture,
+  getCosmicDustTexture
+} from './particles.js';
 
 export const CYCLES_DATA = [
   {
@@ -137,6 +146,308 @@ export const CYCLES_DATA = [
   }
 ];
 
+/**
+ * Générateur des textures de sol procédurales haute définition des 8 cycles
+ */
+function createCycleGroundTextures() {
+  const textures = [];
+
+  // 1. Cycle 1 Eau / Chute
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#020610');
+    grad.addColorStop(1, '#051329');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.32)';
+    ctx.lineWidth = 4;
+    for (let i = 0; i < 18; i++) {
+      ctx.beginPath();
+      const cy = i * 30 + (i % 2 === 0 ? 6 : -6);
+      ctx.moveTo(0, cy);
+      ctx.bezierCurveTo(128, cy - 18, 256, cy + 18, 384, cy - 14);
+      ctx.bezierCurveTo(440, cy, 480, cy - 8, 512, cy);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = 'rgba(186, 230, 253, 0.65)';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < 14; i++) {
+      ctx.beginPath();
+      const cy = i * 38 + (i % 3 === 0 ? 8 : -8);
+      ctx.moveTo(0, cy);
+      ctx.bezierCurveTo(100, cy + 16, 280, cy - 16, 512, cy + 4);
+      ctx.stroke();
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 14);
+    textures.push(tex);
+  }
+
+  // 2. Cycle 2 Terre / Résilience
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#140f0a';
+    ctx.fillRect(0, 0, 512, 512);
+
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 3.0;
+
+    const tileSize = 64;
+    for (let x = 0; x <= 512; x += tileSize) {
+      for (let y = 0; y <= 512; y += tileSize) {
+        ctx.fillStyle = ((x + y) % 128 === 0) ? '#1c150c' : '#171109';
+        ctx.fillRect(x + 2, y + 2, tileSize - 4, tileSize - 4);
+
+        ctx.beginPath();
+        ctx.moveTo(x, y + 16);
+        ctx.lineTo(x + tileSize, y + 48);
+        ctx.stroke();
+      }
+    }
+
+    ctx.fillStyle = 'rgba(74, 222, 128, 0.45)';
+    for (let i = 0; i < 80; i++) {
+      ctx.beginPath();
+      ctx.arc((i * 37) % 512, (i * 73) % 512, 2.5 + (i % 4), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 14);
+    textures.push(tex);
+  }
+
+  // 3. Cycle 3 Feu / Obsession
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#100303';
+    ctx.fillRect(0, 0, 512, 512);
+
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#f97316';
+
+    const drawMagmaVein = (points) => {
+      ctx.beginPath();
+      ctx.moveTo(points[0][0], points[0][1]);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i][0], points[i][1]);
+      }
+      ctx.stroke();
+    };
+
+    drawMagmaVein([[0, 60], [120, 110], [240, 70], [380, 150], [512, 120]]);
+    drawMagmaVein([[0, 240], [150, 210], [280, 270], [420, 230], [512, 280]]);
+    drawMagmaVein([[0, 420], [130, 470], [290, 410], [390, 460], [512, 440]]);
+    drawMagmaVein([[180, 0], [210, 180], [170, 340], [220, 512]]);
+    drawMagmaVein([[360, 0], [330, 190], [380, 360], [340, 512]]);
+
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#fef08a';
+    drawMagmaVein([[0, 60], [120, 110], [240, 70], [380, 150], [512, 120]]);
+    drawMagmaVein([[0, 240], [150, 210], [280, 270], [420, 230], [512, 280]]);
+    drawMagmaVein([[0, 420], [130, 470], [290, 410], [390, 460], [512, 440]]);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 14);
+    textures.push(tex);
+  }
+
+  // 4. Cycle 4 Électricité / Amour
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#121004';
+    ctx.fillRect(0, 0, 512, 512);
+
+    ctx.strokeStyle = '#eab308';
+    ctx.lineWidth = 2.5;
+
+    const step = 64;
+    for (let x = 0; x < 512; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0); ctx.lineTo(x, 512);
+      ctx.stroke();
+    }
+    for (let y = 0; y < 512; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y); ctx.lineTo(512, y);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#ffffff';
+    for (let x = step; x < 512; x += step * 2) {
+      for (let y = step; y < 512; y += step * 2) {
+        ctx.beginPath();
+        ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 14);
+    textures.push(tex);
+  }
+
+  // 5. Cycle 5 Lumière / Bonheur
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(0, 0, 512, 512);
+
+    ctx.strokeStyle = 'rgba(234, 179, 8, 0.45)';
+    ctx.lineWidth = 2.5;
+
+    for (let i = 0; i < 10; i++) {
+      ctx.beginPath();
+      const startX = (i * 54) % 512;
+      ctx.moveTo(startX, 0);
+      ctx.bezierCurveTo(startX + 60, 180, startX - 80, 340, startX + 20, 512);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = 'rgba(147, 197, 253, 0.40)';
+    ctx.lineWidth = 2.0;
+    for (let i = 0; i < 8; i++) {
+      ctx.beginPath();
+      const startY = (i * 68) % 512;
+      ctx.moveTo(0, startY);
+      ctx.bezierCurveTo(180, startY - 40, 360, startY + 60, 512, startY);
+      ctx.stroke();
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 14);
+    textures.push(tex);
+  }
+
+  // 6. Cycle 6 Ombre / Chaos
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#08080a';
+    ctx.fillRect(0, 0, 512, 512);
+
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+    ctx.lineWidth = 3.5;
+
+    for (let i = 0; i < 12; i++) {
+      ctx.beginPath();
+      const y = i * 44;
+      ctx.moveTo(0, y);
+      ctx.lineTo(140, y + 15);
+      ctx.lineTo(260, y - 20);
+      ctx.lineTo(410, y + 10);
+      ctx.lineTo(512, y);
+      ctx.stroke();
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 14);
+    textures.push(tex);
+  }
+
+  // 7. Cycle 7 Vent / Ambition
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#06172d';
+    ctx.fillRect(0, 0, 512, 512);
+
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.50)';
+    ctx.lineWidth = 2.5;
+
+    for (let i = 0; i < 28; i++) {
+      const x = (i * 19) % 512;
+      const y = (i * 13) % 320;
+      const len = 120 + ((i * 17) % 180);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y + len);
+      ctx.stroke();
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 14);
+    textures.push(tex);
+  }
+
+  // 8. Cycle 8 Cosmos / Folie
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#090114';
+    ctx.fillRect(0, 0, 512, 512);
+
+    ctx.strokeStyle = 'rgba(192, 132, 252, 0.45)';
+    ctx.lineWidth = 2.0;
+
+    const gridStep = 48;
+    for (let x = 0; x <= 512; x += gridStep) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0); ctx.lineTo(x, 512);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= 512; y += gridStep) {
+      ctx.beginPath();
+      ctx.moveTo(0, y); ctx.lineTo(512, y);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < 90; i++) {
+      ctx.beginPath();
+      ctx.arc((i * 47) % 512, (i * 91) % 512, 1.2 + (i % 3) * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 14);
+    textures.push(tex);
+  }
+
+  return textures;
+}
+
 export class World {
   constructor(scene) {
     this.scene = scene;
@@ -150,8 +461,14 @@ export class World {
     // Éclairage directionnel & ombres nettes
     this.setupLighting();
 
+    // Textures procédurales haute définition des 8 cycles
+    this.cycleGroundTextures = createCycleGroundTextures();
+
     // Terrain solide uni à 3 sections coulissantes (aucun chargement visible)
     this.setupSolidTerrain();
+
+    // Système des décors de bord de piste propres à chaque cycle
+    this.setupSideProps();
 
     // Système des 8 Éléments Visuels Environnementaux
     this.setupElementSystems();
@@ -159,6 +476,7 @@ export class World {
     // Gestionnaire d'obstacles procéduraux
     this.obstacles = [];
     this.obstacleTimer = 0;
+    this.timeSinceLastSpawn = 0;
     this.spawnDistance = -240; // Spawne au cœur de la brume 100% opaque
     this.despawnZ = 20;
 
@@ -196,16 +514,17 @@ export class World {
     this.scene.add(this.sunLight.target);
   }
 
-  // Terrain solide uni avec léger relief doux (aucun néon filaire)
+  // Terrain solide avec textures procédurales haute définition des 8 cycles
   setupSolidTerrain() {
     this.trackWidth = 140;
     this.sectionLength = 180;
     this.terrainSections = [];
 
-    // Matériau solide mat avec texture d'ombres propre (sans brillance aveuglante)
+    // Matériau solide avec texture procédurale du Cycle 1
     this.groundMaterial = new THREE.MeshStandardMaterial({
-      color: this.cycle.ground,
-      roughness: 0.92,
+      color: 0xffffff,
+      map: this.cycleGroundTextures[0],
+      roughness: 0.40,
       metalness: 0.08,
       flatShading: false
     });
@@ -243,6 +562,178 @@ export class World {
       metalness: 0.25,
       flatShading: true
     });
+  }
+
+  // --- SYSTÈME DES DÉCORS LATÉRAUX (ROADSIDE PROPS) THÉMATIQUES PAR CYCLE ---
+  setupSideProps() {
+    this.sidePropsGroup = new THREE.Group();
+    this.scene.add(this.sidePropsGroup);
+    this.sideProps = [];
+    this.createSidePropsForCycle(this.currentCycleIndex);
+  }
+
+  createSidePropsForCycle(cycleIndex) {
+    while (this.sidePropsGroup.children.length > 0) {
+      const child = this.sidePropsGroup.children[0];
+      this.sidePropsGroup.remove(child);
+      if (child.geometry) child.geometry.dispose();
+    }
+    this.sideProps = [];
+
+    const count = 8;
+    const spacing = 35;
+    const startZ = 20;
+
+    for (let i = 0; i < count; i++) {
+      const z = startZ - i * spacing;
+      for (const side of [-1, 1]) {
+        const x = side * (33 + ((i * 7) % 5));
+        const propMesh = this.buildSidePropMesh(cycleIndex, side);
+        propMesh.position.set(x, 0, z);
+        this.sidePropsGroup.add(propMesh);
+        this.sideProps.push({ mesh: propMesh, side });
+      }
+    }
+  }
+
+  buildSidePropMesh(cycleIndex, side) {
+    const group = new THREE.Group();
+
+    switch (cycleIndex) {
+      case 0: { // Eau : Colonnes de verre abyssal et flèches marines
+        const geo = new THREE.CylinderGeometry(0.7, 1.8, 16, 12);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x0284c7,
+          roughness: 0.35,
+          metalness: 0.20,
+          emissive: 0x00f0ff,
+          emissiveIntensity: 0.35
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 8;
+        group.add(mesh);
+        break;
+      }
+      case 1: { // Terre : Mégalithes & dolmens rocheux
+        const geo = new THREE.BoxGeometry(3.5, 15, 3.5);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x221a12,
+          roughness: 0.85,
+          metalness: 0.06,
+          emissive: 0x22c55e,
+          emissiveIntensity: 0.22
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 7.5;
+        mesh.rotation.y = (side > 0 ? 0.3 : -0.3);
+        group.add(mesh);
+        break;
+      }
+      case 2: { // Feu : Cheminées volcaniques coniques
+        const geo = new THREE.ConeGeometry(2.4, 18, 16);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x200505,
+          roughness: 0.65,
+          metalness: 0.15,
+          emissive: 0xef4444,
+          emissiveIntensity: 0.65
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 9;
+        group.add(mesh);
+        break;
+      }
+      case 3: { // Électricité : Pylônes relais haute tension
+        const geo = new THREE.CylinderGeometry(0.6, 1.2, 20, 12);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x2c2405,
+          metalness: 0.35,
+          roughness: 0.40,
+          emissive: 0xeab308,
+          emissiveIntensity: 0.70
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 10;
+        group.add(mesh);
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.18, 8, 16), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
+        ring.position.y = 18;
+        ring.rotation.x = Math.PI / 2;
+        group.add(ring);
+        break;
+      }
+      case 4: { // Lumière : Obélisques de quartz céleste
+        const geo = new THREE.OctahedronGeometry(2.2, 0);
+        geo.scale(1.0, 3.8, 1.0);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0xedf2f7,
+          roughness: 0.28,
+          metalness: 0.18,
+          emissive: 0x93c5fd,
+          emissiveIntensity: 0.50
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 9;
+        group.add(mesh);
+        break;
+      }
+      case 5: { // Ombre : Monolithes silhouettes de ténèbres
+        const geo = new THREE.BoxGeometry(2.6, 20, 2.6);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x0c0c0e,
+          roughness: 0.90,
+          metalness: 0.05,
+          emissive: 0x334155,
+          emissiveIntensity: 0.25
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 10;
+        group.add(mesh);
+        break;
+      }
+      case 6: { // Vent : Ailerons profilés supersoniques
+        const geo = new THREE.ConeGeometry(1.5, 22, 4);
+        geo.scale(0.5, 1.0, 2.0);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x0a284c,
+          roughness: 0.40,
+          metalness: 0.20,
+          emissive: 0x38bdf8,
+          emissiveIntensity: 0.50
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 11;
+        group.add(mesh);
+        break;
+      }
+      case 7: { // Cosmos : Portails quantiques & Singularités
+        const geo = new THREE.TorusGeometry(3.2, 0.35, 12, 24);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x1f0d36,
+          emissive: 0xc084fc,
+          emissiveIntensity: 0.85,
+          roughness: 0.30,
+          metalness: 0.20
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 9;
+        mesh.rotation.y = Math.PI / 2;
+        group.add(mesh);
+        break;
+      }
+    }
+    return group;
+  }
+
+  updateSideProps(dt, speed, audioPulse) {
+    const deltaZ = speed * dt;
+    for (const prop of this.sideProps) {
+      prop.mesh.position.z += deltaZ;
+      if (prop.mesh.position.z > 25) {
+        prop.mesh.position.z -= 280;
+      }
+      const s = 1.0 + audioPulse * 0.07;
+      prop.mesh.scale.set(s, s, s);
+    }
   }
 
   // --- SYSTÈME DES 8 ÉLÉMENTS VISUELS ENVIRONNEMENTAUX ---
@@ -777,63 +1268,72 @@ export class World {
     this.hemiLight.groundColor.set(this.cycle.fog);
     this.sunLight.intensity = this.cycle.lightIntensity;
 
-    this.groundMaterial.color.set(this.cycle.ground);
+    if (this.cycleGroundTextures && this.cycleGroundTextures[this.currentCycleIndex]) {
+      this.groundMaterial.map = this.cycleGroundTextures[this.currentCycleIndex];
+      this.groundMaterial.color.set(0xffffff);
+      this.groundMaterial.needsUpdate = true;
+    }
     this.monolithMaterial.color.set(this.cycle.monolith);
 
     // Propriétés physiques et reflets selon l'élément (Eau, Terre, Feu, Électricité, Lumière, Ombre, Vent, Cosmos)
     switch (this.cycle.element) {
       case 'Eau': // Cycle 1 (Chute) : Noir / Eau
-        this.groundMaterial.roughness = 0.12;
-        this.groundMaterial.metalness = 0.85;
-        this.monolithMaterial.roughness = 0.2;
-        this.monolithMaterial.metalness = 0.8;
+        this.groundMaterial.roughness = 0.40;
+        this.groundMaterial.metalness = 0.08;
+        this.monolithMaterial.roughness = 0.35;
+        this.monolithMaterial.metalness = 0.20;
         break;
       case 'Terre': // Cycle 2 (Résilience) : Vert ou Marron / Terre
-        this.groundMaterial.roughness = 0.88;
-        this.groundMaterial.metalness = 0.08;
-        this.monolithMaterial.roughness = 0.75;
-        this.monolithMaterial.metalness = 0.15;
+        this.groundMaterial.roughness = 0.85;
+        this.groundMaterial.metalness = 0.04;
+        this.monolithMaterial.roughness = 0.80;
+        this.monolithMaterial.metalness = 0.08;
         break;
       case 'Feu': // Cycle 3 (Obsession) : Rouge / Feu
-        this.groundMaterial.roughness = 0.62;
-        this.groundMaterial.metalness = 0.35;
-        this.monolithMaterial.roughness = 0.45;
-        this.monolithMaterial.metalness = 0.3;
+        this.groundMaterial.roughness = 0.65;
+        this.groundMaterial.metalness = 0.06;
+        this.monolithMaterial.roughness = 0.55;
+        this.monolithMaterial.metalness = 0.15;
         break;
       case 'Électricité': // Cycle 4 (Amour) : Jaune / Électricité
-        this.groundMaterial.roughness = 0.38;
-        this.groundMaterial.metalness = 0.6;
-        this.monolithMaterial.roughness = 0.25;
-        this.monolithMaterial.metalness = 0.75;
+        this.groundMaterial.roughness = 0.45;
+        this.groundMaterial.metalness = 0.15;
+        this.monolithMaterial.roughness = 0.38;
+        this.monolithMaterial.metalness = 0.28;
         break;
       case 'Lumière': // Cycle 5 (Bonheur) : Blanc / Lumière
-        this.groundMaterial.roughness = 0.2;
-        this.groundMaterial.metalness = 0.45;
-        this.monolithMaterial.roughness = 0.18;
-        this.monolithMaterial.metalness = 0.5;
+        this.groundMaterial.roughness = 0.30;
+        this.groundMaterial.metalness = 0.10;
+        this.monolithMaterial.roughness = 0.28;
+        this.monolithMaterial.metalness = 0.18;
         break;
       case 'Ombre': // Cycle 6 (Chaos) : Gris / Ombre
-        this.groundMaterial.roughness = 0.96;
-        this.groundMaterial.metalness = 0.04;
-        this.monolithMaterial.roughness = 0.9;
+        this.groundMaterial.roughness = 0.92;
+        this.groundMaterial.metalness = 0.02;
+        this.monolithMaterial.roughness = 0.90;
         this.monolithMaterial.metalness = 0.05;
         break;
       case 'Vent': // Cycle 7 (Ambition) : Bleu / Vent
-        this.groundMaterial.roughness = 0.3;
-        this.groundMaterial.metalness = 0.65;
-        this.monolithMaterial.roughness = 0.25;
-        this.monolithMaterial.metalness = 0.7;
+        this.groundMaterial.roughness = 0.45;
+        this.groundMaterial.metalness = 0.08;
+        this.monolithMaterial.roughness = 0.38;
+        this.monolithMaterial.metalness = 0.20;
         break;
       case 'Vide ou Cosmos': // Cycle 8 (Folie) : Violet / Vide ou Cosmos
-        this.groundMaterial.roughness = 0.15;
-        this.groundMaterial.metalness = 0.88;
-        this.monolithMaterial.roughness = 0.2;
-        this.monolithMaterial.metalness = 0.85;
+        this.groundMaterial.roughness = 0.35;
+        this.groundMaterial.metalness = 0.12;
+        this.monolithMaterial.roughness = 0.30;
+        this.monolithMaterial.metalness = 0.22;
         break;
     }
 
     // Basculer l'élément visuel actif correspondant
     this.updateActiveElement(this.currentCycleIndex);
+
+    // Mettre à jour les décors de bord de piste propres au nouveau cycle
+    if (this.createSidePropsForCycle) {
+      this.createSidePropsForCycle(this.currentCycleIndex);
+    }
   }
 
   // --- SYSTÈME D'ONDULATIONS D'EAU (CYCLE 1 - CHUTE / EAU) ---
@@ -932,7 +1432,7 @@ export class World {
     subBoxes.push({ mesh: rightMesh, box: new THREE.Box3() });
 
     group.position.set(0, 0, this.spawnDistance);
-    const obj = { mesh: group, subBoxes, type: 'sliding', dir: Math.random() < 0.5 ? 1 : -1, speed: 6.5 };
+    const obj = { mesh: group, subBoxes, type: 'sliding', baseX: 0, phase: Math.random() * Math.PI * 2, amplitude: 7.0, dir: Math.random() < 0.5 ? 1 : -1, speed: 6.5 };
 
     this.scene.add(group);
     this.obstacles.push(obj);
@@ -1376,8 +1876,8 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Mise à jour fluide du monde avec synchronisation audio (BPM & Bass)
-  update(dt, speed, bpm, bassEnergy = 0, onCollisionCheck) {
+  // Mise à jour fluide du monde avec synchronisation audio absolue (BPM, temps, mesure, kick)
+  update(dt, speed, bpmOrAudioInfo, bassEnergy = 0, onCollisionCheck) {
     const deltaZ = speed * dt;
     const time = performance.now() * 0.001;
 
@@ -1389,27 +1889,60 @@ export class World {
       }
     }
 
-    // 2. Synchronisation précise de l'environnement avec la musique (Kick & BPM)
-    const bps = (bpm || 130) / 60.0;
-    const beatPhase = (time * bps * Math.PI * 2) % (Math.PI * 2);
-    const beatKick = Math.pow(Math.sin(beatPhase), 6);
-    const audioPulse = Math.max(bassEnergy, beatKick * 0.72);
+    // 2. Extraction des informations de rythme musical (BPM, kick, temps, mesure)
+    let bpm = 130;
+    let bass = typeof bassEnergy === 'number' ? bassEnergy : 0;
+    let isNewBeat = false;
+    let beatInBar = 0;
+    let beatFraction = 0;
+    let totalBeats = 0;
+
+    if (typeof bpmOrAudioInfo === 'object' && bpmOrAudioInfo !== null) {
+      bpm = bpmOrAudioInfo.bpm || 130;
+      bass = Math.max(bass, bpmOrAudioInfo.bassEnergy || 0);
+      isNewBeat = bpmOrAudioInfo.isNewBeat || false;
+      beatInBar = bpmOrAudioInfo.beatInBar || 0;
+      beatFraction = bpmOrAudioInfo.beatFraction || 0;
+      totalBeats = bpmOrAudioInfo.totalBeats || 0;
+    } else if (typeof bpmOrAudioInfo === 'number') {
+      bpm = bpmOrAudioInfo;
+      const bps = bpm / 60.0;
+      totalBeats = time * bps;
+      const curB = Math.floor(totalBeats);
+      beatFraction = totalBeats - curB;
+      beatInBar = ((curB % 4) + 4) % 4;
+      if (this._lastBeat !== curB) {
+        this._lastBeat = curB;
+        isNewBeat = true;
+      }
+    }
+
+    const bps = bpm / 60.0;
+    const beatPhase = (totalBeats * Math.PI * 2) % (Math.PI * 2);
+    const beatKick = Math.pow(Math.sin(beatPhase * 0.5), 6);
+    const audioPulse = Math.max(bass, beatKick * 0.72);
 
     const audioLightBoost = 1.0 + audioPulse * 0.45;
     this.sunLight.intensity = this.cycle.lightIntensity * audioLightBoost;
     this.hemiLight.intensity = 0.55 * (1.0 + audioPulse * 0.4);
     this.sunLight.target.position.z = -deltaZ;
 
-    // 3. Animation de l'élément environnemental actif
+    // 3. Animation de l'élément environnemental actif et des décors latéraux
     this.updateElements(dt, speed, audioPulse, time);
+    if (this.updateSideProps) {
+      this.updateSideProps(dt, speed, audioPulse);
+    }
 
-    // 4. Cadencement des obstacles sur le BPM et les Trolls élémentaires exclusifs
-    const beatInterval = 60.0 / (bpm || 130);
-    const measureBeats = speed > 95.0 ? 2.6 : 3.4;
-    this.obstacleTimer += dt;
+    // 4. Cadencement des obstacles STRICTEMENT calé sur le rythme musical
+    // - En temps normal : au temps 1 de chaque mesure (beatInBar === 0)
+    // - En intensité accrue (basses puissantes ou vitesse élevée) : tous les 2 temps (beatInBar === 0 ou 2)
+    this.timeSinceLastSpawn = (this.timeSinceLastSpawn || 0) + dt;
+    const isIntense = speed > 85.0 || bass > 0.52;
+    const isSpawnBeat = isIntense ? (isNewBeat && (beatInBar === 0 || beatInBar === 2)) : (isNewBeat && beatInBar === 0);
 
-    if (this.obstacleTimer >= beatInterval * measureBeats) {
-      this.obstacleTimer = 0;
+    // Maintien d'un espacement minimal sécurisé de 1.1s pour garantir la lisibilité et l'esquive
+    if (isSpawnBeat && this.timeSinceLastSpawn >= 1.1) {
+      this.timeSinceLastSpawn = 0;
 
       const lanes = [-15, -9, 0, 9, 15];
       const lx = lanes[Math.floor(Math.random() * lanes.length)];
@@ -1462,7 +1995,7 @@ export class World {
       }
     }
 
-    // 4. Déplacement, émersion progressive et comportement des trolls
+    // 5. Déplacement, émersion progressive et comportement rythmique des obstacles
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const obs = this.obstacles[i];
       obs.mesh.position.z += deltaZ;
@@ -1476,7 +2009,7 @@ export class World {
         obs.mesh.scale.set(1, 1, 1);
       }
 
-      // Logique spécifique des trolls
+      // Logique spécifique des trolls et obstacles calée sur le beat
       if (obs.type === 'falling') {
         if (obs.mesh.position.y > obs.targetY) {
           obs.mesh.position.y = Math.max(obs.targetY, obs.mesh.position.y - obs.fallSpeed * dt);
@@ -1487,7 +2020,7 @@ export class World {
         }
       } else if (obs.type === 'tesla') {
         obs.flickerTimer += dt;
-        if (obs.flickerTimer > 0.035) {
+        if (obs.flickerTimer > 0.035 || isNewBeat) {
           obs.flickerTimer = 0;
           const segs = obs.arcSegments;
           const p = obs.arcPos;
@@ -1514,20 +2047,22 @@ export class World {
             curZ = nextZ;
           }
           obs.arcLine.geometry.attributes.position.needsUpdate = true;
-          obs.arcLine.material.opacity = 0.75 + Math.random() * 0.25;
+          obs.arcLine.material.opacity = 0.85 + (isNewBeat ? 0.15 : Math.random() * 0.15);
         }
       } else if (obs.type === 'sliding') {
-        obs.mesh.position.x += obs.dir * obs.speed * dt;
-        if (Math.abs(obs.mesh.position.x) > 10.0) obs.dir *= -1;
+        // Balancement rythmique fluide sur le tempo
+        const slidePhase = Math.sin(totalBeats * Math.PI + (obs.phase || 0));
+        obs.mesh.position.x = (obs.baseX || 0) + slidePhase * 8.5;
       } else if (obs.type === 'spiral') {
-        obs.mesh.rotation.z += obs.rotSpeed * dt;
+        const beatBoost = 1.0 + audioPulse * 1.4;
+        obs.mesh.rotation.z += obs.rotSpeed * beatBoost * dt;
       } else if (obs.type === 'quake') {
-        obs.mesh.rotation.z = Math.sin(time * 12.0 + obs.shakePhase) * (0.05 + bassEnergy * 0.12);
+        obs.mesh.rotation.z = Math.sin(time * 16.0 + obs.shakePhase) * (0.05 + audioPulse * 0.16);
       } else if (obs.type === 'needle' && obs.mesh.position.y < obs.targetY) {
         obs.mesh.position.y = Math.min(obs.targetY, obs.mesh.position.y + obs.riseSpeed * dt);
       } else if (obs.type === 'glitch') {
-        if (Math.random() < 0.08) {
-          obs.mesh.position.x += (Math.random() - 0.5) * 1.5;
+        if (isNewBeat && Math.random() < 0.45) {
+          obs.mesh.position.x += (Math.random() - 0.5) * 3.0;
         }
       }
 

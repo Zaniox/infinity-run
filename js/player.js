@@ -49,17 +49,21 @@ export class Player {
   createModel() {
     const headRadius = 1.0;
 
+    // Conteneur orienté face à l'horizon (-Z)
+    this.modelContainer = new THREE.Group();
+    this.modelContainer.rotation.y = Math.PI;
+    this.avatar.add(this.modelContainer);
+
     // 1. Matériau torse & membres : Métallique sombre doux (Race the Sun lore)
     this.darkMetalMat = new THREE.MeshStandardMaterial({
-      color: 0x0a0512,
-      roughness: 0.2,
-      metalness: 0.82,
-      envMapIntensity: 1.0
+      color: 0x120d20,
+      roughness: 0.45,
+      metalness: 0.50
     });
 
     // Torse procédural initial (remplacé automatiquement par Infi.fbx dès chargement)
     this.proceduralTorso = new THREE.Group();
-    this.avatar.add(this.proceduralTorso);
+    this.modelContainer.add(this.proceduralTorso);
 
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 0.42, 24), this.darkMetalMat);
     neck.position.set(0, -0.92, 0);
@@ -81,15 +85,15 @@ export class Player {
     // 2. Tête sphérique brillante, légèrement translucide
     const headGeo = new THREE.SphereGeometry(headRadius, 64, 64);
     this.headMat = new THREE.MeshStandardMaterial({
-      color: 0x140428,
-      metalness: 0.88,
-      roughness: 0.12,
+      color: 0x180c2c,
+      metalness: 0.55,
+      roughness: 0.35,
       transparent: true,
-      opacity: 0.92
+      opacity: 0.95
     });
     this.headMesh = new THREE.Mesh(headGeo, this.headMat);
     this.headMesh.castShadow = true;
-    this.avatar.add(this.headMesh);
+    this.modelContainer.add(this.headMesh);
 
     // Halo céleste discret autour de la tête
     const haloGeo = new THREE.SphereGeometry(headRadius * 1.06, 32, 32);
@@ -101,7 +105,7 @@ export class Player {
       blending: THREE.AdditiveBlending
     });
     this.headHalo = new THREE.Mesh(haloGeo, this.haloMat);
-    this.avatar.add(this.headHalo);
+    this.modelContainer.add(this.headHalo);
 
     // 3. Visière intérieure : Ruban Infini 3D et Yeux en Double Arc courbé
     this.createInfiVisor(headRadius);
@@ -129,9 +133,13 @@ export class Player {
         // Centrage précis dans le conteneur avatar
         fbx.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
 
-        // Application des matériaux officiels dédiés aux sous-maillages de l'FBX
         fbx.traverse((child) => {
-          if (child.isMesh) {
+          if (child.isLight) {
+            child.visible = false;
+            child.intensity = 0;
+          } else if (child.isCamera) {
+            child.visible = false;
+          } else if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
             const name = (child.name || '').toLowerCase();
@@ -156,6 +164,14 @@ export class Player {
                 metalness: 0.15
               });
               child.material = this.fbxVisorMaterial;
+            } else if (name.includes('glow') || name.includes('neon') || name.includes('strip')) {
+              // Bandes néon émissives cyan
+              child.material = new THREE.MeshStandardMaterial({
+                color: 0x00f0ff,
+                emissive: 0x00f0ff,
+                emissiveIntensity: 2.2,
+                roughness: 0.1
+              });
             } else if (name.includes('brow')) {
               // Sourcils célestes néon (OODAI_BROWS)
               child.material = new THREE.MeshStandardMaterial({
@@ -174,17 +190,16 @@ export class Player {
             } else {
               // Corps et tête cyber-métallique (NEW_BODY001 & NEW_OODAI_HEAD)
               child.material = new THREE.MeshStandardMaterial({
-                color: 0x120d20,
-                metalness: 0.90,
-                roughness: 0.20,
-                envMapIntensity: 1.5
+                color: 0x140e24,
+                metalness: 0.55,
+                roughness: 0.38
               });
             }
           }
         });
 
         this.fbxModel = fbx;
-        this.avatar.add(fbx);
+        this.modelContainer.add(fbx);
 
         // Masquer ABSOLUMENT tous les éléments procéduraux pour ne laisser que le modèle FBX pur
         if (this.proceduralTorso) this.proceduralTorso.visible = false;
@@ -343,7 +358,7 @@ export class Player {
     visorGeo.computeVertexNormals();
 
     this.visorMesh = new THREE.Mesh(visorGeo, visorMat);
-    this.avatar.add(this.visorMesh);
+    this.modelContainer.add(this.visorMesh);
   }
 
   createInfiHeart() {
@@ -375,12 +390,12 @@ export class Player {
 
     this.heartMesh = new THREE.Mesh(heartGeo, this.heartMat);
     this.heartMesh.position.set(0.24, -1.18, 0.38);
-    this.avatar.add(this.heartMesh);
+    this.modelContainer.add(this.heartMesh);
 
     // Lumière ponctuelle émise par le cœur (focalisée sur le torse)
-    this.heartLight = new THREE.PointLight(0xff2ea6, 1.8, 5.0);
+    this.heartLight = new THREE.PointLight(0xff2ea6, 1.0, 3.2);
     this.heartLight.position.set(0.24, -1.18, 0.52);
-    this.avatar.add(this.heartLight);
+    this.modelContainer.add(this.heartLight);
   }
 
   // --- PARTICULES DE DISLOCATION LORS D'UN CRASH ---
@@ -451,11 +466,11 @@ export class Player {
     this.disParticles.geometry.attributes.position.needsUpdate = true;
   }
 
-  // Recharge vitale et boost de vitesse à la collecte d'un cœur
+  // Recharge vitale à la collecte d'un cœur (sans accélération pour préserver la maîtrise des trajectoires)
   rechargeHeart() {
-    this.energy = Math.min(this.maxEnergy, this.energy + 35.0);
-    this.boostTimer = 2.5; // +40 KM/H pendant 2.5s
-    this.boostExtraSpeed = 40.0;
+    this.energy = Math.min(this.maxEnergy, this.energy + 25.0);
+    this.boostTimer = 0.0;
+    this.boostExtraSpeed = 0.0;
   }
 
   // Animation d'attente cinématique dans le Menu Principal
@@ -568,7 +583,7 @@ export class Player {
     const rawBeat = Math.pow(Math.sin(beatPhase), 6) + 0.3 * Math.pow(Math.sin(beatPhase * 2 + 0.4), 6);
     const heartbeat = Math.min(1.0, rawBeat) * (0.4 + 0.6 * energyRatio) + (bassEnergy * 0.25 * energyRatio);
 
-    const lightInt = (0.9 + energyRatio * 1.5) * (0.7 + heartbeat * 0.5);
+    const lightInt = (0.45 + energyRatio * 0.75) * (0.7 + heartbeat * 0.4);
     this.heartLight.intensity = lightInt;
     this.heartMat.emissiveIntensity = (1.6 + energyRatio * 3.6) * (0.7 + heartbeat * 0.7);
     if (this.fbxHeartMaterial) {
@@ -596,6 +611,7 @@ export class Player {
     this.avatar.visible = true;
     this.heartLight.visible = true;
     this.avatar.rotation.set(0, 0, 0);
+    if (this.modelContainer) this.modelContainer.rotation.y = Math.PI;
     this.group.position.set(0, 3.5, 0);
     this.boundingSphere.center.copy(this.group.position);
     this.disMat.opacity = 0;
