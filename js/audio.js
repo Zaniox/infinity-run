@@ -4,14 +4,14 @@
  */
 
 export const TRACKS = [
-  { id: 1, file: 'audio/01_chute.mp3', name: 'Chute', cycle: 'Chute (Gravité / Abysse)', bpm: 128 },
-  { id: 2, file: 'audio/02_resilience.mp3', name: 'Résilience', cycle: 'Résilience (Terre / Métal)', bpm: 134 },
-  { id: 3, file: 'audio/03_obsession.mp3', name: 'Obsession', cycle: 'Obsession (Vortex / Spirale)', bpm: 142 },
-  { id: 4, file: 'audio/04_amour.mp3', name: 'Amour', cycle: 'Amour (Lumière / Éther)', bpm: 130 },
-  { id: 5, file: 'audio/05_bonheur.mp3', name: 'Bonheur', cycle: 'Bonheur (Énergie Solaire)', bpm: 136 },
-  { id: 6, file: 'audio/06_chaos.mp3', name: 'Chaos', cycle: 'Chaos (Entropie / Feu)', bpm: 140 },
-  { id: 7, file: 'audio/07_ambition.mp3', name: 'Ambition', cycle: 'Ambition (Ascension / Cristal)', bpm: 125 },
-  { id: 8, file: 'audio/08_folie.mp3', name: 'Folie', cycle: 'Folie (Distorsion)', bpm: 146 }
+  { id: 1, file: 'audio/Chute.mp3', name: 'Chute', cycle: 'Chute (Gravité / Abysse)', bpm: 128 },
+  { id: 2, file: 'audio/Resilience.mp3', altFile: 'audio/Résilience.mp3', name: 'Résilience', cycle: 'Résilience (Terre / Métal)', bpm: 134 },
+  { id: 3, file: 'audio/Obsession.mp3', name: 'Obsession', cycle: 'Obsession (Vortex / Spirale)', bpm: 142 },
+  { id: 4, file: 'audio/Amour.mp3', name: 'Amour', cycle: 'Amour (Lumière / Éther)', bpm: 130 },
+  { id: 5, file: 'audio/Bonheur.mp3', name: 'Bonheur', cycle: 'Bonheur (Énergie Solaire)', bpm: 136 },
+  { id: 6, file: 'audio/Chaos.mp3', name: 'Chaos', cycle: 'Chaos (Entropie / Feu)', bpm: 140 },
+  { id: 7, file: 'audio/Ambition.mp3', name: 'Ambition', cycle: 'Ambition (Ascension / Cristal)', bpm: 125 },
+  { id: 8, file: 'audio/Folie.mp3', name: 'Folie', cycle: 'Folie (Distorsion)', bpm: 146 }
 ];
 
 export class AudioManager {
@@ -44,10 +44,21 @@ export class AudioManager {
       this.nextTrack();
     });
 
-    // Fallback automatique vers synthé si le MP3 local est absent (404)
+    // Fallback automatique vers fichier alternatif puis synthé si le MP3 est absent
     this.audioElement.addEventListener('error', () => {
+      const track = this.getCurrentTrack();
+      if (track && track.altFile && !this.audioElement.src.includes(encodeURI(track.altFile))) {
+        this.audioElement.src = track.altFile;
+        this.audioElement.play().then(() => {
+          this.mode = 'mp3';
+          this.stopSynthLoop();
+        }).catch(() => {
+          this.fallbackToSynth();
+        });
+        return;
+      }
       if (this.isPlaying && this.mode !== 'synth') {
-        console.info(`[Audio] Fichier ${this.audioElement.src} non trouvé. Activation du synthétiseur procédural.`);
+        console.info(`[Audio] Fichier audio non trouvé. Activation du synthétiseur procédural.`);
         this.fallbackToSynth();
       }
     });

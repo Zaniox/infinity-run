@@ -109,76 +109,132 @@ export class Player {
     canvas.width = 1024;
     canvas.height = 1024;
     const ctx = canvas.getContext('2d');
-    const cx = 512, cy = 560, rx = 230, ry = 150, strokeW = 68;
+    const cx = 512, cy = 530;
 
-    // Glow externe violet
-    ctx.shadowColor = '#d946ef';
-    ctx.shadowBlur = 45;
-    ctx.lineWidth = strokeW + 16;
-    ctx.strokeStyle = '#c026d3';
+    ctx.clearRect(0, 0, 1024, 1024);
+
+    // 1. Sourcils expressifs en double arc courbé (Image 1)
+    const drawEyebrow = (x, y, r) => {
+      ctx.save();
+      // Glow violet
+      ctx.shadowColor = '#d946ef';
+      ctx.shadowBlur = 24;
+      ctx.lineWidth = 20;
+      ctx.strokeStyle = '#c026d3';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(x, y, r, Math.PI * 1.15, Math.PI * 1.85, false);
+      ctx.stroke();
+
+      // Core blanc pur
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 12;
+      ctx.lineWidth = 12;
+      ctx.strokeStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(x, y, r, Math.PI * 1.15, Math.PI * 1.85, false);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    drawEyebrow(cx - 150, cy - 155, 78);
+    drawEyebrow(cx + 150, cy - 155, 78);
+
+    // 2. Symbole Infini élégant (Lemniscate de Bernoulli / Ruban néon émissif)
+    const a = 295; // Rayon horizontal des boucles
+    const scaleY = 0.82;
+
+    const createInfinityPath = () => {
+      ctx.beginPath();
+      for (let i = 0; i <= 240; i++) {
+        const t = (i / 240) * Math.PI * 2;
+        const denom = 1 + Math.sin(t) * Math.sin(t);
+        const x = cx + (a * Math.cos(t)) / denom;
+        const y = cy + (a * Math.sin(t) * Math.cos(t) * scaleY) / denom;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    };
+
+    // Passe 1 : Grand Halo néon violet intense
+    ctx.save();
+    ctx.shadowColor = '#c026d3';
+    ctx.shadowBlur = 40;
+    ctx.lineWidth = 38;
+    ctx.strokeStyle = '#9333ea';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.bezierCurveTo(cx - 120, cy - ry, cx - rx, cy - ry, cx - rx, cy);
-    ctx.bezierCurveTo(cx - rx, cy + ry, cx - 120, cy + ry, cx, cy);
-    ctx.bezierCurveTo(cx + 120, cy - ry, cx + rx, cy - ry, cx + rx, cy);
-    ctx.bezierCurveTo(cx + rx, cy + ry, cx + 120, cy + ry, cx, cy);
+    createInfinityPath();
     ctx.stroke();
+    ctx.restore();
 
-    // Cœur interne blanc pur
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = 25;
-    ctx.lineWidth = strokeW;
-    ctx.strokeStyle = '#ffffff';
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.bezierCurveTo(cx - 120, cy - ry, cx - rx, cy - ry, cx - rx, cy);
-    ctx.bezierCurveTo(cx - rx, cy + ry, cx - 120, cy + ry, cx, cy);
-    ctx.bezierCurveTo(cx + 120, cy - ry, cx + rx, cy - ry, cx + rx, cy);
-    ctx.bezierCurveTo(cx + rx, cy + ry, cx + 120, cy + ry, cx, cy);
-    ctx.stroke();
-
-    // Croix centrale
-    ctx.beginPath();
-    ctx.moveTo(cx - 48, cy + 42);
-    ctx.lineTo(cx + 48, cy - 42);
-    ctx.stroke();
-
-    // Les deux arcs courbés au-dessus (yeux expressifs)
+    // Passe 2 : Lueur intermédiaire magenta/cyan
+    ctx.save();
     ctx.shadowColor = '#e879f9';
     ctx.shadowBlur = 20;
-    ctx.lineWidth = 28;
+    ctx.lineWidth = 26;
+    ctx.strokeStyle = '#d946ef';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    createInfinityPath();
+    ctx.stroke();
+    ctx.restore();
+
+    // Passe 3 : Cœur blanc pur éclatant (fin et net, boucles bien ouvertes)
+    ctx.save();
+    ctx.shadowColor = '#ffffff';
+    ctx.shadowBlur = 10;
+    ctx.lineWidth = 16;
     ctx.strokeStyle = '#ffffff';
-
-    ctx.beginPath();
-    ctx.arc(cx - 130, cy - 170, 75, Math.PI * 1.18, Math.PI * 1.82, false);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    createInfinityPath();
     ctx.stroke();
+    ctx.restore();
 
+    // Reflets spéculaires célestes (Image 1)
+    // Reflet cyan à gauche
+    ctx.save();
+    ctx.shadowColor = '#00f0ff';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = '#38bdf8';
     ctx.beginPath();
-    ctx.arc(cx + 130, cy - 170, 75, Math.PI * 1.18, Math.PI * 1.82, false);
-    ctx.stroke();
+    ctx.arc(cx - 240, cy - 240, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Reflet rose à droite
+    ctx.save();
+    ctx.shadowColor = '#ec4899';
+    ctx.shadowBlur = 16;
+    ctx.fillStyle = '#f472b6';
+    ctx.beginPath();
+    ctx.arc(cx + 250, cy - 210, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
     const texture = new THREE.CanvasTexture(canvas);
+    texture.generateMipmaps = true;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+
     const visorMat = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
       opacity: 1.0,
-      depthWrite: false
+      depthWrite: false,
+      side: THREE.DoubleSide
     });
 
-    // Déformation sphérique des sommets pour épouser parfaitement la courbure de la tête
-    const visorGeo = new THREE.PlaneGeometry(1.52, 1.12, 32, 32);
+    // Déformation sphérique équilibrée pour épouser la tête sans étirement
+    const visorGeo = new THREE.PlaneGeometry(1.42, 1.42, 32, 32);
     const pos = visorGeo.attributes.position;
-    const sphereR = headRadius * 1.025;
+    const sphereR = headRadius * 1.018;
 
     for (let i = 0; i < pos.count; i++) {
       const vx = pos.getX(i);
       const vy = pos.getY(i);
-      const sy = vy + 0.16;
-      const vz = Math.sqrt(Math.max(0.01, sphereR * sphereR - (vx * vx + sy * sy)));
+      const vz = Math.sqrt(Math.max(0.01, sphereR * sphereR - (vx * vx + vy * vy)));
       pos.setZ(i, vz);
     }
     pos.needsUpdate = true;

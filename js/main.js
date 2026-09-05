@@ -158,30 +158,29 @@ class GameApp {
       this.updateInputAxes();
     });
 
-    // Souris & Tactile mobile
+    // Tactile mobile uniquement (aucun contrôle à la souris sur ordinateur)
     window.addEventListener('pointerdown', (e) => {
-      this.isPointerDown = true;
-      this.pointerStartX = e.clientX;
-      this.pointerStartY = e.clientY;
+      if (e.pointerType === 'touch') {
+        this.isPointerDown = true;
+        this.pointerStartX = e.clientX;
+        this.pointerStartY = e.clientY;
+      }
     });
 
     window.addEventListener('pointermove', (e) => {
-      if (this.isPointerDown) {
+      if (this.isPointerDown && e.pointerType === 'touch') {
         const diffX = (e.clientX - this.pointerStartX) / (window.innerWidth * 0.22);
         const diffY = (this.pointerStartY - e.clientY) / (window.innerHeight * 0.22);
         this.inputAxisX = Math.max(-1, Math.min(1, diffX));
         this.inputAxisY = Math.max(-1, Math.min(1, diffY));
-      } else {
-        const normX = (e.clientX / window.innerWidth) * 2 - 1;
-        const normY = -((e.clientY / window.innerHeight) * 2 - 1);
-        this.inputAxisX = Math.abs(normX) > 0.1 ? Math.sign(normX) * ((Math.abs(normX) - 0.1) / 0.9) : 0;
-        this.inputAxisY = Math.abs(normY) > 0.12 ? Math.sign(normY) * ((Math.abs(normY) - 0.12) / 0.88) : 0;
       }
     });
 
-    const resetPointer = () => {
-      this.isPointerDown = false;
-      this.updateInputAxes();
+    const resetPointer = (e) => {
+      if (!e || e.pointerType === 'touch') {
+        this.isPointerDown = false;
+        this.updateInputAxes();
+      }
     };
     window.addEventListener('pointerup', resetPointer);
     window.addEventListener('pointercancel', resetPointer);
@@ -271,16 +270,17 @@ class GameApp {
         this.maxSpeed = this.currentSpeed;
       }
 
-      // 7. Suivi caméra 3e personne cinématographique
-      const tCamX = playerPos.x * 0.35;
-      const tCamY = Math.max(3.8, playerPos.y + 3.2);
-      const tCamZ = playerPos.z + 9.5;
+      // 7. Suivi caméra 3e personne cinématographique (Infi au premier plan, Nity en ligne de mire à z = -58)
+      const tCamX = playerPos.x * 0.36;
+      const tCamY = Math.max(3.6, playerPos.y + 2.7);
+      const tCamZ = playerPos.z + 8.8;
 
       this.camera.position.x += (tCamX - this.camera.position.x) * 6.0 * dt;
       this.camera.position.y += (tCamY - this.camera.position.y) * 5.0 * dt;
       this.camera.position.z += (tCamZ - this.camera.position.z) * 5.0 * dt;
 
-      this.cameraTarget.set(playerPos.x * 0.2, Math.max(1.8, playerPos.y * 0.6), -18);
+      // La caméra vise en avant vers Nity (z = -58) et le Trou Noir
+      this.cameraTarget.set(playerPos.x * 0.22, Math.max(2.4, playerPos.y * 0.45 + 1.8), -52);
       this.camera.lookAt(this.cameraTarget);
 
       // 8. Télémétrie HUD
