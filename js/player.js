@@ -5,7 +5,13 @@
  */
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import { getSoftGlowTexture } from './particles.js';
+import {
+  getSoftGlowTexture,
+  getShieldHexTexture,
+  getSaiyanAuraTexture,
+  getLaserBeamTexture,
+  getSparkTexture
+} from './particles.js';
 
 export class Player {
   constructor(scene) {
@@ -32,6 +38,14 @@ export class Player {
     this.boostTimer = 0.0;
     this.boostExtraSpeed = 0.0;
 
+    // Système d'Armure & Bouclier protecteur 1-hit
+    this.hasShield = false;
+    this.armorCount = 0;
+    this.invulnerableTimer = 0.0;
+
+    // Système SAYANFINITY (Super Saiyan 20s invulnérable)
+    this.saiyanTimer = 0.0;
+
     // Bounding Sphere pour collision ultra-fluide
     this.radius = 1.0;
     this.boundingSphere = new THREE.Sphere(new THREE.Vector3(), this.radius * 0.82);
@@ -40,6 +54,9 @@ export class Player {
     this.createModel();
     this.loadFBXModel();
     this.createDislocationParticles();
+    this.createShieldMesh();
+    this.createSaiyanAura();
+    this.createLaserPool();
 
     // Positionnement initial
     this.group.position.set(0, this.minAltitude, 0);
@@ -466,6 +483,222 @@ export class Player {
     this.disParticles.geometry.attributes.position.needsUpdate = true;
   }
 
+  // --- 1. SYSTÈME DE BOUCLIER D'ARMURE (1-HIT PROTECTION) ---
+  createShieldMesh() {
+    this.shieldGroup = new THREE.Group();
+    this.shieldGroup.visible = false;
+    this.avatar.add(this.shieldGroup);
+
+    // Sphère holographique d'énergie hexagonale translucide
+    const shieldGeo = new THREE.SphereGeometry(2.15, 32, 32);
+    this.shieldMat = new THREE.MeshBasicMaterial({
+      map: getShieldHexTexture(),
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.68,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.shieldMesh = new THREE.Mesh(shieldGeo, this.shieldMat);
+    this.shieldGroup.add(this.shieldMesh);
+
+    // Anneau de déflexion énergétique orbital
+    const ringGeo = new THREE.TorusGeometry(2.4, 0.05, 16, 48);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
+    this.shieldRing = new THREE.Mesh(ringGeo, ringMat);
+    this.shieldRing.rotation.x = Math.PI / 3;
+    this.shieldGroup.add(this.shieldRing);
+  }
+
+  equipShield(audioManager) {
+    this.hasShield = true;
+    this.armorCount = Math.min(3, this.armorCount + 1);
+    if (this.shieldGroup) this.shieldGroup.visible = true;
+    if (audioManager) audioManager.playShieldEquip();
+  }
+
+  absorbHit(audioManager) {
+    if (this.hasShield) {
+      this.armorCount--;
+      if (this.armorCount <= 0) {
+        this.hasShield = false;
+        if (this.shieldGroup) this.shieldGroup.visible = false;
+      }
+      this.invulnerableTimer = 1.6;
+      if (audioManager) audioManager.playShieldBreak();
+      return true;
+    }
+    return false;
+  }
+
+  // --- 2. SYSTÈME SAYANFINITY (SUPER SAIYAN 20 SECONDES) ---
+  createSaiyanAura() {
+    this.saiyanGroup = new THREE.Group();
+    this.saiyanGroup.visible = false;
+    this.avatar.add(this.saiyanGroup);
+
+    // A. Enveloppe de flammes de Ki dorées montantes
+    const auraGeo = new THREE.ConeGeometry(2.3, 5.4, 24, 8, true);
+    this.saiyanAuraMat = new THREE.MeshBasicMaterial({
+      color: 0xfacc15,
+      transparent: true,
+      opacity: 0.65,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.saiyanCone = new THREE.Mesh(auraGeo, this.saiyanAuraMat);
+    this.saiyanCone.position.y = 0.5;
+    this.saiyanGroup.add(this.saiyanCone);
+
+    // B. Pics de flammes Ki autour du corps
+    this.kiSpikes = [];
+    const spikeGeo = new THREE.ConeGeometry(0.42, 3.2, 8);
+    const spikeMat = new THREE.MeshBasicMaterial({
+      color: 0xffea00,
+      transparent: true,
+      opacity: 0.88,
+      blending: THREE.AdditiveBlending
+    });
+    for (let i = 0; i < 6; i++) {
+      const sp = new THREE.Mesh(spikeGeo, spikeMat);
+      const angle = (i / 6) * Math.PI * 2;
+      sp.position.set(Math.cos(angle) * 1.15, 0.8, Math.sin(angle) * 1.15);
+      sp.rotation.z = Math.cos(angle) * 0.25;
+      sp.rotation.x = Math.sin(angle) * 0.25;
+      this.saiyanGroup.add(sp);
+      this.kiSpikes.push(sp);
+    }
+
+    // C. Particules de Ki doré montant en tourbillon
+    this.kiParticleCount = 90;
+    const kiGeo = new THREE.BufferGeometry();
+    this.kiPos = new Float32Array(this.kiParticleCount * 3);
+    this.kiSeeds = [];
+    for (let i = 0; i < this.kiParticleCount; i++) {
+      this.kiSeeds.push({
+        angle: Math.random() * Math.PI * 2,
+        radius: 0.8 + Math.random() * 1.4,
+        y: Math.random() * 4.0 - 1.5,
+        speedY: 4.5 + Math.random() * 5.5,
+        rotSpeed: 3.0 + Math.random() * 4.0
+      });
+      this.kiPos[i * 3] = 0;
+      this.kiPos[i * 3 + 1] = 0;
+      this.kiPos[i * 3 + 2] = 0;
+    }
+    kiGeo.setAttribute('position', new THREE.BufferAttribute(this.kiPos, 3));
+
+    this.kiMat = new THREE.PointsMaterial({
+      size: 2.8,
+      map: getSaiyanAuraTexture(),
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.kiPoints = new THREE.Points(kiGeo, this.kiMat);
+    this.saiyanGroup.add(this.kiPoints);
+
+    // Lumière divine de Super Saiyan
+    this.saiyanLight = new THREE.PointLight(0xfacc15, 3.5, 14.0);
+    this.saiyanLight.position.set(0, 1.0, 0);
+    this.saiyanGroup.add(this.saiyanLight);
+  }
+
+  activateSayanfinity(duration = 20.0, audioManager) {
+    this.saiyanTimer = duration;
+    if (this.saiyanGroup) this.saiyanGroup.visible = true;
+    if (audioManager) audioManager.playSuperSaiyan();
+  }
+
+  isSayanfinityActive() {
+    return this.saiyanTimer > 0;
+  }
+
+  canSmashObstacles() {
+    return this.saiyanTimer > 0;
+  }
+
+  // --- 3. SYSTÈME DE TIRS BLASTER LASER (STAR FOX DYNAMIQUE) ---
+  createLaserPool() {
+    this.lasers = [];
+    this.laserCooldown = 0.0;
+    this.laserSpeed = 290.0;
+
+    this.laserGeo = new THREE.CylinderGeometry(0.14, 0.14, 3.6, 8);
+    this.laserGeo.rotateX(Math.PI / 2); // Aligné sur l'axe longitudinal (-Z vers l'avant)
+
+    this.laserMat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending
+    });
+
+    this.laserMatSaiyan = new THREE.MeshBasicMaterial({
+      color: 0xffea00,
+      transparent: true,
+      opacity: 0.98,
+      blending: THREE.AdditiveBlending
+    });
+  }
+
+  fireLaser(audioManager) {
+    if (this.isDead || this.laserCooldown > 0) return false;
+    this.laserCooldown = 0.14; // Cadence Star Fox dynamique
+
+    const p = this.group.position;
+    const isSaiyan = this.saiyanTimer > 0;
+    const mat = isSaiyan ? this.laserMatSaiyan : this.laserMat;
+
+    // Double tir laser (canon gauche & canon droit d'Infi)
+    const offsets = [-1.4, 1.4];
+    for (const offX of offsets) {
+      const mesh = new THREE.Mesh(this.laserGeo, mat);
+      mesh.position.set(p.x + offX, p.y - 0.2, p.z - 1.8);
+      this.scene.add(mesh);
+
+      const bbox = new THREE.Box3().setFromObject(mesh);
+      this.lasers.push({
+        mesh,
+        bbox,
+        speed: isSaiyan ? 340.0 : this.laserSpeed,
+        damage: isSaiyan ? 999 : 1,
+        isSaiyan
+      });
+    }
+
+    if (audioManager) {
+      audioManager.playLaserShoot();
+    }
+    return true;
+  }
+
+  updateLasers(dt) {
+    if (this.laserCooldown > 0) {
+      this.laserCooldown -= dt;
+    }
+
+    for (let i = this.lasers.length - 1; i >= 0; i--) {
+      const l = this.lasers[i];
+      l.mesh.position.z -= l.speed * dt;
+      l.bbox.setFromObject(l.mesh);
+
+      // Despawn lointain
+      if (l.mesh.position.z < -340) {
+        this.scene.remove(l.mesh);
+        this.lasers.splice(i, 1);
+      }
+    }
+  }
+
   // Recharge vitale à la collecte d'un cœur (sans accélération pour préserver la maîtrise des trajectoires)
   rechargeHeart() {
     this.energy = Math.min(this.maxEnergy, this.energy + 25.0);
@@ -595,7 +828,85 @@ export class Player {
     // 7. Bounding sphere update
     this.boundingSphere.center.copy(p);
 
-    // 8. Échec si énergie à zéro au sol
+    // 8. Mise à jour des tirs laser Star Fox
+    this.updateLasers(dt);
+
+    // 9. Mise à jour du Bouclier d'Armure (1-Hit Protection)
+    if (this.hasShield && this.shieldGroup) {
+      this.shieldGroup.visible = true;
+      this.shieldMesh.rotation.y += 1.6 * dt;
+      this.shieldMesh.rotation.z += 1.1 * dt;
+      this.shieldRing.rotation.z += 2.4 * dt;
+      const shieldPulse = 1.0 + Math.sin(time * 6.0) * 0.05 + bassEnergy * 0.12;
+      this.shieldGroup.scale.set(shieldPulse, shieldPulse, shieldPulse);
+    } else if (this.shieldGroup) {
+      this.shieldGroup.visible = false;
+    }
+
+    // 10. Période de grâce d'invulnérabilité (clignotement suite à bouclier brisé)
+    if (this.invulnerableTimer > 0) {
+      this.invulnerableTimer -= dt;
+      this.avatar.visible = Math.floor(time * 24) % 2 === 0;
+      if (this.invulnerableTimer <= 0) {
+        this.avatar.visible = true;
+      }
+    }
+
+    // 11. Animation de l'Aura SAYANFINITY (Super Saiyan 20 secondes)
+    if (this.saiyanTimer > 0 && this.saiyanGroup) {
+      this.saiyanTimer -= dt;
+      this.saiyanGroup.visible = true;
+
+      // Pulsation et rotation de l'aura
+      const saiyanPulse = 1.0 + Math.sin(time * 12.0) * 0.14 + bassEnergy * 0.25;
+      this.saiyanCone.scale.set(saiyanPulse, 1.0 + Math.sin(time * 8.0) * 0.1, saiyanPulse);
+      this.saiyanCone.rotation.y += 4.5 * dt;
+
+      // Animation des pics de flammes
+      if (this.kiSpikes) {
+        for (let i = 0; i < this.kiSpikes.length; i++) {
+          const sp = this.kiSpikes[i];
+          const spPhase = time * 10.0 + i * 1.2;
+          sp.scale.set(1.0 + Math.sin(spPhase) * 0.25, 1.0 + Math.cos(spPhase) * 0.35, 1.0);
+        }
+      }
+
+      // Tourbillon des particules de Ki doré
+      if (this.kiPoints && this.kiSeeds) {
+        const kPos = this.kiPoints.geometry.attributes.position.array;
+        for (let i = 0; i < this.kiParticleCount; i++) {
+          const s = this.kiSeeds[i];
+          s.y += s.speedY * dt;
+          s.angle += s.rotSpeed * dt;
+          if (s.y > 4.5) {
+            s.y = -1.5;
+            s.radius = 0.6 + Math.random() * 1.5;
+          }
+          kPos[i * 3] = Math.cos(s.angle) * s.radius;
+          kPos[i * 3 + 1] = s.y;
+          kPos[i * 3 + 2] = Math.sin(s.angle) * s.radius;
+        }
+        this.kiPoints.geometry.attributes.position.needsUpdate = true;
+      }
+
+      // Reflets dorés sur les éléments du joueur
+      if (this.fbxHeartMaterial) {
+        this.fbxHeartMaterial.emissive.set(0xffea00);
+      }
+      if (this.fbxVisorMaterial) {
+        this.fbxVisorMaterial.emissive.set(0x00f0ff);
+      }
+
+      if (this.saiyanTimer <= 0) {
+        this.saiyanTimer = 0;
+        this.saiyanGroup.visible = false;
+        if (this.fbxHeartMaterial) this.fbxHeartMaterial.emissive.set(0xff2ea6);
+      }
+    } else if (this.saiyanGroup) {
+      this.saiyanGroup.visible = false;
+    }
+
+    // 12. Échec si énergie à zéro au sol
     if (this.energy <= 0 && p.y <= this.minAltitude + 0.05) {
       this.triggerCrash();
     }
@@ -615,5 +926,25 @@ export class Player {
     this.group.position.set(0, 3.5, 0);
     this.boundingSphere.center.copy(this.group.position);
     this.disMat.opacity = 0;
+
+    // Reset Armure & Bouclier
+    this.hasShield = false;
+    this.armorCount = 0;
+    this.invulnerableTimer = 0;
+    if (this.shieldGroup) this.shieldGroup.visible = false;
+
+    // Reset Sayanfinity
+    this.saiyanTimer = 0;
+    if (this.saiyanGroup) this.saiyanGroup.visible = false;
+    if (this.fbxHeartMaterial) this.fbxHeartMaterial.emissive.set(0xff2ea6);
+
+    // Reset Lasers
+    if (this.lasers) {
+      for (const l of this.lasers) {
+        this.scene.remove(l.mesh);
+      }
+      this.lasers = [];
+    }
+    this.laserCooldown = 0;
   }
 }

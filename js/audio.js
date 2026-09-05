@@ -333,6 +333,153 @@ export class AudioManager {
     osc.stop(now + 1.5);
   }
 
+  // SFX : Tir Blaster Laser Star Fox (Double impulsion laser cyber-punch)
+  playLaserShoot() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+
+    [0, 0.028].forEach((offset) => {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(880, now + offset);
+      osc.frequency.exponentialRampToValueAtTime(110, now + offset + 0.12);
+
+      gain.gain.setValueAtTime(0.24, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.13);
+
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(now + offset);
+      osc.stop(now + offset + 0.14);
+    });
+  }
+
+  // SFX : Destruction d'obstacle par tir laser (Impact explosif + étincelles)
+  playObstacleDestroyed() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+
+    // Sub thump
+    const subOsc = this.audioCtx.createOscillator();
+    const subGain = this.audioCtx.createGain();
+    subOsc.type = 'sine';
+    subOsc.frequency.setValueAtTime(160, now);
+    subOsc.frequency.exponentialRampToValueAtTime(36, now + 0.28);
+    subGain.gain.setValueAtTime(0.65, now);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    subOsc.connect(subGain);
+    subGain.connect(this.audioCtx.destination);
+    subOsc.start(now);
+    subOsc.stop(now + 0.32);
+
+    // Bruit d'éclatement
+    const bufferSize = this.audioCtx.sampleRate * 0.22;
+    const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.25));
+    }
+    const noise = this.audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = this.audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(800, now);
+    filter.Q.setValueAtTime(2.0, now);
+    const noiseGain = this.audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.5, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(this.audioCtx.destination);
+    noise.start(now);
+    noise.stop(now + 0.24);
+  }
+
+  // SFX : Équipement Bouclier d'Armure (Harmonique montante protectrice)
+  playShieldEquip() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+    const freqs = [392, 523.25, 659.25, 1046.5]; // G4, C5, E5, C6
+    freqs.forEach((freq, idx) => {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+      gain.gain.setValueAtTime(0.25, now + idx * 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.4);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(now + idx * 0.05);
+      osc.stop(now + idx * 0.05 + 0.42);
+    });
+  }
+
+  // SFX : Bouclier brisé / Absorption d'un crash (Décharge électrique & choc métallique)
+  playShieldBreak() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.35);
+    gain.gain.setValueAtTime(0.7, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.42);
+  }
+
+  // SFX : Transformation SAYANFINITY (Montée en puissance divine & rugissement ki)
+  playSuperSaiyan() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+
+    // Riser d'énergie grondante
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(65, now);
+    osc.frequency.exponentialRampToValueAtTime(980, now + 1.2);
+    gain.gain.setValueAtTime(0.05, now);
+    gain.gain.linearRampToValueAtTime(0.75, now + 0.7);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+    const filter = this.audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(200, now);
+    filter.frequency.exponentialRampToValueAtTime(3200, now + 1.1);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 1.85);
+  }
+
+  // SFX : Percussion démolition Super Saiyan (Choc titanesque au contact d'un obstacle)
+  playSaiyanSmash() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+
+    const sub = this.audioCtx.createOscillator();
+    const subGain = this.audioCtx.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(240, now);
+    sub.frequency.exponentialRampToValueAtTime(28, now + 0.45);
+    subGain.gain.setValueAtTime(0.95, now);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    sub.connect(subGain);
+    subGain.connect(this.audioCtx.destination);
+    sub.start(now);
+    sub.stop(now + 0.52);
+  }
+
+
   // Progression de la piste courante (0.0 à 1.0)
   getTrackProgress() {
     if (this.mode === 'mp3' && this.audioElement.duration && !isNaN(this.audioElement.duration) && this.audioElement.duration > 0) {

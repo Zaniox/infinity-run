@@ -273,3 +273,116 @@ export function getCosmicDustTexture() {
   return texture;
 }
 
+/**
+ * Texture de flamme dorée et aura d'énergie de Super Saiyan (Sayanfinity)
+ */
+export function getSaiyanAuraTexture() {
+  if (textureCache.saiyanAura) return textureCache.saiyanAura;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  // Flamme montante dorée avec dégradé chaud
+  const grad = ctx.createRadialGradient(64, 75, 4, 64, 64, 58);
+  grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+  grad.addColorStop(0.18, 'rgba(254, 240, 138, 0.95)');
+  grad.addColorStop(0.40, 'rgba(250, 204, 21, 0.82)');
+  grad.addColorStop(0.68, 'rgba(234, 88, 12, 0.38)');
+  grad.addColorStop(1.0, 'rgba(180, 83, 9, 0.0)');
+
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  // Forme de flamme effilée
+  ctx.moveTo(64, 4);
+  ctx.bezierCurveTo(96, 32, 118, 70, 112, 98);
+  ctx.bezierCurveTo(106, 120, 78, 126, 64, 124);
+  ctx.bezierCurveTo(50, 126, 22, 120, 16, 98);
+  ctx.bezierCurveTo(10, 70, 32, 32, 64, 4);
+  ctx.fill();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  textureCache.saiyanAura = texture;
+  return texture;
+}
+
+/**
+ * Texture de grille d'énergie hexagonale pour le bouclier d'Armure
+ */
+export function getShieldHexTexture() {
+  if (textureCache.shieldHex) return textureCache.shieldHex;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  ctx.clearRect(0, 0, 256, 256);
+
+  // Motif hexagonal futuriste cyan
+  const drawHex = (x, y, r) => {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i - Math.PI / 6;
+      const hx = x + r * Math.cos(angle);
+      const hy = y + r * Math.sin(angle);
+      if (i === 0) ctx.moveTo(hx, hy);
+      else ctx.lineTo(hx, hy);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = '#00f0ff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(0, 240, 255, 0.12)';
+    ctx.fill();
+  };
+
+  const r = 28;
+  const h = r * Math.sqrt(3);
+  for (let y = 0; y < 256 + h; y += h) {
+    let row = 0;
+    for (let x = 0; x < 256 + r * 3; x += r * 3) {
+      drawHex(x, y, r - 3);
+      drawHex(x + 1.5 * r, y + h / 2, r - 3);
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(4, 4);
+  texture.needsUpdate = true;
+  textureCache.shieldHex = texture;
+  return texture;
+}
+
+/**
+ * Texture de plasma laser pour les tirs de blaster Star Fox
+ */
+export function getLaserBeamTexture() {
+  if (textureCache.laserBeam) return textureCache.laserBeam;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  const grad = ctx.createLinearGradient(32, 0, 32, 256);
+  grad.addColorStop(0.0, 'rgba(0, 240, 255, 0.0)');
+  grad.addColorStop(0.2, 'rgba(0, 240, 255, 0.8)');
+  grad.addColorStop(0.5, 'rgba(255, 255, 255, 1.0)');
+  grad.addColorStop(0.8, 'rgba(0, 240, 255, 0.8)');
+  grad.addColorStop(1.0, 'rgba(0, 240, 255, 0.0)');
+
+  ctx.fillStyle = grad;
+  ctx.fillRect(18, 0, 28, 256);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  textureCache.laserBeam = texture;
+  return texture;
+}
+
+

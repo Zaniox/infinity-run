@@ -2117,3 +2117,153 @@ html, body {
   transform: translateY(-1px);
 }
 
+/* ==========================================================================
+   STAR FOX COMBAT & SAYANFINITY MODE STYLES
+   ========================================================================== */
+.neon-shield {
+  color: #00f0ff;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.8);
+  font-size: 1.1rem;
+}
+
+.neon-saiyan {
+  color: #facc15;
+  text-shadow: 0 0 12px rgba(250, 204, 21, 0.9);
+  font-size: 1.1rem;
+}
+
+.highlight-shield {
+  color: #00f0ff;
+  text-shadow: 0 0 12px rgba(0, 240, 255, 0.7);
+  font-weight: 800;
+}
+
+/* Réticule Star Fox */
+.starfox-reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 50;
+  transition: transform 0.08s ease;
+}
+
+.reticle-corner {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: #00f0ff;
+  border-style: solid;
+  opacity: 0.85;
+}
+
+.reticle-corner.top-left {
+  top: 0; left: 0;
+  border-width: 2px 0 0 2px;
+}
+
+.reticle-corner.top-right {
+  top: 0; right: 0;
+  border-width: 2px 2px 0 0;
+}
+
+.reticle-corner.bottom-left {
+  bottom: 0; left: 0;
+  border-width: 0 0 2px 2px;
+}
+
+.reticle-corner.bottom-right {
+  bottom: 0; right: 0;
+  border-width: 0 2px 2px 0;
+}
+
+.reticle-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: #ffffff;
+  box-shadow: 0 0 8px #00f0ff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.starfox-reticle.hit {
+  transform: translate(-50%, -50%) scale(1.4);
+}
+.starfox-reticle.hit .reticle-corner {
+  border-color: #ffea00;
+  box-shadow: 0 0 12px #ffea00;
+}
+
+/* Bannière Sayanfinity */
+.sayanfinity-banner {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  background: rgba(26, 16, 2, 0.88);
+  border: 2px solid #facc15;
+  border-radius: 12px;
+  padding: 10px 24px;
+  text-align: center;
+  box-shadow: 0 0 35px rgba(250, 204, 21, 0.7), inset 0 0 20px rgba(250, 204, 21, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: saiyanPulse 0.8s infinite alternate ease-in-out;
+}
+
+@keyframes saiyanPulse {
+  0% { box-shadow: 0 0 25px rgba(250, 204, 21, 0.6); }
+  100% { box-shadow: 0 0 45px rgba(250, 204, 21, 0.95), 0 0 70px rgba(234, 88, 12, 0.5); }
+}
+
+.sayan-badge {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: #ffea00;
+  font-weight: 900;
+  text-shadow: 0 0 10px rgba(255, 234, 0, 0.8);
+}
+
+.sayan-title {
+  font-size: 0.84rem;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.sayan-timer-box {
+  width: 200px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.sayan-timer-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #facc15, #ea580c);
+  border-radius: 4px;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 10px #facc15;
+}
+
+.sayan-timer-text {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #fef08a;
+  letter-spacing: 0.12em;
+  margin-top: 2px;
+}
+
+

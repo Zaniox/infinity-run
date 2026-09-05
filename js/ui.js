@@ -100,6 +100,11 @@ export class UIManager {
     this.hudSpeed = document.getElementById('hud-speed');
     this.hudHearts = document.getElementById('hud-hearts');
     this.hudCycleName = document.getElementById('hud-cycle-name');
+    this.hudShield = document.getElementById('hud-shield');
+    this.starfoxReticle = document.getElementById('starfox-reticle');
+    this.sayanfinityBanner = document.getElementById('sayanfinity-banner');
+    this.sayanTimerBar = document.getElementById('sayan-timer-bar');
+    this.sayanTimerText = document.getElementById('sayan-timer-text');
 
     // Audio & Navigation dans le HUD
     this.btnAudioToggle = document.getElementById('btn-audio-toggle');
@@ -573,7 +578,7 @@ export class UIManager {
     }
   }
 
-  updateHUD(energy, distance, speed, heartsCount) {
+  updateHUD(energy, distance, speed, heartsCount, hasShield = false, armorCount = 0, saiyanActive = false, saiyanRemaining = 0) {
     if (this.energyBar) {
       this.energyBar.style.width = `${Math.max(0, Math.min(100, energy))}%`;
       if (energy < 25) {
@@ -586,6 +591,47 @@ export class UIManager {
     if (this.hudDistance) this.hudDistance.textContent = `${Math.round(distance)} M`;
     if (this.hudSpeed) this.hudSpeed.textContent = `${Math.round(speed * 3.6)} KM/H`;
     if (this.hudHearts) this.hudHearts.textContent = `♥ ${heartsCount}`;
+
+    // Bouclier d'armure
+    this.updateShield(hasShield, armorCount);
+
+    // Sayanfinity
+    this.updateSayanfinity(saiyanActive, saiyanRemaining);
+  }
+
+  pulseReticleHit() {
+    if (this.starfoxReticle) {
+      this.starfoxReticle.classList.add('hit');
+      setTimeout(() => {
+        if (this.starfoxReticle) this.starfoxReticle.classList.remove('hit');
+      }, 130);
+    }
+  }
+
+  updateShield(hasShield, armorCount = 0) {
+    if (this.hudShield) {
+      if (hasShield) {
+        this.hudShield.textContent = `🛡️ ACTIF (${armorCount})`;
+        this.hudShield.style.color = '#00f0ff';
+        this.hudShield.style.textShadow = '0 0 12px rgba(0, 240, 255, 0.8)';
+      } else {
+        this.hudShield.textContent = 'INACTIF';
+        this.hudShield.style.color = '#64748b';
+        this.hudShield.style.textShadow = 'none';
+      }
+    }
+  }
+
+  updateSayanfinity(active, timeRemaining = 0, maxDuration = 20.0) {
+    if (!this.sayanfinityBanner) return;
+    if (active && timeRemaining > 0) {
+      this.sayanfinityBanner.classList.remove('hidden');
+      const pct = Math.max(0, Math.min(100, (timeRemaining / maxDuration) * 100));
+      if (this.sayanTimerBar) this.sayanTimerBar.style.width = `${pct}%`;
+      if (this.sayanTimerText) this.sayanTimerText.textContent = `${timeRemaining.toFixed(1)}S`;
+    } else {
+      this.sayanfinityBanner.classList.add('hidden');
+    }
   }
 
   updateCycleBadge(cycle) {

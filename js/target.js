@@ -36,7 +36,7 @@ export class TargetManager {
     // Mirages de Nity (Cycle 8 Folie)
     this.createNityMirages();
 
-    // 4. Sillage de cœurs semés par Nity
+    // 4. Sillage de cœurs et drops semés par Nity (Cœurs, Armures, Sayanfinity)
     this.hearts = [];
     this.heartSpawnTimer = 0;
     this.heartGeometry = this.buildHeartGeometry();
@@ -46,6 +46,24 @@ export class TargetManager {
       emissiveIntensity: 3.8,
       roughness: 0.12,
       metalness: 0.18
+    });
+
+    // Matériau Capsule d'Armure (Bouclier cyan)
+    this.armorMaterial = new THREE.MeshStandardMaterial({
+      color: 0x00f0ff,
+      emissive: 0x0284c7,
+      emissiveIntensity: 3.5,
+      roughness: 0.15,
+      metalness: 0.8
+    });
+
+    // Matériau Sayanfinity (Or divin Super Saiyan)
+    this.sayanfinityMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffea00,
+      emissive: 0xf59e0b,
+      emissiveIntensity: 4.5,
+      roughness: 0.1,
+      metalness: 0.9
     });
   }
 
@@ -363,14 +381,14 @@ export class TargetManager {
     return geom;
   }
 
-  // --- 4. SILLAGE DE CŒURS SEMÉ PAR NITY ---
+  // --- 4. SILLAGE DE CŒURS, ARMURES ET SAYANFINITY PAR NITY ---
   spawnHeartFromNity() {
     const group = new THREE.Group();
 
     const heartMesh = new THREE.Mesh(this.heartGeometry, this.heartMaterial);
     group.add(heartMesh);
 
-    // Halo d'énergie autour du cœur
+    // Halo d'énergie rose autour du cœur
     const glowGeo = new THREE.SphereGeometry(1.2, 16, 16);
     const glowMat = new THREE.MeshBasicMaterial({
       color: 0xff2ea6,
@@ -378,8 +396,7 @@ export class TargetManager {
       opacity: 0.45,
       blending: THREE.AdditiveBlending
     });
-    const glow = new THREE.Mesh(glowGeo, glowMat);
-    group.add(glow);
+    group.add(new THREE.Mesh(glowGeo, glowMat));
 
     // Anneau d'énergie céleste en rotation
     const orbitGeo = new THREE.TorusGeometry(1.5, 0.04, 8, 24);
@@ -392,11 +409,10 @@ export class TargetManager {
     orbit.rotation.x = Math.PI / 2.4;
     group.add(orbit);
 
-    // Le cœur apparaît exactement derrière Nity dans son sillage
     const np = this.nityGroup.position;
     const spreadX = np.x + (Math.random() - 0.5) * 4.0;
     const spawnY = Math.max(2.0, np.y - 0.5 + (Math.random() - 0.5) * 2.0);
-    const spawnZ = np.z + 4.0; // Juste derrière Nity
+    const spawnZ = np.z + 4.0;
 
     group.position.set(spreadX, spawnY, spawnZ);
 
@@ -404,14 +420,158 @@ export class TargetManager {
       mesh: group,
       orbit: orbit,
       radius: 1.6,
-      collected: false
+      collected: false,
+      type: 'heart'
     };
 
     this.scene.add(group);
     this.hearts.push(heartObj);
+    return heartObj;
   }
 
-  // Mise à jour continue : Animation d'aspiration, Trou Noir et Cœurs
+  // Drop Capsule d'Armure (Bouclier de protection 1-hit)
+  spawnArmorFromNity() {
+    const group = new THREE.Group();
+
+    // Cristal hexagonal protecteur cyan
+    const coreGeo = new THREE.IcosahedronGeometry(0.85, 0);
+    const coreMesh = new THREE.Mesh(coreGeo, this.armorMaterial);
+    group.add(coreMesh);
+
+    // Halo d'énergie cyan
+    const glowGeo = new THREE.SphereGeometry(1.3, 16, 16);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.52,
+      blending: THREE.AdditiveBlending
+    });
+    group.add(new THREE.Mesh(glowGeo, glowMat));
+
+    // Double anneau orbital protecteur
+    const ringGeo = new THREE.TorusGeometry(1.4, 0.06, 8, 24);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
+    const ring1 = new THREE.Mesh(ringGeo, ringMat);
+    ring1.rotation.x = Math.PI / 3;
+    group.add(ring1);
+
+    const ring2 = new THREE.Mesh(ringGeo, ringMat);
+    ring2.rotation.y = Math.PI / 3;
+    group.add(ring2);
+
+    const np = this.nityGroup.position;
+    const spreadX = np.x + (Math.random() - 0.5) * 4.0;
+    const spawnY = Math.max(2.0, np.y - 0.5 + (Math.random() - 0.5) * 2.0);
+    const spawnZ = np.z + 4.0;
+
+    group.position.set(spreadX, spawnY, spawnZ);
+
+    const armorObj = {
+      mesh: group,
+      orbit: ring1,
+      orbit2: ring2,
+      radius: 1.7,
+      collected: false,
+      type: 'armor'
+    };
+
+    this.scene.add(group);
+    this.hearts.push(armorObj);
+    return armorObj;
+  }
+
+  // Drop Sayanfinity (Rare : Mode Super Saiyan 20s)
+  spawnSayanfinityFromNity() {
+    const group = new THREE.Group();
+
+    // Sphère d'or incandescent
+    const coreGeo = new THREE.SphereGeometry(0.95, 24, 24);
+    const coreMesh = new THREE.Mesh(coreGeo, this.sayanfinityMaterial);
+    group.add(coreMesh);
+
+    // Flamme de Ki dorée
+    const kiGeo = new THREE.SphereGeometry(1.45, 16, 16);
+    const kiMat = new THREE.MeshBasicMaterial({
+      color: 0xfacc15,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending
+    });
+    group.add(new THREE.Mesh(kiGeo, kiMat));
+
+    // Couronne de flammes / rayons d'énergie
+    const crown = new THREE.Group();
+    const spikeGeo = new THREE.ConeGeometry(0.25, 1.6, 6);
+    const spikeMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.92,
+      blending: THREE.AdditiveBlending
+    });
+    for (let r = 0; r < 5; r++) {
+      const sp = new THREE.Mesh(spikeGeo, spikeMat);
+      const angle = (r / 5) * Math.PI * 2;
+      sp.position.set(Math.cos(angle) * 0.9, Math.sin(angle) * 0.9, 0);
+      sp.rotation.z = angle - Math.PI / 2;
+      crown.add(sp);
+    }
+    group.add(crown);
+
+    // Anneau de foudre de Saiyan
+    const ringGeo = new THREE.TorusGeometry(1.65, 0.07, 8, 24);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xffea00,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 4;
+    group.add(ring);
+
+    const np = this.nityGroup.position;
+    const spreadX = np.x + (Math.random() - 0.5) * 4.0;
+    const spawnY = Math.max(2.0, np.y - 0.5 + (Math.random() - 0.5) * 2.0);
+    const spawnZ = np.z + 4.0;
+
+    group.position.set(spreadX, spawnY, spawnZ);
+
+    const sayanObj = {
+      mesh: group,
+      orbit: ring,
+      orbit2: crown,
+      radius: 1.85,
+      collected: false,
+      type: 'sayanfinity'
+    };
+
+    this.scene.add(group);
+    this.hearts.push(sayanObj);
+    return sayanObj;
+  }
+
+  // Spawner un drop spécifique à un point donné (ex: après destruction d'un obstacle par tir blaster)
+  spawnDropAt(x, y, z, type = 'armor') {
+    let drop;
+    if (type === 'sayanfinity') {
+      drop = this.spawnSayanfinityFromNity();
+    } else if (type === 'armor') {
+      drop = this.spawnArmorFromNity();
+    } else {
+      drop = this.spawnHeartFromNity();
+    }
+    if (drop && drop.mesh) {
+      drop.mesh.position.set(x, y, z);
+    }
+    return drop;
+  }
+
+  // Mise à jour continue : Animation d'aspiration, Trou Noir et Drops
   update(dt, speed, playerPos, bassEnergy) {
     const time = performance.now() * 0.001;
 
@@ -485,21 +645,36 @@ export class TargetManager {
     this.suctionPoints.geometry.attributes.position.needsUpdate = true;
     this.suctionMat.opacity = 0.65 + bassEnergy * 0.35;
 
-    // 4. Cadencement du sillage de cœurs semés par Nity
+    // 4. Cadencement du sillage semé par Nity (Cœurs, Armures et Sayanfinity)
     this.heartSpawnTimer += dt;
-    const heartInterval = Math.max(1.5, 2.8 - (speed / 120.0));
+    const heartInterval = Math.max(1.4, 2.6 - (speed / 120.0));
     if (this.heartSpawnTimer >= heartInterval) {
       this.heartSpawnTimer = 0;
-      this.spawnHeartFromNity();
+
+      const r = Math.random();
+      if (r < 0.07) {
+        // Drop Sayanfinity rare (~7%)
+        this.spawnSayanfinityFromNity();
+      } else if (r < 0.28) {
+        // Drop Armure régulier (~21%)
+        this.spawnArmorFromNity();
+      } else {
+        // Cœurs vitaux indispensables (~72%)
+        this.spawnHeartFromNity();
+      }
     }
 
-    // 5. Défilement des cœurs vers Infi
+    // 5. Défilement des drops vers Infi
     const deltaZ = speed * dt;
     for (let i = this.hearts.length - 1; i >= 0; i--) {
       const h = this.hearts[i];
       h.mesh.position.z += deltaZ;
       h.mesh.rotation.y += 2.8 * dt;
-      h.orbit.rotation.z += 3.6 * dt;
+      if (h.orbit) h.orbit.rotation.z += 3.6 * dt;
+      if (h.orbit2) {
+        h.orbit2.rotation.y += 4.2 * dt;
+        h.orbit2.rotation.z += 2.8 * dt;
+      }
 
       // Despawn si dépassé derrière Infi
       if (h.mesh.position.z > 14.0 || h.collected) {
@@ -509,19 +684,26 @@ export class TargetManager {
     }
   }
 
-  // Vérification de collecte par Infi
-  checkHeartCollisions(playerPos, playerRadius, onCollectCallback) {
+  // Vérification de collecte par Infi de tous types de drops (Cœur, Armure, Sayanfinity)
+  checkDropCollisions(playerPos, playerRadius, onCollectCallback) {
     for (const h of this.hearts) {
       if (!h.collected) {
         const dist = h.mesh.position.distanceTo(playerPos);
         if (dist < (h.radius + playerRadius * 0.95)) {
           h.collected = true;
           if (onCollectCallback) {
-            onCollectCallback(h.mesh.position);
+            onCollectCallback(h.type || 'heart', h.mesh.position);
           }
         }
       }
     }
+  }
+
+  // Rétrocompatibilité
+  checkHeartCollisions(playerPos, playerRadius, onCollectCallback) {
+    this.checkDropCollisions(playerPos, playerRadius, (type, pos) => {
+      if (onCollectCallback) onCollectCallback(pos, type);
+    });
   }
 
   // Adaptation de la palette selon le cycle

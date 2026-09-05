@@ -153,11 +153,14 @@
           <span class="btn-lb-tag">EN DIRECT</span>
         </button>
 
-        <!-- Guide des Commandes Minimaliste -->
+        <!-- Guide des Commandes Minimaliste & Combat Star Fox -->
         <div class="menu-controls-grid">
           <div class="ctrl-item"><kbd>Q</kbd> <kbd>D</kbd> ou <kbd>◄</kbd> <kbd>►</kbd> <span>Virage</span></div>
           <div class="ctrl-item"><kbd>Z</kbd> <kbd>S</kbd> ou <kbd>▲</kbd> <kbd>▼</kbd> <span>Cabrer / Piquer</span></div>
+          <div class="ctrl-item"><kbd>ESPACE</kbd> / <kbd>CLIC</kbd> <span>Tir Laser Star Fox</span></div>
           <div class="ctrl-item"><span class="neon-heart">♥</span> <span>Cœurs (+25 énergie)</span></div>
+          <div class="ctrl-item"><span class="neon-shield">🛡️</span> <span>Armure (1-Hit Protect)</span></div>
+          <div class="ctrl-item"><span class="neon-saiyan">⚡</span> <span>Sayanfinity (Super Saiyan 20s)</span></div>
         </div>
       </div>
     </div>
@@ -167,7 +170,16 @@
       <!-- Notification d'accueil temporaire -->
       <div id="intro-hint" class="intro-hint">
         <span class="intro-title">// NITY EST DANS LE TROU NOIR &bull; PLONGEZ DANS L'HORIZON</span>
-        <span class="intro-sub">VOL GLIDER IMMÉDIAT &bull; CLIQUEZ OU TOUCHEZ POUR ACTIVER LE SON</span>
+        <span class="intro-sub">VOL GLIDER &bull; [ESPACE] POUR TIRER AU BLASTER &bull; CŒURS VITAUX</span>
+      </div>
+
+      <!-- Réticule de Visée Dynamique Star Fox -->
+      <div id="starfox-reticle" class="starfox-reticle">
+        <div class="reticle-corner top-left"></div>
+        <div class="reticle-corner top-right"></div>
+        <div class="reticle-corner bottom-left"></div>
+        <div class="reticle-corner bottom-right"></div>
+        <div class="reticle-dot"></div>
       </div>
 
       <header class="hud-header">
@@ -200,9 +212,19 @@
         </div>
       </header>
 
-      <!-- Toast / Bannière de Transition de Cycle -->
+      <!-- Bannière & Compte à Rebours SAYANFINITY (Super Saiyan 20s) -->
+      <div id="sayanfinity-banner" class="sayanfinity-banner hidden">
+        <div class="sayan-badge">⚡ MODE SAYANFINITY &bull; INVULNÉRABILITÉ TOTALE</div>
+        <div class="sayan-title">SUPER SAIYAN EN COURS ! CASSEZ LES OBSTACLES</div>
+        <div class="sayan-timer-box">
+          <div id="sayan-timer-bar" class="sayan-timer-fill"></div>
+        </div>
+        <div id="sayan-timer-text" class="sayan-timer-text">20.0S</div>
+      </div>
+
+      <!-- Toast / Bannière de Transition de Cycle (Glide) -->
       <div id="cycle-toast" class="cycle-toast hidden">
-        <div class="cycle-toast-header">PROGRESSION DE L'ALBUM</div>
+        <div class="cycle-toast-header">PROGRESSION DE L'ALBUM &bull; GLIDE FLUIDE</div>
         <h2 id="cycle-toast-title" class="cycle-toast-title">CYCLE 1 &bull; CHUTE</h2>
         <p id="cycle-toast-desc" class="cycle-toast-desc">Gravité / Abysse</p>
       </div>
@@ -228,6 +250,10 @@
           <span id="hud-speed" class="telemetry-value">245 KM/H</span>
         </div>
         <div class="telemetry-item">
+          <span class="telemetry-tag">BOUCLIER ARMURE</span>
+          <span id="hud-shield" class="telemetry-value highlight-shield">INACTIF</span>
+        </div>
+        <div class="telemetry-item">
           <span class="telemetry-tag">CŒURS</span>
           <span id="hud-hearts" class="telemetry-value highlight-heart">♥ 0</span>
         </div>
@@ -239,7 +265,7 @@
 
       <footer class="hud-footer">
         <div class="hud-controls-hint">
-          [Q] [D] ou [◄] [►] Virage &bull; [Z] [S] ou [▲] [▼] Cabrer / Piquer &bull; Collectez les cœurs de Nity
+          [Q] [D] Virage &bull; [Z] [S] Cabrer/Piquer &bull; <strong>[ESPACE] / [CLIC] Tir Laser Star Fox</strong> &bull; 🛡️ Armure 1-Hit &bull; ⚡ Sayanfinity 20s
         </div>
       </footer>
     </div>

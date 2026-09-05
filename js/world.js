@@ -480,6 +480,14 @@ export class World {
     this.spawnDistance = -240; // Spawne au cœur de la brume 100% opaque
     this.despawnZ = 20;
 
+    // Système de particules d'explosion des obstacles détruits
+    this.activeExplosions = [];
+
+    // Système de Transition Fluide (Glisse sans rupture de Cycle 1 à 8)
+    this.isTransitioning = false;
+    this.transitionProgress = 0.0;
+    this.transitionDuration = 2.8;
+
     // Bassin d'ondulations d'eau pour le Cycle 1 (Chute / Eau)
     this.setupWaterRipplesPool();
   }
@@ -600,124 +608,225 @@ export class World {
     const group = new THREE.Group();
 
     switch (cycleIndex) {
-      case 0: { // Eau : Colonnes de verre abyssal et flèches marines
-        const geo = new THREE.CylinderGeometry(0.7, 1.8, 16, 12);
+      case 0: { // Eau : Spires sous-marines monumentales avec anneaux bioluminescents & orbe aquatique
+        const geo = new THREE.CylinderGeometry(0.8, 2.2, 22, 12);
         const mat = new THREE.MeshStandardMaterial({
-          color: 0x0284c7,
-          roughness: 0.35,
-          metalness: 0.20,
+          color: 0x021326,
+          roughness: 0.25,
+          metalness: 0.85,
           emissive: 0x00f0ff,
-          emissiveIntensity: 0.35
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 8;
-        group.add(mesh);
-        break;
-      }
-      case 1: { // Terre : Mégalithes & dolmens rocheux
-        const geo = new THREE.BoxGeometry(3.5, 15, 3.5);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x221a12,
-          roughness: 0.85,
-          metalness: 0.06,
-          emissive: 0x22c55e,
-          emissiveIntensity: 0.22
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 7.5;
-        mesh.rotation.y = (side > 0 ? 0.3 : -0.3);
-        group.add(mesh);
-        break;
-      }
-      case 2: { // Feu : Cheminées volcaniques coniques
-        const geo = new THREE.ConeGeometry(2.4, 18, 16);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x200505,
-          roughness: 0.65,
-          metalness: 0.15,
-          emissive: 0xef4444,
-          emissiveIntensity: 0.65
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 9;
-        group.add(mesh);
-        break;
-      }
-      case 3: { // Électricité : Pylônes relais haute tension
-        const geo = new THREE.CylinderGeometry(0.6, 1.2, 20, 12);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x2c2405,
-          metalness: 0.35,
-          roughness: 0.40,
-          emissive: 0xeab308,
-          emissiveIntensity: 0.70
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 10;
-        group.add(mesh);
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.18, 8, 16), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
-        ring.position.y = 18;
-        ring.rotation.x = Math.PI / 2;
-        group.add(ring);
-        break;
-      }
-      case 4: { // Lumière : Obélisques de quartz céleste
-        const geo = new THREE.OctahedronGeometry(2.2, 0);
-        geo.scale(1.0, 3.8, 1.0);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0xedf2f7,
-          roughness: 0.28,
-          metalness: 0.18,
-          emissive: 0x93c5fd,
-          emissiveIntensity: 0.50
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 9;
-        group.add(mesh);
-        break;
-      }
-      case 5: { // Ombre : Monolithes silhouettes de ténèbres
-        const geo = new THREE.BoxGeometry(2.6, 20, 2.6);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x0c0c0e,
-          roughness: 0.90,
-          metalness: 0.05,
-          emissive: 0x334155,
-          emissiveIntensity: 0.25
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 10;
-        group.add(mesh);
-        break;
-      }
-      case 6: { // Vent : Ailerons profilés supersoniques
-        const geo = new THREE.ConeGeometry(1.5, 22, 4);
-        geo.scale(0.5, 1.0, 2.0);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x0a284c,
-          roughness: 0.40,
-          metalness: 0.20,
-          emissive: 0x38bdf8,
-          emissiveIntensity: 0.50
+          emissiveIntensity: 0.55
         });
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.y = 11;
         group.add(mesh);
+
+        // Orbe d'eau lumineuse au sommet
+        const orb = new THREE.Mesh(
+          new THREE.SphereGeometry(1.6, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.85 })
+        );
+        orb.position.y = 22.5;
+        group.add(orb);
+
+        // Anneau d'écume en rotation
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(2.4, 0.12, 8, 24),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 })
+        );
+        ring.position.y = 15;
+        ring.rotation.x = Math.PI / 2.3;
+        group.add(ring);
         break;
       }
-      case 7: { // Cosmos : Portails quantiques & Singularités
-        const geo = new THREE.TorusGeometry(3.2, 0.35, 12, 24);
+      case 1: { // Terre : Dolmen tellurique colossal & mégalithe avec roche en lévitation
+        const geo = new THREE.BoxGeometry(4.2, 18, 4.2);
         const mat = new THREE.MeshStandardMaterial({
-          color: 0x1f0d36,
-          emissive: 0xc084fc,
-          emissiveIntensity: 0.85,
-          roughness: 0.30,
-          metalness: 0.20
+          color: 0x1f160e,
+          roughness: 0.90,
+          metalness: 0.08,
+          emissive: 0x22c55e,
+          emissiveIntensity: 0.28
         });
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.y = 9;
-        mesh.rotation.y = Math.PI / 2;
+        mesh.rotation.y = (side > 0 ? 0.35 : -0.35);
         group.add(mesh);
+
+        // Linteau supérieur (arche de dolmen)
+        const lintel = new THREE.Mesh(new THREE.BoxGeometry(6.5, 2.2, 4.8), mat);
+        lintel.position.y = 19;
+        group.add(lintel);
+
+        // Bloc de roche suspendu au centre
+        const rock = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(1.5, 0),
+          new THREE.MeshStandardMaterial({ color: 0x352315, roughness: 0.85 })
+        );
+        rock.position.set(0, 12, 0);
+        group.add(rock);
+        break;
+      }
+      case 2: { // Feu : Cheminée volcanique basaltique avec cratère de lave en fusion
+        const geo = new THREE.ConeGeometry(3.2, 22, 16);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x220404,
+          roughness: 0.65,
+          metalness: 0.35,
+          emissive: 0xef4444,
+          emissiveIntensity: 0.85
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 11;
+        group.add(mesh);
+
+        // Cône de magma incandescent au sommet
+        const magma = new THREE.Mesh(
+          new THREE.ConeGeometry(1.8, 4.0, 12),
+          new THREE.MeshBasicMaterial({ color: 0xf97316 })
+        );
+        magma.position.y = 22;
+        group.add(magma);
+
+        // Anneau de braises
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(3.6, 0.2, 8, 20),
+          new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.8 })
+        );
+        ring.position.y = 16;
+        ring.rotation.x = Math.PI / 2.2;
+        group.add(ring);
+        break;
+      }
+      case 3: { // Électricité : Relais Tesla haute tension avec bobines et électrode plasma
+        const geo = new THREE.CylinderGeometry(0.7, 1.4, 24, 12);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x201a02,
+          metalness: 0.85,
+          roughness: 0.25,
+          emissive: 0xeab308,
+          emissiveIntensity: 0.85
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 12;
+        group.add(mesh);
+
+        // Électrode plasma sphérique
+        const sphere = new THREE.Mesh(
+          new THREE.SphereGeometry(2.0, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0xfef08a })
+        );
+        sphere.position.y = 24.5;
+        group.add(sphere);
+
+        // 3 Anneaux de bobinage Tesla
+        for (let h = 8; h <= 20; h += 5) {
+          const ring = new THREE.Mesh(
+            new THREE.TorusGeometry(2.2, 0.18, 8, 16),
+            new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+          );
+          ring.position.y = h;
+          ring.rotation.x = Math.PI / 2;
+          group.add(ring);
+        }
+        break;
+      }
+      case 4: { // Lumière : Obélisque de quartz céleste avec double pyramide et halo
+        const geo = new THREE.OctahedronGeometry(2.4, 0);
+        geo.scale(1.0, 4.2, 1.0);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          roughness: 0.15,
+          metalness: 0.75,
+          emissive: 0x93c5fd,
+          emissiveIntensity: 0.85
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 12;
+        group.add(mesh);
+
+        // Couronne de lumière rayonnante
+        const halo = new THREE.Mesh(
+          new THREE.TorusGeometry(3.2, 0.1, 16, 32),
+          new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })
+        );
+        halo.position.y = 18;
+        halo.rotation.x = Math.PI / 3;
+        group.add(halo);
+        break;
+      }
+      case 5: { // Ombre : Monolithe fractal de ténèbres avec cristaux d'obsidienne
+        const geo = new THREE.BoxGeometry(3.0, 24, 3.0);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x08080a,
+          roughness: 0.95,
+          metalness: 0.05,
+          emissive: 0x475569,
+          emissiveIntensity: 0.40
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 12;
+        group.add(mesh);
+
+        // Éperons d'ombre latéraux inclinés
+        for (let s = -1; s <= 1; s += 2) {
+          const claw = new THREE.Mesh(new THREE.ConeGeometry(0.8, 8, 4), mat);
+          claw.position.set(s * 2.2, 14, 0);
+          claw.rotation.z = s * 0.4;
+          group.add(claw);
+        }
+        break;
+      }
+      case 6: { // Vent : Aileron profilé supersonique avec voiles de bourrasque
+        const geo = new THREE.ConeGeometry(1.8, 26, 4);
+        geo.scale(0.5, 1.0, 2.2);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x061e38,
+          roughness: 0.25,
+          metalness: 0.75,
+          emissive: 0x38bdf8,
+          emissiveIntensity: 0.75
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 13;
+        group.add(mesh);
+
+        // Anneau vortex de vent
+        const windRing = new THREE.Mesh(
+          new THREE.TorusGeometry(3.0, 0.15, 8, 20),
+          new THREE.MeshBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.85 })
+        );
+        windRing.position.y = 16;
+        windRing.rotation.y = Math.PI / 2.5;
+        group.add(windRing);
+        break;
+      }
+      case 7: { // Cosmos : Portail quantique & gyroscope gravitationnel
+        const ringGeo = new THREE.TorusGeometry(3.8, 0.35, 12, 32);
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x1a0630,
+          emissive: 0xc084fc,
+          emissiveIntensity: 1.1,
+          roughness: 0.20,
+          metalness: 0.85
+        });
+        const ring1 = new THREE.Mesh(ringGeo, mat);
+        ring1.position.y = 12;
+        ring1.rotation.y = Math.PI / 2;
+        group.add(ring1);
+
+        const ring2 = new THREE.Mesh(ringGeo, mat);
+        ring2.position.y = 12;
+        ring2.rotation.x = Math.PI / 3;
+        group.add(ring2);
+
+        // Singularité centrale
+        const core = new THREE.Mesh(
+          new THREE.SphereGeometry(1.4, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0xa855f7 })
+        );
+        core.position.y = 12;
+        group.add(core);
         break;
       }
     }
@@ -1251,89 +1360,213 @@ export class World {
     }
   }
 
-  // Transition fluide vers un cycle donné
-  setCycle(index) {
-    this.currentCycleIndex = (index + CYCLES_DATA.length) % CYCLES_DATA.length;
-    this.cycle = CYCLES_DATA[this.currentCycleIndex];
+  getRoughnessForElement(element) {
+    switch (element) {
+      case 'Eau': return 0.40;
+      case 'Terre': return 0.85;
+      case 'Feu': return 0.65;
+      case 'Électricité': return 0.45;
+      case 'Lumière': return 0.30;
+      case 'Ombre': return 0.92;
+      case 'Vent': return 0.45;
+      case 'Vide ou Cosmos': return 0.35;
+      default: return 0.50;
+    }
+  }
 
-    // Nettoyage immédiat des obstacles pour révéler instantanément le nouvel environnement
-    this.reset();
+  getMetalnessForElement(element) {
+    switch (element) {
+      case 'Eau': return 0.08;
+      case 'Terre': return 0.04;
+      case 'Feu': return 0.06;
+      case 'Électricité': return 0.15;
+      case 'Lumière': return 0.10;
+      case 'Ombre': return 0.02;
+      case 'Vent': return 0.08;
+      case 'Vide ou Cosmos': return 0.12;
+      default: return 0.05;
+    }
+  }
 
-    // Transition des couleurs d'atmosphère
-    this.scene.background.set(this.cycle.sky);
-    this.scene.fog.color.set(this.cycle.fog);
+  applyCycleImmediate(cycle) {
+    this.scene.background.set(cycle.sky);
+    this.scene.fog.color.set(cycle.fog);
 
-    this.sunLight.color.set(this.cycle.primary);
-    this.hemiLight.color.set(this.cycle.secondary);
-    this.hemiLight.groundColor.set(this.cycle.fog);
-    this.sunLight.intensity = this.cycle.lightIntensity;
+    this.sunLight.color.set(cycle.primary);
+    this.hemiLight.color.set(cycle.secondary);
+    this.hemiLight.groundColor.set(cycle.fog);
+    this.sunLight.intensity = cycle.lightIntensity;
 
     if (this.cycleGroundTextures && this.cycleGroundTextures[this.currentCycleIndex]) {
       this.groundMaterial.map = this.cycleGroundTextures[this.currentCycleIndex];
       this.groundMaterial.color.set(0xffffff);
       this.groundMaterial.needsUpdate = true;
     }
-    this.monolithMaterial.color.set(this.cycle.monolith);
+    this.monolithMaterial.color.set(cycle.monolith);
 
-    // Propriétés physiques et reflets selon l'élément (Eau, Terre, Feu, Électricité, Lumière, Ombre, Vent, Cosmos)
-    switch (this.cycle.element) {
-      case 'Eau': // Cycle 1 (Chute) : Noir / Eau
-        this.groundMaterial.roughness = 0.40;
-        this.groundMaterial.metalness = 0.08;
-        this.monolithMaterial.roughness = 0.35;
-        this.monolithMaterial.metalness = 0.20;
-        break;
-      case 'Terre': // Cycle 2 (Résilience) : Vert ou Marron / Terre
-        this.groundMaterial.roughness = 0.85;
-        this.groundMaterial.metalness = 0.04;
-        this.monolithMaterial.roughness = 0.80;
-        this.monolithMaterial.metalness = 0.08;
-        break;
-      case 'Feu': // Cycle 3 (Obsession) : Rouge / Feu
-        this.groundMaterial.roughness = 0.65;
-        this.groundMaterial.metalness = 0.06;
-        this.monolithMaterial.roughness = 0.55;
-        this.monolithMaterial.metalness = 0.15;
-        break;
-      case 'Électricité': // Cycle 4 (Amour) : Jaune / Électricité
-        this.groundMaterial.roughness = 0.45;
-        this.groundMaterial.metalness = 0.15;
-        this.monolithMaterial.roughness = 0.38;
-        this.monolithMaterial.metalness = 0.28;
-        break;
-      case 'Lumière': // Cycle 5 (Bonheur) : Blanc / Lumière
-        this.groundMaterial.roughness = 0.30;
-        this.groundMaterial.metalness = 0.10;
-        this.monolithMaterial.roughness = 0.28;
-        this.monolithMaterial.metalness = 0.18;
-        break;
-      case 'Ombre': // Cycle 6 (Chaos) : Gris / Ombre
-        this.groundMaterial.roughness = 0.92;
-        this.groundMaterial.metalness = 0.02;
-        this.monolithMaterial.roughness = 0.90;
-        this.monolithMaterial.metalness = 0.05;
-        break;
-      case 'Vent': // Cycle 7 (Ambition) : Bleu / Vent
-        this.groundMaterial.roughness = 0.45;
-        this.groundMaterial.metalness = 0.08;
-        this.monolithMaterial.roughness = 0.38;
-        this.monolithMaterial.metalness = 0.20;
-        break;
-      case 'Vide ou Cosmos': // Cycle 8 (Folie) : Violet / Vide ou Cosmos
-        this.groundMaterial.roughness = 0.35;
-        this.groundMaterial.metalness = 0.12;
-        this.monolithMaterial.roughness = 0.30;
-        this.monolithMaterial.metalness = 0.22;
-        break;
-    }
+    this.groundMaterial.roughness = this.getRoughnessForElement(cycle.element);
+    this.groundMaterial.metalness = this.getMetalnessForElement(cycle.element);
 
-    // Basculer l'élément visuel actif correspondant
     this.updateActiveElement(this.currentCycleIndex);
+  }
 
-    // Mettre à jour les décors de bord de piste propres au nouveau cycle
-    if (this.createSidePropsForCycle) {
+  // Transition fluide vers un cycle donné (Glide sans coupure, obstacles préservés)
+  setCycle(index, immediate = false) {
+    const prevCycle = this.cycle;
+    this.currentCycleIndex = (index + CYCLES_DATA.length) % CYCLES_DATA.length;
+    this.cycle = CYCLES_DATA[this.currentCycleIndex];
+
+    if (immediate || !prevCycle) {
+      this.reset();
+      this.applyCycleImmediate(this.cycle);
       this.createSidePropsForCycle(this.currentCycleIndex);
+      return;
     }
+
+    // TRANSITION FLUIDE SANS COUPURE (GLIDE)
+    // 1. On NE vide PAS les obstacles existants : ils continuent leur course vers Infi
+    // 2. Les nouveaux obstacles générés à l'horizon adopteront automatiquement le nouveau cycle
+    // 3. Interpolation progressive (Lerp) des ciels, brouillards, textures et lumières
+    this.isTransitioning = true;
+    this.transitionProgress = 0.0;
+    this.transitionDuration = 2.8;
+
+    this.prevSkyColor = new THREE.Color(prevCycle.sky);
+    this.nextSkyColor = new THREE.Color(this.cycle.sky);
+    this.prevFogColor = new THREE.Color(prevCycle.fog);
+    this.nextFogColor = new THREE.Color(this.cycle.fog);
+    this.prevSunColor = new THREE.Color(prevCycle.primary);
+    this.nextSunColor = new THREE.Color(this.cycle.primary);
+    this.prevHemiColor = new THREE.Color(prevCycle.secondary);
+    this.nextHemiColor = new THREE.Color(this.cycle.secondary);
+    this.prevLightIntensity = prevCycle.lightIntensity;
+    this.nextLightIntensity = this.cycle.lightIntensity;
+
+    this.targetRoughness = this.getRoughnessForElement(this.cycle.element);
+    this.targetMetalness = this.getMetalnessForElement(this.cycle.element);
+    this.prevRoughness = this.groundMaterial.roughness;
+    this.prevMetalness = this.groundMaterial.metalness;
+
+    // Mise à jour des décors de bord de piste avec le nouveau thème
+    this.createSidePropsForCycle(this.currentCycleIndex);
+    this.updateActiveElement(this.currentCycleIndex);
+  }
+
+  // --- SYSTÈME DE COMBAT STAR FOX & DESTRUCTION D'OBSTACLES ---
+  checkLaserCollisions(lasers, onHitCallback) {
+    if (!lasers || lasers.length === 0 || this.obstacles.length === 0) return;
+
+    for (let lIdx = lasers.length - 1; lIdx >= 0; lIdx--) {
+      const laser = lasers[lIdx];
+      let laserHit = false;
+
+      for (let oIdx = this.obstacles.length - 1; oIdx >= 0; oIdx--) {
+        const obs = this.obstacles[oIdx];
+
+        let collided = false;
+        if (obs.subBoxes) {
+          for (const sub of obs.subBoxes) {
+            if (sub.box.intersectsBox(laser.bbox)) {
+              collided = true;
+              break;
+            }
+          }
+        } else if (obs.bbox && obs.bbox.intersectsBox(laser.bbox)) {
+          collided = true;
+        }
+
+        if (collided) {
+          laserHit = true;
+          const hitPos = obs.mesh.position.clone();
+
+          // Destruction de l'obstacle
+          this.destroyObstacle(oIdx, laser.isSaiyan);
+
+          // Callback pour le score (+100 PTS / +250 PTS), SFX et drops
+          if (onHitCallback) {
+            onHitCallback(obs, hitPos, laser.isSaiyan);
+          }
+          break; // Le laser s'éteint après l'impact
+        }
+      }
+
+      if (laserHit) {
+        this.scene.remove(laser.mesh);
+        lasers.splice(lIdx, 1);
+      }
+    }
+  }
+
+  // Pulvérisation d'un obstacle avec éclatement de particules de son élément
+  destroyObstacle(obstacleIndex, isSaiyan = false) {
+    if (obstacleIndex < 0 || obstacleIndex >= this.obstacles.length) return;
+    const obs = this.obstacles[obstacleIndex];
+    const pos = obs.mesh.position.clone();
+
+    // Effet d'explosion avec particules de l'élément du cycle
+    this.createObstacleExplosion(pos, this.cycle.element, isSaiyan);
+
+    this.scene.remove(obs.mesh);
+    this.obstacles.splice(obstacleIndex, 1);
+  }
+
+  createObstacleExplosion(pos, element, isSaiyan = false) {
+    const pCount = isSaiyan ? 56 : 34;
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array(pCount * 3);
+    const velocities = [];
+
+    let pColor = 0x00f0ff;
+    if (isSaiyan) {
+      pColor = 0xffea00;
+    } else {
+      switch (element) {
+        case 'Eau': pColor = 0x00f0ff; break;
+        case 'Terre': pColor = 0x22c55e; break;
+        case 'Feu': pColor = 0xef4444; break;
+        case 'Électricité': pColor = 0xfacc15; break;
+        case 'Lumière': pColor = 0xffffff; break;
+        case 'Ombre': pColor = 0x94a3b8; break;
+        case 'Vent': pColor = 0x38bdf8; break;
+        case 'Vide ou Cosmos': pColor = 0xc084fc; break;
+      }
+    }
+
+    for (let i = 0; i < pCount; i++) {
+      positions[i * 3] = pos.x + (Math.random() - 0.5) * 2;
+      positions[i * 3 + 1] = pos.y + (Math.random() - 0.5) * 2;
+      positions[i * 3 + 2] = pos.z + (Math.random() - 0.5) * 2;
+
+      const spd = (isSaiyan ? 24 : 15) + Math.random() * 20;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      velocities.push(
+        Math.sin(phi) * Math.cos(theta) * spd,
+        Math.cos(phi) * spd + 3.0,
+        Math.sin(phi) * Math.sin(theta) * spd
+      );
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const mat = new THREE.PointsMaterial({
+      size: isSaiyan ? 3.2 : 2.4,
+      color: pColor,
+      map: getSoftGlowTexture(),
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    const pts = new THREE.Points(geo, mat);
+    this.scene.add(pts);
+
+    this.activeExplosions.push({
+      pts,
+      velocities,
+      timer: 0.0,
+      maxAge: 0.65
+    });
   }
 
   // --- SYSTÈME D'ONDULATIONS D'EAU (CYCLE 1 - CHUTE / EAU) ---
@@ -1881,6 +2114,35 @@ export class World {
     const deltaZ = speed * dt;
     const time = performance.now() * 0.001;
 
+    // 0. Transition fluide de cycle (Glide sans coupure)
+    if (this.isTransitioning) {
+      this.transitionProgress += dt / this.transitionDuration;
+      const t = Math.min(1.0, this.transitionProgress);
+      const smoothT = t * t * (3 - 2 * t);
+
+      this.scene.background.lerpColors(this.prevSkyColor, this.nextSkyColor, smoothT);
+      this.scene.fog.color.lerpColors(this.prevFogColor, this.nextFogColor, smoothT);
+      this.sunLight.color.lerpColors(this.prevSunColor, this.nextSunColor, smoothT);
+      this.hemiLight.color.lerpColors(this.prevHemiColor, this.nextHemiColor, smoothT);
+      this.hemiLight.groundColor.lerpColors(this.prevFogColor, this.nextFogColor, smoothT);
+      this.sunLight.intensity = THREE.MathUtils.lerp(this.prevLightIntensity, this.nextLightIntensity, smoothT);
+      this.groundMaterial.roughness = THREE.MathUtils.lerp(this.prevRoughness, this.targetRoughness, smoothT);
+      this.groundMaterial.metalness = THREE.MathUtils.lerp(this.prevMetalness, this.targetMetalness, smoothT);
+
+      // Basculer la texture de sol à mi-course
+      if (t >= 0.5 && this.cycleGroundTextures && this.cycleGroundTextures[this.currentCycleIndex]) {
+        if (this.groundMaterial.map !== this.cycleGroundTextures[this.currentCycleIndex]) {
+          this.groundMaterial.map = this.cycleGroundTextures[this.currentCycleIndex];
+          this.groundMaterial.needsUpdate = true;
+        }
+      }
+
+      if (t >= 1.0) {
+        this.isTransitioning = false;
+        this.applyCycleImmediate(this.cycle);
+      }
+    }
+
     // 1. Défilement continu du sol sans couture
     for (const sec of this.terrainSections) {
       sec.position.z += deltaZ;
@@ -2077,13 +2339,19 @@ export class World {
 
       // Test de collision avec le joueur
       if (onCollisionCheck && Math.abs(obs.mesh.position.z) < 8.0) {
-        let hit = false;
+        let hitResult = null;
         if (obs.subBoxes) {
           for (const sub of obs.subBoxes) {
-            if (onCollisionCheck(sub.box)) hit = true;
+            const res = onCollisionCheck(sub.box, obs, i);
+            if (res) { hitResult = res; break; }
           }
-        } else if (onCollisionCheck(obs.bbox)) {
-          hit = true;
+        } else {
+          hitResult = onCollisionCheck(obs.bbox, obs, i);
+        }
+
+        if (hitResult === 'destroy' || hitResult === 'smash') {
+          this.destroyObstacle(i, hitResult === 'smash');
+          continue;
         }
       }
 
@@ -2108,6 +2376,31 @@ export class World {
         this.ripples.splice(i, 1);
       }
     }
+
+    // 6. Animation des particules d'explosion des obstacles détruits (Star Fox & Saiyan)
+    if (this.activeExplosions) {
+      for (let i = this.activeExplosions.length - 1; i >= 0; i--) {
+        const exp = this.activeExplosions[i];
+        exp.timer += dt;
+        const pos = exp.pts.geometry.attributes.position.array;
+        const vel = exp.velocities;
+        for (let p = 0; p < vel.length / 3; p++) {
+          pos[p * 3] += vel[p * 3] * dt;
+          pos[p * 3 + 1] += vel[p * 3 + 1] * dt;
+          pos[p * 3 + 2] += vel[p * 3 + 2] * dt;
+          vel[p * 3 + 1] -= 24.0 * dt; // Pesanteur
+        }
+        exp.pts.geometry.attributes.position.needsUpdate = true;
+        exp.pts.material.opacity = Math.max(0, 0.95 * (1.0 - exp.timer / exp.maxAge));
+
+        if (exp.timer >= exp.maxAge) {
+          this.scene.remove(exp.pts);
+          exp.pts.geometry.dispose();
+          exp.pts.material.dispose();
+          this.activeExplosions.splice(i, 1);
+        }
+      }
+    }
   }
 
   reset() {
@@ -2122,5 +2415,14 @@ export class World {
       rip.mesh.material.dispose();
     }
     this.ripples = [];
+
+    if (this.activeExplosions) {
+      for (const exp of this.activeExplosions) {
+        this.scene.remove(exp.pts);
+        exp.pts.geometry.dispose();
+        exp.pts.material.dispose();
+      }
+      this.activeExplosions = [];
+    }
   }
 }

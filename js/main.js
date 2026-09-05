@@ -14,6 +14,7 @@ import { LeaderboardManager } from './leaderboard.js';
 
 class GameApp {
   constructor() {
+    console.log('>>> GameApp constructor starting <<<');
     this.canvas = document.getElementById('game-canvas');
     this.clock = new THREE.Clock();
     window.gameApp = this;
@@ -192,7 +193,8 @@ class GameApp {
 
   // Callback lors d'un changement de cycle / piste
   onTrackChange(index, track) {
-    this.world.setCycle(index);
+    const isPlaying = this.state === this.STATE_PLAYING;
+    this.world.setCycle(index, !isPlaying);
     const cycle = this.world.cycle;
     this.target.setCycleColors(cycle.primary, cycle.secondary);
     this.target.setCycleIndex(index);
@@ -211,6 +213,13 @@ class GameApp {
       if (['ArrowRight', 'KeyD'].includes(e.code)) this.keyRight = true;
       if (['ArrowUp', 'KeyW', 'KeyZ'].includes(e.code)) this.keyUp = true;
       if (['ArrowDown', 'KeyS'].includes(e.code)) this.keyDown = true;
+      if (e.code === 'Space') {
+        this.keyFire = true;
+        if (this.state === this.STATE_PLAYING) {
+          this.player.fireLaser(this.audio);
+          e.preventDefault();
+        }
+      }
       this.updateInputAxes();
     });
 
@@ -219,15 +228,26 @@ class GameApp {
       if (['ArrowRight', 'KeyD'].includes(e.code)) this.keyRight = false;
       if (['ArrowUp', 'KeyW', 'KeyZ'].includes(e.code)) this.keyUp = false;
       if (['ArrowDown', 'KeyS'].includes(e.code)) this.keyDown = false;
+      if (e.code === 'Space') this.keyFire = false;
       this.updateInputAxes();
     });
 
-    // Tactile mobile uniquement (aucun contrôle à la souris sur ordinateur)
+    // Tir au clic gauche de souris pendant le vol Star Fox
+    window.addEventListener('mousedown', (e) => {
+      if (e.button === 0 && this.state === this.STATE_PLAYING) {
+        this.player.fireLaser(this.audio);
+      }
+    });
+
+    // Tactile mobile
     window.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'touch') {
         this.isPointerDown = true;
         this.pointerStartX = e.clientX;
         this.pointerStartY = e.clientY;
+        if (this.state === this.STATE_PLAYING) {
+          this.player.fireLaser(this.audio);
+        }
       }
     });
 
@@ -258,6 +278,10 @@ class GameApp {
     if (this.keyUp && !this.keyDown) this.inputAxisY = 1;
     else if (this.keyDown && !this.keyUp) this.inputAxisY = -1;
     else if (!this.keyUp && !this.keyDown && !this.isPointerDown) this.inputAxisY = 0;
+
+    if (this.keyFire && this.state === this.STATE_PLAYING) {
+      this.player.fireLaser(this.audio);
+    }
   }
 
   bindResize() {
@@ -303,12 +327,15 @@ class GameApp {
     }
 
     if (this.state === this.STATE_PLAYING) {
-      // 2. Calcul de la vitesse de translation avec boost temporaire
+      // 2. Calcul de la vitesse de translation avec boost temporaire et bonus Sayanfinity
+      const saiyanBonus = this.player.isSayanfinityActive() ? 24.0 : 0.0;
       this.baseSpeed = 68.0 + (this.distance / 1200.0) * 15.0;
-      this.currentSpeed = this.baseSpeed + this.player.boostExtraSpeed;
+      this.currentSpeed = this.baseSpeed + this.player.boostExtraSpeed + saiyanBonus;
 
-      // Effet cinématique d'étirement du champ de vision lors d'un boost
-      if (this.player.boostTimer > 0) {
+      // Effet cinématique d'étirement du champ de vision lors d'un boost ou Sayanfinity
+      if (this.player.isSayanfinityActive()) {
+        this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV + 14, 6 * dt);
+      } else if (this.player.boostTimer > 0) {
         this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV + 12, 6 * dt);
       } else {
         this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV, 4 * dt);
@@ -324,29 +351,81 @@ class GameApp {
         this.audio.playCrash();
       }
 
+      // Collision des lasers Star Fox avec les obstacles
+      this.world.checkLaserCollisions(this.player.lasers, (obs, hitPos, isSaiyan) => {
+        this.audio.playObstacleDestroyed();
+        this.obstaclesDestroyed = (this.obstaclesDestroyed || 0) + 1;
+        this.distance += isSaiyan ? 30 : 15;
+        this.ui.pulseReticleHit();
+
+        // Chance de faire dropper une Armure ou un Cœur sur l'obstacle détruit
+        const dropRoll = Math.random();
+        if (dropRoll < 0.22) {
+          this.target.spawnDropAt(hitPos.x, Math.max(1.5, hitPos.y), hitPos.z, 'armor');
+        } else if (dropRoll < 0.42) {
+          this.target.spawnDropAt(hitPos.x, Math.max(1.5, hitPos.y), hitPos.z, 'heart');
+        }
+      });
+
       // 4. Défilement du monde et des obstacles synchronisés au beat musical absolu
       const playerPos = this.player.group.position;
       const beatInfo = this.audio.getBeatInfo();
 
-      this.world.update(dt, this.currentSpeed, beatInfo, bass, (box) => {
+      this.world.update(dt, this.currentSpeed, beatInfo, bass, (box, obs, obsIdx) => {
         // Test de collision entre la sphère du joueur et la boîte d'obstacle
         if (box.intersectsSphere(this.player.boundingSphere)) {
+          // Période de grâce d'invulnérabilité
+          if (this.player.invulnerableTimer > 0) {
+            return false;
+          }
+
+          // Cas 1 : Mode SAYANFINITY actif (Super Saiyan 20s) -> broie l'obstacle instantanément !
+          if (this.player.isSayanfinityActive()) {
+            this.audio.playSaiyanSmash();
+            this.obstaclesDestroyed = (this.obstaclesDestroyed || 0) + 1;
+            this.distance += 35; // Bonus destructeur
+            this.ui.pulseReticleHit();
+            return 'smash';
+          }
+
+          // Cas 2 : Bouclier d'Armure actif -> absorbe l'impact, protège et détruit l'obstacle !
+          if (this.player.hasShield) {
+            this.player.absorbHit(this.audio);
+            this.ui.pulseReticleHit();
+            return 'destroy';
+          }
+
+          // Cas 3 : Mort / Crash direct
           this.player.triggerCrash();
           this.audio.playCrash();
           this.state = this.STATE_DYING;
-          return true;
+          return 'crash';
         }
         return false;
       });
 
-      // 5. Mise à jour du trou noir, de Nity et des cœurs
+      // 5. Mise à jour du trou noir, de Nity et des drops
       this.target.update(dt, this.currentSpeed, playerPos, bass);
 
-      // Détection de collecte des cœurs du sillage de Nity
-      this.target.checkHeartCollisions(playerPos, this.player.radius, () => {
-        this.player.rechargeHeart();
-        this.audio.playHeartCollect();
-        this.heartsCount++;
+      // Détection de collecte des drops (Cœurs vitaux, Armures 1-hit, Sayanfinity 20s)
+      this.target.checkDropCollisions(playerPos, this.player.radius, (type, pos) => {
+        if (type === 'sayanfinity') {
+          // Rare drop : SAYANFINITY 20 secondes !
+          this.player.activateSayanfinity(20.0, this.audio);
+          this.player.rechargeHeart();
+          this.ui.showClimaxAlert('⚡ SAYANFINITY ACTIVÉ ! CASSEZ LES OBSTACLES (20S)', true);
+          setTimeout(() => {
+            if (this.ui) this.ui.hideClimaxAlert();
+          }, 3500);
+        } else if (type === 'armor') {
+          // Armure protectrice 1-hit
+          this.player.equipShield(this.audio);
+        } else {
+          // Cœur vital d'énergie
+          this.player.rechargeHeart();
+          this.audio.playHeartCollect();
+          this.heartsCount++;
+        }
       });
 
       // 6. Gestion du Climax du Cycle 8 (Rattrapage de Nity & Feinte Temporelle)
@@ -397,8 +476,17 @@ class GameApp {
       this.cameraTarget.set(playerPos.x * 0.22, Math.max(2.4, playerPos.y * 0.45 + 1.8), -52);
       this.camera.lookAt(this.cameraTarget);
 
-      // 9. Télémétrie HUD
-      this.ui.updateHUD(this.player.energy, this.distance, this.currentSpeed, this.heartsCount);
+      // 9. Télémétrie HUD avec Armure et Sayanfinity
+      this.ui.updateHUD(
+        this.player.energy,
+        this.distance,
+        this.currentSpeed,
+        this.heartsCount,
+        this.player.hasShield,
+        this.player.armorCount,
+        this.player.isSayanfinityActive(),
+        this.player.saiyanTimer
+      );
 
     } else if (this.state === this.STATE_DYING) {
       // Dislocation d'Infi en particules
@@ -504,7 +592,14 @@ class GameApp {
   }
 }
 
-// Initialisation au chargement du DOM
-window.addEventListener('DOMContentLoaded', () => {
+console.log('>>> main.js script evaluating. readyState:', document.readyState);
+// Initialisation au chargement du DOM ou immédiatement si déjà chargé
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', () => {
+    console.log('>>> DOMContentLoaded fired, creating GameApp <<<');
+    new GameApp();
+  });
+} else {
+  console.log('>>> DOM already ready, creating GameApp immediately <<<');
   new GameApp();
-});
+}
