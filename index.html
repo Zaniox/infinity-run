@@ -6,11 +6,12 @@
   <title>// SOUNDRISE : INFINITY RUN</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Importmap Three.js moderne sans build step / 100% compatible GitHub Pages -->
+  <!-- Importmap Three.js avec support officiel des Addons (UnrealBloomPass, EffectComposer) -->
   <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
       }
     }
   </script>
@@ -19,23 +20,45 @@
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
 
-    <!-- UI Overlay Minimaliste : Infi vs Nity -->
+    <!-- UI Overlay Cyber-Baroque OodaïSound -->
     <div id="hud-overlay">
       <header class="hud-header">
         <div class="hud-brand">
           <h1 class="hud-title">// SOUNDRISE <span class="neon-nity">: INFINITY RUN</span></h1>
-          <div class="hud-subtitle">CYCLE 1 &bull; INFI EN VOL VERS NITY</div>
+          <div class="hud-subtitle">CYCLE 1 &bull; INFI GLIDER WINGS</div>
         </div>
 
-        <div class="hud-target-badge">
-          <div class="target-dot"></div>
-          <span class="target-text">CIBLE : NITY (HORIZON)</span>
+        <!-- Jauge d'Énergie du Cœur d'Infi -->
+        <div class="hud-heart-gauge">
+          <div class="gauge-label">
+            <span class="heart-icon">♥</span> ÉNERGIE CŒUR
+          </div>
+          <div class="gauge-bar">
+            <div id="heart-energy-fill" class="gauge-fill"></div>
+          </div>
         </div>
       </header>
 
+      <!-- Télémétrie de vol (Vitesse & Altitude) -->
+      <aside class="hud-telemetry">
+        <div class="telemetry-item">
+          <span class="telemetry-tag">VITESSE</span>
+          <span id="hud-speed" class="telemetry-value">252 KM/H</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-tag">ALTITUDE</span>
+          <span id="hud-altitude" class="telemetry-value">12 M</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-tag">CIBLE</span>
+          <span class="telemetry-target">NITY (HORIZON)</span>
+        </div>
+      </aside>
+
       <footer class="hud-footer">
         <div class="hud-controls-hint">
-          <span class="key-hint">◄</span> <span class="key-hint">►</span> ou <span class="key-hint">Q</span> / <span class="key-hint">D</span> Virage &bull; Glisser Souris / Tactile
+          <span class="key-hint">▲</span> <span class="key-hint">▼</span> ou <span class="key-hint">Z</span> / <span class="key-hint">S</span> Cabrer / Piquer &bull; 
+          <span class="key-hint">◄</span> <span class="key-hint">►</span> ou <span class="key-hint">Q</span> / <span class="key-hint">D</span> Virage &bull; Glisser Souris / Tactile 2D
         </div>
       </footer>
     </div>
