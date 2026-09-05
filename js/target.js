@@ -219,17 +219,41 @@ export class TargetManager {
 
         fbx.position.set(-center.x * scale, -center.y * scale + 1.2, -center.z * scale);
 
+        this.nityFbxMaterials = [];
+
         fbx.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
-            child.material = new THREE.MeshStandardMaterial({
-              color: 0x080416,
-              metalness: 0.92,
-              roughness: 0.14,
-              emissive: 0x00f0ff,
-              emissiveIntensity: 0.65
-            });
+            const name = (child.name || '').toLowerCase();
+            if (name.includes('heart')) {
+              // Cœur de Nity émissif rose/magenta
+              child.material = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: 0xff2ea6,
+                emissiveIntensity: 3.5,
+                roughness: 0.1
+              });
+            } else if (name.includes('eye') || name.includes('brow')) {
+              // Yeux et sourcils célestes
+              child.material = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: 0xffffff,
+                emissiveIntensity: 2.2,
+                roughness: 0.1
+              });
+            } else {
+              // Corps féminin silhouette réactif aux couleurs du cycle
+              const mat = new THREE.MeshStandardMaterial({
+                color: 0x080416,
+                metalness: 0.92,
+                roughness: 0.14,
+                emissive: 0x00f0ff,
+                emissiveIntensity: 0.75
+              });
+              child.material = mat;
+              this.nityFbxMaterials.push(mat);
+            }
           }
         });
 
@@ -506,6 +530,12 @@ export class TargetManager {
     if (this.nityMantleMat) this.nityMantleMat.emissive.set(secondaryHex);
     if (this.nityRingMat) this.nityRingMat.color.set(secondaryHex);
     if (this.suctionMat) this.suctionMat.color.set(primaryHex);
+
+    if (this.nityFbxMaterials) {
+      for (const mat of this.nityFbxMaterials) {
+        mat.emissive.set(primaryHex);
+      }
+    }
   }
 
   setCycleIndex(cycleIndex) {

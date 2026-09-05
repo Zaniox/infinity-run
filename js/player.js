@@ -126,33 +126,45 @@ export class Player {
         const scale = targetHeight / (maxDim || 1);
         fbx.scale.setScalar(scale);
 
-        fbx.position.set(-center.x * scale, -center.y * scale - 0.5, -center.z * scale);
+        fbx.position.set(-center.x * scale, -center.y * scale - 0.4, -center.z * scale);
 
-        // Matériau cyber-métallique sombre doux
+        // Différenciation des matériaux : Visière / Symbole Infini lumineux vs Armure cyber-métallique
         fbx.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
-            child.material = new THREE.MeshStandardMaterial({
-              color: 0x0c0618,
-              metalness: 0.88,
-              roughness: 0.16,
-              envMapIntensity: 1.2
-            });
+            const name = (child.name || '').toLowerCase();
+            if (name.includes('infinity') || name.includes('glow') || name.includes('eye') || name.includes('visor')) {
+              child.material = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: 0xbd00ff,
+                emissiveIntensity: 3.6,
+                roughness: 0.1,
+                metalness: 0.2
+              });
+            } else {
+              child.material = new THREE.MeshStandardMaterial({
+                color: 0x0c0618,
+                metalness: 0.88,
+                roughness: 0.16,
+                envMapIntensity: 1.2
+              });
+            }
           }
         });
 
         this.fbxModel = fbx;
         this.avatar.add(fbx);
 
-        // Remplacement du torse de secours
-        if (this.proceduralTorso) {
-          this.proceduralTorso.visible = false;
-        }
+        // Masquer le torse et la tête procédurale de secours pour laisser place au modèle officiel Infi.fbx
+        if (this.proceduralTorso) this.proceduralTorso.visible = false;
+        if (this.headMesh) this.headMesh.visible = false;
+        if (this.headHalo) this.headHalo.visible = false;
+        if (this.facePlane) this.facePlane.visible = false;
       },
       undefined,
       (err) => {
-        console.info('[Player] Note : Fallback procédural Infi actif (chargement FBX différé ou non supporté) :', err);
+        console.info('[Player] Note : Fallback procédural Infi actif :', err);
       }
     );
   }
