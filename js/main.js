@@ -9,6 +9,8 @@ import { TargetManager } from './target.js';
 import { Player } from './player.js';
 import { World, CYCLES_DATA } from './world.js';
 import { UIManager } from './ui.js';
+import { AuthManager } from './auth.js';
+import { LeaderboardManager } from './leaderboard.js';
 
 class GameApp {
   constructor() {
@@ -16,6 +18,12 @@ class GameApp {
     this.clock = new THREE.Clock();
     window.gameApp = this;
     window.game = this;
+
+    // Gestionnaires d'Authentification Google et de Classement Mondial
+    this.auth = new AuthManager((user) => {
+      if (this.ui) this.ui.updateAuthState(user);
+    });
+    this.leaderboard = new LeaderboardManager();
 
     // États de jeu
     this.STATE_MENU = 'MENU';
@@ -60,7 +68,9 @@ class GameApp {
       () => this.restartGame(),
       () => this.audio.toggleMute(),
       () => this.audio.prevTrack(),
-      () => this.audio.nextTrack()
+      () => this.audio.nextTrack(),
+      this.auth,
+      this.leaderboard
     );
 
     window.gameApp = this;
@@ -121,6 +131,15 @@ class GameApp {
   }
 
   startGame() {
+    if (!this.auth || !this.auth.isAuthenticated()) {
+      if (this.ui) this.ui.openGoogleDirectModal();
+      return;
+    }
+    if (!this.auth.hasPseudo()) {
+      if (this.ui) this.ui.openPseudoModal();
+      return;
+    }
+
     this.state = this.STATE_PLAYING;
     this.ui.hideStartMenu();
     if (!this.audio.isPlaying) this.audio.start();
@@ -389,6 +408,28 @@ class GameApp {
         this.state = this.STATE_GAMEOVER;
         const reason = this.player.energy <= 0 ? 'energy' : 'collision';
         this.ui.showGameOver(reason, this.distance, this.maxSpeed, this.heartsCount);
+
+        // Enregistrement automatique au Classement Mondial officiel
+        if (this.auth && this.auth.isAuthenticated() && this.auth.hasPseudo() && this.leaderboard) {
+          const user = this.auth.getUser();
+          const totalScore = Math.floor(this.distance * 10 + this.heartsCount * 250);
+          const rankInfo = this.ui.computeRank(totalScore);
+
+          this.leaderboard.submitScore({
+            pseudo: user.pseudo,
+            googleUid: user.googleUid,
+            avatar: user.picture,
+            score: totalScore,
+            distance: this.distance,
+            maxSpeed: this.maxSpeed,
+            cycle: this.world.cycle.name,
+            rank: rankInfo.rank
+          }).then((res) => {
+            if (this.ui) this.ui.updateGameOverWorldRank(res);
+          }).catch((err) => {
+            console.warn('[Leaderboard] Erreur d\'envoi cloud :', err);
+          });
+        }
       }
     }
 
@@ -400,6 +441,23 @@ class GameApp {
   triggerClimaxFeinte() {
     if (this.isClimaxFeinteActive) return;
     this.isClimaxFeinteActive = true;
+
+    // Enregistrement au classement mondial pour l'accomplissement du cycle
+    if (this.auth && this.auth.isAuthenticated() && this.auth.hasPseudo() && this.leaderboard) {
+      const user = this.auth.getUser();
+      const totalScore = Math.floor(this.distance * 10 + this.heartsCount * 250);
+      const rankInfo = this.ui.computeRank(totalScore);
+      this.leaderboard.submitScore({
+        pseudo: user.pseudo,
+        googleUid: user.googleUid,
+        avatar: user.picture,
+        score: totalScore,
+        distance: this.distance,
+        maxSpeed: this.maxSpeed,
+        cycle: `Boucle ∞ ${this.loopCount} (Folie)`,
+        rank: rankInfo.rank
+      }).catch((e) => console.warn(e));
+    }
 
     // 1. Flash blanc/cyan aveuglant
     this.ui.triggerFlash();

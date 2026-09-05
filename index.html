@@ -6,6 +6,9 @@
   <title>// SOUNDRISE : INFINITY RUN</title>
   <link rel="stylesheet" href="style.css" />
 
+  <!-- Google Identity Services (GIS) officiel -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <!-- Importmap Three.js ES6 officiel -->
   <script type="importmap">
     {
@@ -52,7 +55,7 @@
     <!-- Écran Flash Cosmique (Feinte du Cycle 8) -->
     <div id="cosmic-flash" class="cosmic-flash"></div>
 
-    <!-- MENU PRINCIPAL PLAY / ACCUEIL CINÉMATOGRAPHIQUE HAUTE DÉFINITION -->
+    <!-- MENU PRINCIPAL PLAY SIMPLE, BEAU & EFFICACE -->
     <div id="start-menu" class="start-menu-overlay">
       <div class="start-menu-card">
         <!-- Visualiseur Égaliseur Audio Supersonique -->
@@ -62,7 +65,64 @@
 
         <div class="menu-brand-badge">// OODAÏSOUND &bull; EXPÉRIENCE OFFICIELLE</div>
         <h1 class="menu-title">// SOUNDRISE <span class="neon-title">: INFINITY RUN</span></h1>
-        <p class="menu-subtitle">ODYSSÉE GLIDER 3D &bull; RACE THE SUN FEEL &bull; SYNCHRONISATION ÉLÉMENTAIRE</p>
+        <p class="menu-subtitle">ODYSSÉE GLIDER 3D &bull; CLASSEMENT MONDIAL SYNCHRONISÉ</p>
+
+        <!-- SECTION AUTHENTIFICATION COMPTE GOOGLE & PROFIL PILOTE -->
+        <div id="menu-auth-section" class="menu-auth-box">
+          <!-- État 1 : Non connecté -->
+          <div id="auth-unlogged" class="auth-state-box">
+            <div class="auth-notice">
+              <span class="auth-notice-icon">🔒</span>
+              <div class="auth-notice-text">
+                <strong>CONNEXION GOOGLE REQUISE POUR JOUER</strong>
+                <span>Connectez-vous pour choisir votre pseudo et figurer au classement mondial</span>
+              </div>
+            </div>
+
+            <div class="auth-actions">
+              <!-- Emplacement officiel Google Identity Services -->
+              <div id="google-signin-btn-container" class="google-btn-slot"></div>
+
+              <!-- Bouton direct alternatif en 1 clic -->
+              <button id="btn-open-google-login" class="btn-google-direct" type="button">
+                <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <span>Connexion Compte Google</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- État 2 : Connecté avec Compte Google -->
+          <div id="auth-logged" class="auth-state-box hidden">
+            <div class="user-profile-banner">
+              <div class="user-avatar-wrap">
+                <img id="user-avatar-img" class="user-avatar-img" src="" alt="Avatar" />
+                <span class="user-verified-badge" title="Compte Google Vérifié">✓</span>
+              </div>
+              <div class="user-info-text">
+                <div class="user-header-line">
+                  <span class="user-badge-google">COMPTE GOOGLE CONNECTÉ</span>
+                  <span id="user-name-display" class="user-real-name">Pilote</span>
+                </div>
+                <div class="user-pseudo-row">
+                  <span class="pseudo-label">PSEUDO :</span>
+                  <strong id="user-pseudo-display" class="user-pseudo-name">--</strong>
+                  <button id="btn-edit-pseudo" class="btn-icon-edit" type="button" title="Modifier le pseudo">✏️</button>
+                </div>
+                <div id="user-best-stats" class="user-best-stats">
+                  <span>MEILLEUR SCORE : <strong id="user-best-score">0 PTS</strong></span>
+                  <span class="stat-sep">&bull;</span>
+                  <span>RANG MONDIAL : <strong id="user-best-rank">#--</strong></span>
+                </div>
+              </div>
+              <button id="btn-logout" class="btn-logout" type="button" title="Déconnexion">🚪</button>
+            </div>
+          </div>
+        </div>
 
         <!-- Sélecteur de Cycle de départ Interactif -->
         <div class="menu-cycle-box">
@@ -76,22 +136,28 @@
             </div>
             <button id="menu-btn-next" class="btn-cycle-nav" title="Cycle suivant">►</button>
           </div>
-          <div id="menu-cycle-troll" class="menu-troll-hint">TROMBES D'EAU ABYSSALES : Piliers noirs tombant du ciel en piqué</div>
         </div>
 
-        <!-- Bouton Géant JOUER / PLAY avec Effet Shimmer -->
-        <button id="btn-play-game" class="btn-play-giant">
+        <!-- Bouton Géant JOUER / PLAY Dynamique (Bloqué si non connecté ou sans pseudo) -->
+        <button id="btn-play-game" class="btn-play-giant locked">
           <div class="btn-shimmer"></div>
-          <span class="btn-play-icon">▶</span>
-          <span class="btn-play-text">JOUER &bull; DÉCOLLER</span>
-          <span class="btn-play-sub">[ ESPACE ou CLIQUEZ POUR VOLER ]</span>
+          <span id="btn-play-icon" class="btn-play-icon">🔒</span>
+          <span id="btn-play-text" class="btn-play-text">CONNEXION GOOGLE REQUISE</span>
+          <span id="btn-play-sub" class="btn-play-sub">[ CONNECTEZ-VOUS POUR DÉCOLLER ]</span>
+        </button>
+
+        <!-- Bouton Accès au Classement Mondial Réel -->
+        <button id="btn-open-leaderboard" class="btn-open-leaderboard" type="button">
+          <span class="btn-lb-icon">🏆</span>
+          <span class="btn-lb-text">CLASSEMENT MONDIAL</span>
+          <span class="btn-lb-tag">EN DIRECT</span>
         </button>
 
         <!-- Guide des Commandes Minimaliste -->
         <div class="menu-controls-grid">
-          <div class="ctrl-item"><kbd>Q</kbd> <kbd>D</kbd> ou <kbd>◄</kbd> <kbd>►</kbd> <span>Virage & Roulis</span></div>
+          <div class="ctrl-item"><kbd>Q</kbd> <kbd>D</kbd> ou <kbd>◄</kbd> <kbd>►</kbd> <span>Virage</span></div>
           <div class="ctrl-item"><kbd>Z</kbd> <kbd>S</kbd> ou <kbd>▲</kbd> <kbd>▼</kbd> <span>Cabrer / Piquer</span></div>
-          <div class="ctrl-item"><span class="neon-heart">♥</span> <span>Cœurs de Nity</span></div>
+          <div class="ctrl-item"><span class="neon-heart">♥</span> <span>Cœurs (+25 énergie)</span></div>
         </div>
       </div>
     </div>
@@ -209,10 +275,148 @@
           <div id="final-rank-sub" class="rank-sub">BON SCORE — Belle endurance dans l'abysse gravitationnel.</div>
         </div>
 
+        <!-- Notification et Enregistrement au Classement Mondial -->
+        <div class="gameover-world-banner">
+          <div class="gw-status">
+            <span class="gw-icon">🌐</span>
+            <div class="gw-text">
+              <strong id="gameover-world-status">ENREGISTREMENT AU CLASSEMENT MONDIAL...</strong>
+              <span id="gameover-world-rank-text">Connexion au serveur cloud...</span>
+            </div>
+          </div>
+          <button id="btn-gameover-leaderboard" class="btn-lb-mini" type="button">
+            🏆 VOIR LE CLASSEMENT MONDIAL
+          </button>
+        </div>
+
         <button id="btn-restart" class="btn-restart">
           <span class="btn-restart-text">REPRENDRE LA TRAVERSÉE</span>
           <span class="btn-restart-sub">[ ESPACE ou ENTRÉE ]</span>
         </button>
+      </div>
+    </div>
+
+    <!-- MODAL CHOIX DU PSEUDO DU JOUEUR -->
+    <div id="pseudo-modal" class="modal-overlay hidden">
+      <div class="modal-card pseudo-card">
+        <div class="modal-top-bar"></div>
+        <div class="modal-badge">// ENREGISTREMENT OFFICIEL PILOTE</div>
+        <h2 class="modal-title">CHOISIS TON PSEUDO</h2>
+        <p class="modal-instruction">
+          Ce pseudo sera inscrit en temps réel dans le <strong>Classement Mondial</strong> avec votre compte Google.
+        </p>
+
+        <div class="pseudo-profile-preview">
+          <img id="pseudo-avatar-preview" class="pseudo-avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=pilot&backgroundColor=020617" alt="Avatar" />
+          <div class="pseudo-google-info">
+            <span id="pseudo-google-name" class="pseudo-g-name">Pilote Google</span>
+            <span id="pseudo-google-email" class="pseudo-g-email">compte@gmail.com</span>
+          </div>
+        </div>
+
+        <form id="form-pseudo" class="form-pseudo" onsubmit="return false;">
+          <div class="pseudo-input-group">
+            <span class="pseudo-prefix">@</span>
+            <input id="input-player-pseudo" type="text" maxlength="18" placeholder="Ex: InfiMaster, NovaRunner..." autocomplete="off" />
+          </div>
+          <div id="pseudo-error-msg" class="pseudo-error-msg hidden"></div>
+
+          <button id="btn-confirm-pseudo" class="btn-play-giant btn-pseudo-confirm" type="submit">
+            <div class="btn-shimmer"></div>
+            <span class="btn-play-text">VALIDER MON PSEUDO & DÉCOLLER</span>
+            <span class="btn-play-sub">[ ENREGISTREMENT AU CLASSEMENT MONDIAL ]</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL CONNEXION DIRECTE COMPTE GOOGLE -->
+    <div id="google-login-modal" class="modal-overlay hidden">
+      <div class="modal-card google-login-card">
+        <div class="modal-top-bar"></div>
+        <button id="btn-close-google-modal" class="modal-close-corner" type="button" title="Fermer">✖</button>
+        <div class="modal-badge">// CONNEXION GOOGLE OFFICIELLE</div>
+        <h2 class="modal-title">CONNECTER UN COMPTE GOOGLE</h2>
+        <p class="modal-instruction">
+          Entrez votre adresse email Google / Gmail pour lier votre compte et enregistrer vos records mondiaux.
+        </p>
+
+        <form id="form-google-login" class="form-google-login" onsubmit="return false;">
+          <div class="form-field">
+            <label for="input-google-email">ADRESSE EMAIL GOOGLE (GMAIL)</label>
+            <input id="input-google-email" type="email" placeholder="votre.compte@gmail.com" required />
+          </div>
+          <div class="form-field">
+            <label for="input-google-name">NOM DE PILOTE OU PRÉNOM</label>
+            <input id="input-google-name" type="text" placeholder="Prénom ou Nom" />
+          </div>
+          <div id="google-login-error" class="pseudo-error-msg hidden"></div>
+
+          <button id="btn-confirm-google-login" class="btn-play-giant btn-google-confirm" type="submit">
+            <span class="btn-play-text">SE CONNECTER AVEC CE COMPTE GOOGLE</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL CLASSEMENT MONDIAL EN DIRECT (VRAI SERVEUR CLOUD) -->
+    <div id="leaderboard-modal" class="modal-overlay hidden">
+      <div class="modal-card leaderboard-card">
+        <div class="modal-top-bar"></div>
+        <button id="btn-close-leaderboard" class="modal-close-corner" type="button" title="Fermer">✖</button>
+
+        <div class="lb-header">
+          <div class="modal-badge">// SOUNDRISE WORLD CHAMPIONSHIP</div>
+          <h2 class="modal-title">🏆 CLASSEMENT MONDIAL</h2>
+          <div class="lb-live-status">
+            <span class="live-dot"></span>
+            <span>SERVEUR CLOUD EN DIRECT &bull; SYNCHRONISÉ MONDIALEMENT</span>
+          </div>
+        </div>
+
+        <!-- Carte de statut du joueur connecté -->
+        <div id="lb-player-card" class="lb-player-banner">
+          <div class="lb-player-avatar-wrap">
+            <img id="lb-my-avatar" class="lb-my-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=pilot&backgroundColor=020617" alt="Avatar" />
+          </div>
+          <div class="lb-player-details">
+            <span class="lb-my-title">VOTRE RECORD PERSONNEL</span>
+            <div class="lb-my-main-info">
+              <strong id="lb-my-pseudo" class="lb-my-pseudo">--</strong>
+              <span class="lb-my-rank-badge">RANG MONDIAL : <strong id="lb-my-rank">#--</strong></span>
+            </div>
+          </div>
+          <div class="lb-my-score-box">
+            <span class="lb-score-label">MEILLEUR SCORE</span>
+            <strong id="lb-my-score" class="lb-score-num">0 PTS</strong>
+          </div>
+        </div>
+
+        <!-- Tableau des scores mondiaux scrollable -->
+        <div class="lb-table-container">
+          <div class="lb-table-header">
+            <span class="col-rank">RANG</span>
+            <span class="col-pilot">PILOTE</span>
+            <span class="col-score">SCORE</span>
+            <span class="col-distance">DISTANCE</span>
+            <span class="col-speed">VITESSE</span>
+            <span class="col-cycle">CYCLE</span>
+            <span class="col-date">DATE</span>
+          </div>
+          <div id="lb-table-body" class="lb-table-body">
+            <div class="lb-loading">Chargement des records mondiaux en cours...</div>
+          </div>
+        </div>
+
+        <!-- Pied du modal avec actions -->
+        <div class="lb-footer">
+          <button id="btn-refresh-leaderboard" class="btn-lb-action" type="button">
+            <span>🔄</span> <span>ACTUALISER EN DIRECT</span>
+          </button>
+          <button id="btn-dismiss-leaderboard" class="btn-lb-action btn-lb-close" type="button">
+            FERMER
+          </button>
+        </div>
       </div>
     </div>
 
