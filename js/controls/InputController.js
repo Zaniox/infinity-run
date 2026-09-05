@@ -1,12 +1,20 @@
 export class InputController {
   constructor() {
-    this.axis = 0; // -1 (gauche) à +1 (droite)
+    this.axisX = 0; // -1 (gauche) à +1 (droite)
+    this.axisY = 0; // -1 (piqué / descente) à +1 (cabré / montée)
+
+    // État des touches clavier
     this.keyLeft = false;
     this.keyRight = false;
+    this.keyUp = false;
+    this.keyDown = false;
 
+    // Souris & tactile
     this.isPointerDown = false;
     this.pointerStartX = 0;
+    this.pointerStartY = 0;
     this.pointerDeltaX = 0;
+    this.pointerDeltaY = 0;
 
     this.initKeyboard();
     this.initPointer();
@@ -14,14 +22,23 @@ export class InputController {
 
   initKeyboard() {
     window.addEventListener('keydown', (e) => {
-      // Flèches et touches Q/D (ou A/D)
+      // Latéral
       if (['ArrowLeft', 'KeyA', 'KeyQ'].includes(e.code)) {
         this.keyLeft = true;
       }
       if (['ArrowRight', 'KeyD'].includes(e.code)) {
         this.keyRight = true;
       }
-      this.updateAxis();
+
+      // Vertical (Vol : Monter / Descendre)
+      if (['ArrowUp', 'KeyW', 'KeyZ'].includes(e.code)) {
+        this.keyUp = true;
+      }
+      if (['ArrowDown', 'KeyS'].includes(e.code)) {
+        this.keyDown = true;
+      }
+
+      this.updateAxes();
     });
 
     window.addEventListener('keyup', (e) => {
@@ -31,35 +48,49 @@ export class InputController {
       if (['ArrowRight', 'KeyD'].includes(e.code)) {
         this.keyRight = false;
       }
-      this.updateAxis();
+      if (['ArrowUp', 'KeyW', 'KeyZ'].includes(e.code)) {
+        this.keyUp = false;
+      }
+      if (['ArrowDown', 'KeyS'].includes(e.code)) {
+        this.keyDown = false;
+      }
+
+      this.updateAxes();
     });
   }
 
   initPointer() {
-    // Gestion souris et écran tactile
     window.addEventListener('pointerdown', (e) => {
       this.isPointerDown = true;
       this.pointerStartX = e.clientX;
+      this.pointerStartY = e.clientY;
       this.pointerDeltaX = 0;
+      this.pointerDeltaY = 0;
     });
 
     window.addEventListener('pointermove', (e) => {
       if (this.isPointerDown) {
-        // Déplacement par glissement (drag)
-        const diff = (e.clientX - this.pointerStartX) / (window.innerWidth * 0.22);
-        this.pointerDeltaX = Math.max(-1, Math.min(1, diff));
-        this.updateAxis();
+        // Mode glissement (drag 2D)
+        const diffX = (e.clientX - this.pointerStartX) / (window.innerWidth * 0.22);
+        const diffY = (this.pointerStartY - e.clientY) / (window.innerHeight * 0.22); // Vers le haut = positif
+
+        this.pointerDeltaX = Math.max(-1, Math.min(1, diffX));
+        this.pointerDeltaY = Math.max(-1, Math.min(1, diffY));
+        this.updateAxes();
       } else {
-        // Suivi léger de la souris
-        const normalizedX = (e.clientX / window.innerWidth) * 2 - 1;
-        if (Math.abs(normalizedX) > 0.12) {
-          const steer = (Math.abs(normalizedX) - 0.12) / 0.88;
-          this.pointerDeltaX = Math.sign(normalizedX) * steer;
-        } else {
-          this.pointerDeltaX = 0;
-        }
+        // Suivi libre de la souris
+        const normX = (e.clientX / window.innerWidth) * 2 - 1;
+        const normY = -((e.clientY / window.innerHeight) * 2 - 1); // Haut = positif
+
+        // Deadzones
+        this.pointerDeltaX = Math.abs(normX) > 0.1 ? Math.sign(normX) * ((Math.abs(normX) - 0.1) / 0.9) : 0;
+        this.pointerDeltaY = Math.abs(normY) > 0.12 ? Math.sign(normY) * ((Math.abs(normY) - 0.12) / 0.88) : 0;
+
         if (!this.keyLeft && !this.keyRight) {
-          this.axis = this.pointerDeltaX;
+          this.axisX = this.pointerDeltaX;
+        }
+        if (!this.keyUp && !this.keyDown) {
+          this.axisY = this.pointerDeltaY;
         }
       }
     });
@@ -67,28 +98,43 @@ export class InputController {
     const resetPointer = () => {
       this.isPointerDown = false;
       this.pointerDeltaX = 0;
-      this.updateAxis();
+      this.pointerDeltaY = 0;
+      this.updateAxes();
     };
 
     window.addEventListener('pointerup', resetPointer);
     window.addEventListener('pointercancel', resetPointer);
   }
 
-  updateAxis() {
+  updateAxes() {
+    // Axe X
     if (this.keyLeft && !this.keyRight) {
-      this.axis = -1;
+      this.axisX = -1;
     } else if (this.keyRight && !this.keyLeft) {
-      this.axis = 1;
-    } else if (this.isPointerDown) {
-      this.axis = this.pointerDeltaX;
-    } else if (!this.keyLeft && !this.keyRight) {
-      this.axis = this.pointerDeltaX;
+      this.axisX = 1;
+    } else if (this.isPointerDown || (!this.keyLeft && !this.keyRight)) {
+      this.axisX = this.pointerDeltaX;
     } else {
-      this.axis = 0;
+      this.axisX = 0;
+    }
+
+    // Axe Y (Vol)
+    if (this.keyUp && !this.keyDown) {
+      this.axisY = 1;  // Monter / cabrer
+    } else if (this.keyDown && !this.keyUp) {
+      this.axisY = -1; // Piquer / descendre
+    } else if (this.isPointerDown || (!this.keyUp && !this.keyDown)) {
+      this.axisY = this.pointerDeltaY;
+    } else {
+      this.axisY = 0;
     }
   }
 
-  getAxis() {
-    return this.axis;
+  getAxisX() {
+    return this.axisX;
+  }
+
+  getAxisY() {
+    return this.axisY;
   }
 }

@@ -6,7 +6,7 @@
   <title>// SOUNDRISE : INFINITY RUN</title>
   <link rel="stylesheet" href="css/style.css" />
 
-  <!-- Importmap pour Three.js sans bundler / 100% compatible GitHub Pages -->
+  <!-- Three.js ES Modules -->
   <script type="importmap">
     {
       "imports": {
@@ -19,16 +19,41 @@
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
 
-    <!-- Interface HUD Minimaliste -->
+    <!-- UI Overlay Cyber-Baroque OodaïSound -->
     <div id="hud-overlay">
       <header class="hud-header">
-        <h1 class="hud-title">// SOUNDRISE <span class="neon-cyan">: INFINITY RUN</span></h1>
-        <div class="hud-badge">PHASE 1 &bull; 3D SKELETON</div>
+        <div class="hud-brand">
+          <h1 class="hud-title">// SOUNDRISE <span class="neon-magenta">: INFINITY RUN</span></h1>
+          <div class="hud-subtitle">CYCLE 1 &bull; GLIDER WINGS</div>
+        </div>
+
+        <!-- Jauge d'Énergie du Cœur Néon -->
+        <div class="hud-heart-gauge">
+          <div class="gauge-label">
+            <span class="heart-icon">♥</span> ÉNERGIE CŒUR
+          </div>
+          <div class="gauge-bar">
+            <div id="heart-energy-fill" class="gauge-fill"></div>
+          </div>
+        </div>
       </header>
+
+      <!-- Télémétrie de vol (Vitesse & Altitude) -->
+      <aside class="hud-telemetry">
+        <div class="telemetry-item">
+          <span class="telemetry-tag">VITESSE</span>
+          <span id="hud-speed" class="telemetry-value">234 KM/H</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-tag">ALTITUDE</span>
+          <span id="hud-altitude" class="telemetry-value">12 M</span>
+        </div>
+      </aside>
 
       <footer class="hud-footer">
         <div class="hud-controls-hint">
-          <span class="key-hint">◄</span> <span class="key-hint">►</span> ou <span class="key-hint">Q</span> / <span class="key-hint">D</span> &bull; Glisser Souris / Tactile
+          <span class="key-hint">▲</span> <span class="key-hint">▼</span> Cabrer / Piquer &bull; 
+          <span class="key-hint">◄</span> <span class="key-hint">►</span> ou <span class="key-hint">Q</span> / <span class="key-hint">D</span> Virage &bull; Glisser Souris / Tactile 2D
         </div>
       </footer>
     </div>

@@ -3,13 +3,10 @@ import * as THREE from 'three';
 export class InfiniteGrid {
   constructor(scene) {
     this.scene = scene;
-    this.speed = 65.0; // Vitesse constante de défilement vers la caméra
-
-    // Dimensions de la grille
-    this.trackWidth = 80;
-    this.sectionLength = 240;
-    this.gridWidthSegments = 40;
-    this.gridLengthSegments = 120;
+    this.trackWidth = 84;
+    this.sectionLength = 260;
+    this.gridWidthSegments = 42;
+    this.gridLengthSegments = 130;
 
     this.group = new THREE.Group();
     this.sections = [];
@@ -19,23 +16,22 @@ export class InfiniteGrid {
   }
 
   createGridSections() {
-    // Matériau filaire (wireframe) couleur cyan néon (#00f0ff)
+    // Matériau filaire cyan néon éclatant
     const wireMaterial = new THREE.MeshBasicMaterial({
       color: 0x00f0ff,
       wireframe: true,
       transparent: true,
-      opacity: 0.75
+      opacity: 0.72
     });
 
-    // Sous-couche opaque sombre
+    // Sous-sol sombre absorbant
     const baseMaterial = new THREE.MeshBasicMaterial({
-      color: 0x030108,
+      color: 0x030107,
       polygonOffset: true,
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 1
     });
 
-    // Deux grands segments juxtaposés en Z pour une boucle infinie continue
     for (let i = 0; i < 2; i++) {
       const sectionGroup = new THREE.Group();
 
@@ -46,21 +42,17 @@ export class InfiniteGrid {
         this.gridLengthSegments
       );
 
-      // Sol sombre occultant
       const baseMesh = new THREE.Mesh(geom, baseMaterial);
       baseMesh.rotation.x = -Math.PI / 2;
       sectionGroup.add(baseMesh);
 
-      // Grille filaire cyan néon
       const wireMesh = new THREE.Mesh(geom, wireMaterial);
       wireMesh.rotation.x = -Math.PI / 2;
       wireMesh.position.y = 0.01;
       sectionGroup.add(wireMesh);
 
-      // Bordures de guidage cyan néon intense
       this.addBorderGuides(sectionGroup);
 
-      // Positionnement initial en Z
       sectionGroup.position.z = -i * this.sectionLength;
       this.sections.push(sectionGroup);
       this.group.add(sectionGroup);
@@ -74,7 +66,7 @@ export class InfiniteGrid {
     });
 
     const halfLength = this.sectionLength / 2;
-    const borderOffsets = [-16, 16];
+    const borderOffsets = [-17, 17];
 
     borderOffsets.forEach((x) => {
       const points = [
@@ -87,15 +79,14 @@ export class InfiniteGrid {
     });
   }
 
-  update(deltaTime) {
-    const deltaZ = this.speed * deltaTime;
+  update(deltaTime, forwardSpeed = 65.0) {
+    // Défilement dynamique basé sur la vitesse de planeur
+    const deltaZ = forwardSpeed * deltaTime;
 
     for (let i = 0; i < this.sections.length; i++) {
       const section = this.sections[i];
-      // Le sol défile vers la caméra (+Z) à vitesse constante
       section.position.z += deltaZ;
 
-      // Quand une section passe derrière la caméra, elle boucle sans couture vers l'avant
       if (section.position.z >= this.sectionLength) {
         section.position.z -= this.sectionLength * 2;
       }

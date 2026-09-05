@@ -15,22 +15,20 @@ export class Engine {
 
   initScene() {
     this.scene = new THREE.Scene();
-    // Brume atmosphérique sombre pour fondre l'horizon
-    this.scene.fog = new THREE.FogExp2(0x04010b, 0.0075);
+    // Brume volumétrique violet foncé profonde pour fondre l'horizon
+    this.scene.fog = new THREE.FogExp2(0x050110, 0.0055);
   }
 
   initCamera() {
-    // Caméra perspective 3e personne avec légère plongée
+    // Caméra perspective 3e personne en légère plongée
     this.camera = new THREE.PerspectiveCamera(
       64,
       this.width / this.height,
       0.1,
-      1000
+      1200
     );
-    // Position : légèrement surélevée et en arrière de la sphère
-    this.camera.position.set(0, 4.0, 9.0);
-    // Cible : point central en avant sur la piste
-    this.cameraTarget = new THREE.Vector3(0, 1.0, -12);
+    this.camera.position.set(0, 4.2, 9.5);
+    this.cameraTarget = new THREE.Vector3(0, 2.0, -15);
     this.camera.lookAt(this.cameraTarget);
   }
 
@@ -43,28 +41,29 @@ export class Engine {
     this.renderer.setSize(this.width, this.height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.1;
+    this.renderer.toneMappingExposure = 1.25;
   }
 
   initLights() {
-    // Lumière ambiante douce
-    const ambientLight = new THREE.AmbientLight(0x18052e, 1.5);
+    // Ambiance violet sombre
+    const ambientLight = new THREE.AmbientLight(0x280540, 1.6);
     this.scene.add(ambientLight);
 
-    // Lumière néon cyan rasante
-    const cyanLight = new THREE.DirectionalLight(0x00f0ff, 2.5);
-    cyanLight.position.set(10, 12, 6);
-    this.scene.add(cyanLight);
+    // Key Light magenta puissant (reflets vernis supérieurs)
+    const keyLight = new THREE.DirectionalLight(0xff2ea6, 3.2);
+    keyLight.position.set(12, 20, 10);
+    this.scene.add(keyLight);
 
-    // Lumière néon magenta en contre-champ
-    const magentaLight = new THREE.DirectionalLight(0xff007f, 2.0);
-    magentaLight.position.set(-10, 10, -6);
-    this.scene.add(magentaLight);
+    // Rim Light cyan néon électrique (contour réflexif sur les flancs)
+    const rimLight = new THREE.DirectionalLight(0x00f0ff, 2.8);
+    rimLight.position.set(-12, 12, -6);
+    this.scene.add(rimLight);
 
-    // Lumière ponctuelle sous la sphère
-    this.playerLight = new THREE.PointLight(0x00f0ff, 2.0, 25);
-    this.playerLight.position.set(0, 0.8, 0);
-    this.scene.add(this.playerLight);
+    // Lumière rasante douce au sol
+    const groundGlow = new THREE.PointLight(0x7928ca, 2.0, 40);
+    groundGlow.position.set(0, 1.0, 5);
+    this.scene.add(groundGlow);
+    this.groundGlow = groundGlow;
   }
 
   initResizeListener() {
