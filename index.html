@@ -6,6 +6,9 @@
   <title>// SOUNDRISE : INFINITY RUN</title>
   <link rel="stylesheet" href="style.css" />
 
+  <!-- Tone.js pour la synthèse sonore et l'analyse FFT audio-réactive -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
   <!-- Importmap Three.js avec support officiel des Addons (UnrealBloomPass, EffectComposer) -->
   <script type="importmap">
     {
@@ -20,27 +23,47 @@
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
 
+    <!-- Écran flash lors du Speed Boost (Fragment d'Infini) -->
+    <div id="speed-boost-fx"></div>
+
     <!-- UI Overlay Cyber-Baroque OodaïSound -->
     <div id="hud-overlay">
       <header class="hud-header">
         <div class="hud-brand">
-          <h1 class="hud-title">// SOUNDRISE <span class="neon-nity">: INFINITY RUN</span></h1>
-          <div class="hud-subtitle">CYCLE 1 &bull; INFI GLIDER WINGS</div>
+          <h1 class="hud-title">// SOUNDRISE <span id="neon-accent-title" class="neon-dynamic">: INFINITY RUN</span></h1>
+          <!-- Sélecteur des 8 Cycles d'OodaïSound -->
+          <div class="hud-cycle-selector">
+            <button id="btn-prev-cycle" class="btn-cycle-nav" title="Cycle précédent">◄</button>
+            <div id="hud-cycle-name" class="cycle-tag">CYCLE 1 &bull; ÉVEIL</div>
+            <button id="btn-next-cycle" class="btn-cycle-nav" title="Cycle suivant">►</button>
+          </div>
         </div>
 
-        <!-- Jauge d'Énergie du Cœur d'Infi -->
-        <div class="hud-heart-gauge">
-          <div class="gauge-label">
-            <span class="heart-icon">♥</span> ÉNERGIE CŒUR
-          </div>
-          <div class="gauge-bar">
-            <div id="heart-energy-fill" class="gauge-fill"></div>
+        <div class="hud-header-right">
+          <!-- Bouton Contrôle Audio Tone.js -->
+          <button id="btn-audio-toggle" class="btn-audio">
+            <span id="audio-icon">🔇</span>
+            <span id="audio-label">ACTIVER LE SON</span>
+          </button>
+
+          <!-- Jauge d'Énergie du Cœur d'Infi -->
+          <div class="hud-heart-gauge">
+            <div class="gauge-label">
+              <span class="heart-icon">♥</span> ÉNERGIE CŒUR
+            </div>
+            <div class="gauge-bar">
+              <div id="heart-energy-fill" class="gauge-fill"></div>
+            </div>
           </div>
         </div>
       </header>
 
-      <!-- Télémétrie de vol (Vitesse & Altitude) -->
+      <!-- Télémétrie de vol (Vitesse, Altitude, Distance) -->
       <aside class="hud-telemetry">
+        <div class="telemetry-item">
+          <span class="telemetry-tag">DISTANCE</span>
+          <span id="hud-distance" class="telemetry-value">0 M</span>
+        </div>
         <div class="telemetry-item">
           <span class="telemetry-tag">VITESSE</span>
           <span id="hud-speed" class="telemetry-value">252 KM/H</span>
@@ -61,6 +84,31 @@
           <span class="key-hint">◄</span> <span class="key-hint">►</span> ou <span class="key-hint">Q</span> / <span class="key-hint">D</span> Virage &bull; Glisser Souris / Tactile 2D
         </div>
       </footer>
+    </div>
+
+    <!-- Modal Game Over Épuré Cyber-Baroque -->
+    <div id="game-over-modal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div id="modal-glitch-bar" class="modal-glitch-bar"></div>
+        <h2 class="modal-title">// SIGNAL ROMPU</h2>
+        <div id="death-reason" class="modal-reason">IMPACT CRITIQUE &bull; AVATAR DÉSINTÉGRÉ</div>
+
+        <div class="modal-stats">
+          <div class="stat-box">
+            <span class="stat-label">DISTANCE PARCOURUE</span>
+            <span id="final-distance" class="stat-value">0 M</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">VITESSE MAXIMALE</span>
+            <span id="final-speed" class="stat-value">0 KM/H</span>
+          </div>
+        </div>
+
+        <button id="btn-restart" class="btn-neon-primary">
+          <span class="btn-text">REPRENDRE LE VOL</span>
+          <span class="btn-subtext">[ ESPACE ou ENTRÉE ]</span>
+        </button>
+      </div>
     </div>
   </div>
 

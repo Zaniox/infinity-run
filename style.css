@@ -31,6 +31,24 @@ html, body {
   display: block;
 }
 
+/* Flash de Speed Boost (Fragment d'Infini) */
+#speed-boost-fx {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.45) 0%, rgba(189, 0, 255, 0.25) 50%, transparent 80%);
+  opacity: 0;
+  transition: opacity 0.12s ease-out;
+  z-index: 4;
+}
+
+#speed-boost-fx.active {
+  opacity: 1;
+}
+
 /* UI Overlay Minimaliste Cyber-Baroque */
 #hud-overlay {
   position: absolute;
@@ -57,7 +75,7 @@ html, body {
 .hud-brand {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
 .hud-title {
@@ -68,16 +86,92 @@ html, body {
   text-shadow: 0 0 12px rgba(189, 0, 255, 0.8), 0 0 24px rgba(0, 240, 255, 0.4);
 }
 
-.neon-nity {
+.neon-dynamic {
   color: #00f0ff;
-  text-shadow: 0 0 15px rgba(0, 240, 255, 0.9);
+  text-shadow: 0 0 15px currentColor;
+  transition: color 0.8s ease;
 }
 
-.hud-subtitle {
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
-  font-weight: 700;
+/* Sélecteur des 8 Cycles */
+.hud-cycle-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.btn-cycle-nav {
+  background: rgba(18, 5, 32, 0.7);
+  border: 1px solid rgba(168, 85, 247, 0.4);
   color: #c084fc;
+  border-radius: 4px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  transition: all 0.15s ease;
+}
+
+.btn-cycle-nav:hover {
+  background: rgba(168, 85, 247, 0.3);
+  color: #ffffff;
+  border-color: #00f0ff;
+}
+
+.cycle-tag {
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  font-weight: 800;
+  color: #00f0ff;
+  background: rgba(10, 3, 22, 0.8);
+  border: 1px solid currentColor;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  text-shadow: 0 0 10px currentColor;
+  transition: all 0.8s ease;
+}
+
+.hud-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+/* Bouton Audio Tone.js */
+.btn-audio {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(18, 4, 34, 0.75);
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  color: #f1f5f9;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
+}
+
+.btn-audio:hover {
+  border-color: #00f0ff;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-audio.active {
+  border-color: #00f0ff;
+  color: #00f0ff;
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.5);
 }
 
 /* Jauge d'Énergie du Cœur */
@@ -149,7 +243,7 @@ html, body {
   bottom: 85px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .telemetry-item {
@@ -163,6 +257,7 @@ html, body {
   border-radius: 8px;
   border-left: 3px solid #00f0ff;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  transition: border-color 0.8s ease;
 }
 
 .telemetry-tag {
@@ -177,8 +272,9 @@ html, body {
   letter-spacing: 0.1em;
   color: #00f0ff;
   font-weight: 800;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+  text-shadow: 0 0 10px currentColor;
   font-family: 'Consolas', monospace;
+  transition: color 0.8s ease;
 }
 
 .telemetry-target {
@@ -221,4 +317,149 @@ html, body {
   border-radius: 4px;
   font-size: 0.76rem;
   box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+/* Modal Game Over Épuré */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(4, 1, 10, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 10;
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+
+.modal-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-card {
+  width: 90%;
+  max-width: 440px;
+  background: rgba(18, 5, 34, 0.88);
+  border: 1px solid rgba(255, 46, 166, 0.4);
+  border-radius: 16px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  box-shadow: 0 0 35px rgba(255, 46, 166, 0.35), 0 0 80px rgba(147, 51, 234, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-glitch-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #00f0ff, #ff2ea6, #a855f7);
+  box-shadow: 0 0 15px #ff2ea6;
+}
+
+.modal-title {
+  font-size: 1.35rem;
+  letter-spacing: 0.22em;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 0 15px rgba(255, 46, 166, 0.9);
+}
+
+.modal-reason {
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  color: #ff4d6d;
+  text-align: center;
+  padding: 6px 14px;
+  background: rgba(239, 68, 68, 0.12);
+  border-radius: 6px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.modal-stats {
+  display: flex;
+  width: 100%;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.stat-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(28, 8, 52, 0.65);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 10px;
+  padding: 12px 8px;
+}
+
+.stat-label {
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  color: #a855f7;
+  font-weight: 700;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+  color: #00f0ff;
+  font-weight: 900;
+  font-family: 'Consolas', monospace;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+}
+
+.btn-neon-primary {
+  width: 100%;
+  padding: 14px 20px;
+  margin-top: 8px;
+  background: linear-gradient(135deg, #ff2ea6, #9333ea);
+  border: 1px solid #ffffff;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  box-shadow: 0 0 25px rgba(255, 46, 166, 0.6);
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+  pointer-events: auto;
+}
+
+.btn-neon-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 35px rgba(255, 46, 166, 0.9);
+}
+
+.btn-neon-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-text {
+  font-size: 0.92rem;
+  letter-spacing: 0.22em;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+.btn-subtext {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
 }

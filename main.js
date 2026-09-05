@@ -6,45 +6,110 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 /**
  * // SOUNDRISE : INFINITY RUN
- * Phase 2 & 3 : Infi & Nity Visuels Haute Fidélité, Bloom Post-Processing & Physique de Vol Glider
+ * Architecture Complète : Moteur 3D, Post-Processing Bloom, Audio Tone.js,
+ * 8 Cycles d'OodaïSound, Obstacles Procéduraux, Fragments d'Infini et Physique Glider.
  */
 
-class GameEngine {
+// Données des 8 Cycles de l'œuvre "Soundrise : Infinity"
+const CYCLES = [
+  { id: 1, name: "ÉVEIL", bpm: 128, primary: 0x00f0ff, secondary: 0xbd00ff, fog: 0x050112, light: 0x00f0ff, desc: "Cyan / Violet" },
+  { id: 2, name: "CHUTE", bpm: 134, primary: 0xff007f, secondary: 0x7928ca, fog: 0x0e0114, light: 0xff007f, desc: "Magenta / Pourpre" },
+  { id: 3, name: "CHAOS", bpm: 142, primary: 0xff003c, secondary: 0xff7700, fog: 0x140103, light: 0xff003c, desc: "Rouge / Braise" },
+  { id: 4, name: "AMBITION", bpm: 130, primary: 0xffb703, secondary: 0xfb8500, fog: 0x140801, light: 0xffb703, desc: "Or / Ambre" },
+  { id: 5, name: "RENAISSANCE", bpm: 136, primary: 0x00ff88, secondary: 0x00b4d8, fog: 0x011408, light: 0x00ff88, desc: "Émeraude / Cyan" },
+  { id: 6, name: "ZÉNITH", bpm: 140, primary: 0x38bdf8, secondary: 0x6366f1, fog: 0x030817, light: 0x38bdf8, desc: "Bleu Glace / Indigo" },
+  { id: 7, name: "NÉANT", bpm: 125, primary: 0xa855f7, secondary: 0xe2e8f0, fog: 0x020108, light: 0xa855f7, desc: "Violet Sombre / Argent" },
+  { id: 8, name: "INFINI", bpm: 146, primary: 0xffffff, secondary: 0xfef08a, fog: 0x0d091a, light: 0xffffff, desc: "Blanc Pur / Céleste" }
+];
+
+class SoundriseGame {
   constructor() {
     this.canvas = document.getElementById('game-canvas');
     this.clock = new THREE.Clock();
 
-    // DOM HUD
-    this.energyBar = document.getElementById('heart-energy-fill');
-    this.speedText = document.getElementById('hud-speed');
-    this.altitudeText = document.getElementById('hud-altitude');
+    // États de jeu
+    this.STATE_PLAYING = 'PLAYING';
+    this.STATE_DYING = 'DYING';
+    this.STATE_GAMEOVER = 'GAMEOVER';
+    this.state = this.STATE_PLAYING;
 
+    // Progression des 8 Cycles
+    this.currentCycleIndex = 0;
+    this.currentCycle = CYCLES[0];
+
+    // Stats de vol
+    this.distance = 0;
+    this.maxSpeed = 0;
+    this.baseSpeed = 68.0;
+    this.currentSpeed = 68.0;
+    this.boostTimer = 0;
+
+    // Éléments du DOM
+    this.initDOMElements();
+
+    // Moteur 3D Three.js & Post-Processing
     this.initScene();
     this.initCamera();
     this.initRenderer();
     this.initPostProcessing();
     this.initLights();
     this.initInputs();
+
+    // Entités du monde
     this.createInfiniteGrid();
-    this.createPlayerInfi();
-    this.createHorizonNity();
+    this.createInfiPlayer();
+    this.createNityBeacon();
+    this.initObstacles();
+    this.initDislocationFX();
+
+    // Moteur Audio Tone.js
+    this.initAudioEngine();
+
+    // Événements d'interface
+    this.initUIEvents();
     this.initResize();
 
     this.animate = this.animate.bind(this);
     requestAnimationFrame(this.animate);
   }
 
-  // --- 1. SCÈNE & FOND NOIR SPATIAL ---
-  initScene() {
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x020006);
-    this.scene.fog = new THREE.FogExp2(0x04010a, 0.005);
+  // --- 1. DOM HUD & MODALS ---
+  initDOMElements() {
+    this.energyBar = document.getElementById('heart-energy-fill');
+    this.speedText = document.getElementById('hud-speed');
+    this.altitudeText = document.getElementById('hud-altitude');
+    this.distanceText = document.getElementById('hud-distance');
+    this.cycleNameText = document.getElementById('hud-cycle-name');
+    this.neonAccentTitle = document.getElementById('neon-accent-title');
+
+    this.btnAudioToggle = document.getElementById('btn-audio-toggle');
+    this.audioIcon = document.getElementById('audio-icon');
+    this.audioLabel = document.getElementById('audio-label');
+
+    this.btnPrevCycle = document.getElementById('btn-prev-cycle');
+    this.btnNextCycle = document.getElementById('btn-next-cycle');
+
+    this.speedBoostFX = document.getElementById('speed-boost-fx');
+
+    this.gameOverModal = document.getElementById('game-over-modal');
+    this.deathReasonText = document.getElementById('death-reason');
+    this.finalDistanceText = document.getElementById('final-distance');
+    this.finalSpeedText = document.getElementById('final-speed');
+    this.btnRestart = document.getElementById('btn-restart');
+    this.modalGlitchBar = document.getElementById('modal-glitch-bar');
   }
 
-  // --- 2. CAMÉRA TROISIÈME PERSONNE ---
+  // --- 2. SCÈNE & CAMÉRA ---
+  initScene() {
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(this.currentCycle.fog);
+    this.scene.fog = new THREE.FogExp2(this.currentCycle.fog, 0.0052);
+  }
+
   initCamera() {
+    this.baseFOV = 62;
     this.camera = new THREE.PerspectiveCamera(
-      62,
+      this.baseFOV,
       window.innerWidth / window.innerHeight,
       0.1,
       1200
@@ -54,7 +119,7 @@ class GameEngine {
     this.camera.lookAt(this.cameraTarget);
   }
 
-  // --- 3. RENDERER WEBGL ---
+  // --- 3. RENDERER & POST-PROCESSING UNREALBLOOMPASS ---
   initRenderer() {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
@@ -67,19 +132,11 @@ class GameEngine {
     this.renderer.toneMappingExposure = 1.25;
   }
 
-  // --- 4. POST-PROCESSING BLOOM (UNREALBLOOMPASS) ---
   initPostProcessing() {
     const size = new THREE.Vector2(window.innerWidth, window.innerHeight);
     const renderPass = new RenderPass(this.scene, this.camera);
 
-    // UnrealBloomPass : calibré pour faire resplendir les yeux, le cœur et Nity
-    this.bloomPass = new UnrealBloomPass(
-      size,
-      1.55,  // force du bloom (strength)
-      0.65,  // rayon de diffusion (radius)
-      0.35   // seuil d'activation (threshold)
-    );
-
+    this.bloomPass = new UnrealBloomPass(size, 1.6, 0.65, 0.32);
     const outputPass = new OutputPass();
 
     this.composer = new EffectComposer(this.renderer);
@@ -88,52 +145,47 @@ class GameEngine {
     this.composer.addPass(outputPass);
   }
 
-  // --- 5. ÉCLAIRAGES NÉON & REFLETS CYBER ---
+  // --- 4. ÉCLAIRAGES DYNAMIQUES DU CYCLE ---
   initLights() {
-    const ambient = new THREE.AmbientLight(0x280540, 1.6);
-    this.scene.add(ambient);
+    this.ambientLight = new THREE.AmbientLight(this.currentCycle.secondary, 1.6);
+    this.scene.add(this.ambientLight);
 
-    // Rim light violette arrière (halo d'Infi)
-    const backRim = new THREE.DirectionalLight(0xbd00ff, 4.0);
-    backRim.position.set(0, 8, -10);
-    this.scene.add(backRim);
+    this.backRimLight = new THREE.DirectionalLight(this.currentCycle.secondary, 4.2);
+    this.backRimLight.position.set(0, 8, -10);
+    this.scene.add(this.backRimLight);
 
-    // Reflet cyan avant-droit (Image 1)
-    const cyanLight = new THREE.DirectionalLight(0x00f0ff, 3.2);
-    cyanLight.position.set(8, 6, 8);
-    this.scene.add(cyanLight);
+    this.keyLight = new THREE.DirectionalLight(this.currentCycle.primary, 3.4);
+    this.keyLight.position.set(8, 6, 8);
+    this.scene.add(this.keyLight);
 
-    // Key light magenta avant-gauche
-    const magentaLight = new THREE.DirectionalLight(0xff2ea6, 3.2);
-    magentaLight.position.set(-8, 12, 8);
-    this.scene.add(magentaLight);
+    this.fillLight = new THREE.DirectionalLight(0xff007f, 2.8);
+    this.fillLight.position.set(-8, 12, 8);
+    this.scene.add(this.fillLight);
   }
 
-  // --- 6. SOL INFINI FILAIRE CYAN & VIOLET ---
+  // --- 5. SOL INFINI FILAIRE CYBER-BAROQUE ---
   createInfiniteGrid() {
     this.gridGroup = new THREE.Group();
     this.gridSections = [];
     this.trackWidth = 84;
     this.sectionLength = 240;
-    this.baseForwardSpeed = 68.0;
-    this.currentForwardSpeed = 68.0;
 
-    const wireMaterial = new THREE.MeshBasicMaterial({
-      color: 0x00f0ff,
+    this.gridWireMat = new THREE.MeshBasicMaterial({
+      color: this.currentCycle.primary,
       wireframe: true,
       transparent: true,
       opacity: 0.72
     });
 
-    const baseMaterial = new THREE.MeshBasicMaterial({
-      color: 0x030108,
+    this.gridBaseMat = new THREE.MeshBasicMaterial({
+      color: 0x020006,
       polygonOffset: true,
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 1
     });
 
-    const railMaterial = new THREE.LineBasicMaterial({
-      color: 0xbd00ff,
+    this.gridRailMat = new THREE.LineBasicMaterial({
+      color: this.currentCycle.secondary,
       linewidth: 2
     });
 
@@ -141,11 +193,11 @@ class GameEngine {
       const section = new THREE.Group();
       const geom = new THREE.PlaneGeometry(this.trackWidth, this.sectionLength, 42, 120);
 
-      const baseMesh = new THREE.Mesh(geom, baseMaterial);
+      const baseMesh = new THREE.Mesh(geom, this.gridBaseMat);
       baseMesh.rotation.x = -Math.PI / 2;
       section.add(baseMesh);
 
-      const wireMesh = new THREE.Mesh(geom, wireMaterial);
+      const wireMesh = new THREE.Mesh(geom, this.gridWireMat);
       wireMesh.rotation.x = -Math.PI / 2;
       wireMesh.position.y = 0.01;
       section.add(wireMesh);
@@ -157,7 +209,7 @@ class GameEngine {
           new THREE.Vector3(x, 0.02, halfL)
         ];
         const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-        const rail = new THREE.Line(lineGeo, railMaterial);
+        const rail = new THREE.Line(lineGeo, this.gridRailMat);
         section.add(rail);
       });
 
@@ -169,53 +221,70 @@ class GameEngine {
     this.scene.add(this.gridGroup);
   }
 
-  // --- 7. MODÉLISATION D'INFI (IMAGE 1 LORE) ---
-  createPlayerInfi() {
+  // --- 6. AVATAR INFI (IMAGE 1 LORE) ---
+  createInfiPlayer() {
     this.playerGroup = new THREE.Group();
     this.avatarMesh = new THREE.Group();
     this.playerGroup.add(this.avatarMesh);
 
-    // A. Tête : sphère en verre/chrome aux reflets irisés violets
     const headRadius = 1.0;
     const headGeo = new THREE.SphereGeometry(headRadius, 64, 64);
     this.headMat = new THREE.MeshPhysicalMaterial({
-      color: 0x140226,
+      color: 0x120224,
       metalness: 0.98,
       roughness: 0.08,
       clearcoat: 1.0,
       clearcoatRoughness: 0.04,
-      emissive: 0x2c0544,
+      emissive: 0x240438,
       emissiveIntensity: 0.45,
       reflectivity: 1.0
     });
     this.headMesh = new THREE.Mesh(headGeo, this.headMat);
     this.avatarMesh.add(this.headMesh);
 
-    // Halo néon violet externe
+    // Halo néon externe autour de la tête
     const haloGeo = new THREE.SphereGeometry(headRadius * 1.07, 48, 48);
-    const haloMat = new THREE.MeshBasicMaterial({
-      color: 0xa855f7,
+    this.playerHaloMat = new THREE.MeshBasicMaterial({
+      color: this.currentCycle.secondary,
       transparent: true,
       opacity: 0.38,
       side: THREE.BackSide,
       blending: THREE.AdditiveBlending
     });
-    this.haloMesh = new THREE.Mesh(haloGeo, haloMat);
-    this.avatarMesh.add(this.haloMesh);
+    this.playerHalo = new THREE.Mesh(haloGeo, this.playerHaloMat);
+    this.avatarMesh.add(this.playerHalo);
 
-    // B. Torse humanoïde minimaliste sombre et hautement réfléchissant
-    this.createHumanoidTorso();
+    // Torse humanoïde minimaliste
+    const torsoMat = new THREE.MeshPhysicalMaterial({
+      color: 0x0d0218,
+      metalness: 0.96,
+      roughness: 0.1,
+      clearcoat: 1.0
+    });
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.4, 32), torsoMat);
+    neck.position.set(0, -0.95, 0);
+    this.avatarMesh.add(neck);
 
-    // C. Visage : symbole infini ruban 3D émissif blanc/violet + sourcils
+    const chest = new THREE.Mesh(new THREE.ConeGeometry(0.9, 1.3, 4), torsoMat);
+    chest.rotation.x = Math.PI;
+    chest.rotation.y = Math.PI / 4;
+    chest.position.set(0, -1.35, 0);
+    this.avatarMesh.add(chest);
+
+    const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.28, 0.6), torsoMat);
+    shoulders.position.set(0, -1.08, 0);
+    this.avatarMesh.add(shoulders);
+
+    // Visage infini 3D courbe épousant la tête (aucun découpage)
     this.createInfiVisor(headRadius);
 
-    // D. Cœur géométrique émissif blanc/rose sur la poitrine gauche
+    // Cœur géométrique blanc/rose sur la poitrine gauche
     this.createInfiHeart();
 
-    // E. Ombre de contact au sol dynamique
+    // Ombre de contact au sol
     const shadowGeo = new THREE.CircleGeometry(headRadius * 0.95, 32);
     this.shadowMat = new THREE.MeshBasicMaterial({
-      color: 0x00f0ff,
+      color: this.currentCycle.primary,
       transparent: true,
       opacity: 0.35
     });
@@ -224,51 +293,21 @@ class GameEngine {
     this.shadowMesh.position.y = -0.55;
     this.playerGroup.add(this.shadowMesh);
 
-    // Position initiale au sol
     this.minAltitude = 1.3;
     this.maxAltitude = 22.0;
     this.playerGroup.position.set(0, this.minAltitude, 0);
     this.scene.add(this.playerGroup);
 
-    // Variables de dynamique de vol
+    // Physique de vol
     this.energy = 100.0;
     this.maxEnergy = 100.0;
     this.lateralSpeed = 22.0;
     this.verticalSpeed = 16.0;
     this.maxX = 15.0;
-  }
+    this.playerRadius = headRadius;
 
-  createHumanoidTorso() {
-    const torsoGroup = new THREE.Group();
-
-    // Cou cylindrique fin reliant la tête
-    const neckGeo = new THREE.CylinderGeometry(0.28, 0.34, 0.4, 32);
-    const torsoMat = new THREE.MeshPhysicalMaterial({
-      color: 0x0d0218,
-      metalness: 0.96,
-      roughness: 0.1,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.05
-    });
-    const neck = new THREE.Mesh(neckGeo, torsoMat);
-    neck.position.set(0, -0.95, 0);
-    torsoGroup.add(neck);
-
-    // Buste humanoïde stylisé (forme triangulaire profilée avec épaules biseautées, Image 1)
-    const chestGeo = new THREE.ConeGeometry(0.9, 1.3, 4);
-    const chest = new THREE.Mesh(chestGeo, torsoMat);
-    chest.rotation.x = Math.PI; // Pointe vers le bas
-    chest.rotation.y = Math.PI / 4; // Orientation des facettes
-    chest.position.set(0, -1.35, 0);
-    torsoGroup.add(chest);
-
-    // Épaules profilées géométriques
-    const shoulderGeo = new THREE.BoxGeometry(1.6, 0.28, 0.6);
-    const shoulders = new THREE.Mesh(shoulderGeo, torsoMat);
-    shoulders.position.set(0, -1.08, 0);
-    torsoGroup.add(shoulders);
-
-    this.avatarMesh.add(torsoGroup);
+    // Bounding sphere
+    this.playerBoundingSphere = new THREE.Sphere(new THREE.Vector3(), headRadius * 0.82);
   }
 
   createInfiVisor(headRadius) {
@@ -276,10 +315,8 @@ class GameEngine {
     canvas.width = 1024;
     canvas.height = 1024;
     const ctx = canvas.getContext('2d');
-
     const cx = 512, cy = 560, rx = 230, ry = 150, strokeW = 68;
 
-    // 1. Halo violet/magenta
     ctx.shadowColor = '#d946ef';
     ctx.shadowBlur = 45;
     ctx.lineWidth = strokeW + 16;
@@ -295,7 +332,6 @@ class GameEngine {
     ctx.bezierCurveTo(cx + rx, cy + ry, cx + 120, cy + ry, cx, cy);
     ctx.stroke();
 
-    // 2. Cœur blanc néon avec croisement 3D
     ctx.shadowColor = '#a855f7';
     ctx.shadowBlur = 25;
     ctx.lineWidth = strokeW;
@@ -309,13 +345,11 @@ class GameEngine {
     ctx.bezierCurveTo(cx + rx, cy + ry, cx + 120, cy + ry, cx, cy);
     ctx.stroke();
 
-    // Recouvrement net du croisement (ruban droit par-dessus)
     ctx.beginPath();
     ctx.moveTo(cx - 48, cy + 42);
     ctx.lineTo(cx + 48, cy - 42);
     ctx.stroke();
 
-    // 3. Sourcils expressifs
     ctx.shadowColor = '#e879f9';
     ctx.shadowBlur = 20;
     ctx.lineWidth = 26;
@@ -356,7 +390,6 @@ class GameEngine {
   }
 
   createInfiHeart() {
-    // Cœur géométrique 3D blanc/rose sur la poitrine gauche
     const heartShape = new THREE.Shape();
     heartShape.moveTo(0, 0);
     heartShape.bezierCurveTo(0, 0.1, -0.15, 0.24, -0.28, 0.24);
@@ -376,7 +409,6 @@ class GameEngine {
     heartGeo.scale(0.42, 0.42, 0.42);
     heartGeo.center();
 
-    // Matériau émissif blanc/rose intense (faisant réagir l'UnrealBloomPass)
     this.heartMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xff2ea6,
@@ -385,98 +417,466 @@ class GameEngine {
     });
 
     this.heartMesh = new THREE.Mesh(heartGeo, this.heartMat);
-    // Positionné sur la poitrine gauche d'Infi (Image 1)
     this.heartMesh.position.set(0.24, -1.18, 0.38);
     this.avatarMesh.add(this.heartMesh);
 
-    // Lumière ponctuelle vive émise par le cœur
     this.heartLight = new THREE.PointLight(0xff2ea6, 4.0, 16);
     this.heartLight.position.set(0.24, -1.18, 0.52);
     this.avatarMesh.add(this.heartLight);
   }
 
-  // --- 8. CRÉATION DE NITY (L'HORIZON LORE IMAGE 2) ---
-  createHorizonNity() {
+  // --- 7. CIBLE NITY À L'HORIZON (IMAGE 2 LORE) ---
+  createNityBeacon() {
     this.nityGroup = new THREE.Group();
 
-    // A. Cône d'énergie vertical élancé (Image 2)
     const coneRadius = 14;
     const coneHeight = 36;
     const coneGeo = new THREE.ConeGeometry(coneRadius, coneHeight, 32);
-    const coneMat = new THREE.MeshPhysicalMaterial({
+    this.nityConeMat = new THREE.MeshPhysicalMaterial({
       color: 0x0c163b,
-      emissive: 0x0066ff,
+      emissive: this.currentCycle.secondary,
       emissiveIntensity: 1.2,
       metalness: 0.9,
       roughness: 0.15,
       clearcoat: 1.0
     });
-    const coneMesh = new THREE.Mesh(coneGeo, coneMat);
+    const coneMesh = new THREE.Mesh(coneGeo, this.nityConeMat);
     coneMesh.position.set(0, coneHeight / 2, 0);
     this.nityGroup.add(coneMesh);
 
-    // B. Sphère céleste lumineuse en lévitation au sommet
     const sphereRadius = 14;
     const sphereGeo = new THREE.SphereGeometry(sphereRadius, 48, 48);
-    const sphereMat = new THREE.MeshPhysicalMaterial({
+    this.nitySphereMat = new THREE.MeshPhysicalMaterial({
       color: 0x120835,
-      emissive: 0x7928ca,
+      emissive: this.currentCycle.primary,
       emissiveIntensity: 1.8,
       metalness: 0.95,
       roughness: 0.08,
       clearcoat: 1.0
     });
-    this.nitySphere = new THREE.Mesh(sphereGeo, sphereMat);
+    this.nitySphere = new THREE.Mesh(sphereGeo, this.nitySphereMat);
     this.nitySphere.position.set(0, coneHeight + sphereRadius + 5, 0);
     this.nityGroup.add(this.nitySphere);
 
-    // C. Halos néon pulsants enveloppants (Bloom rayonnant)
-    const haloGeo = new THREE.SphereGeometry(sphereRadius * 1.2, 32, 32);
+    // Halo céleste néon rayonnant
+    const haloGeo = new THREE.SphereGeometry(sphereRadius * 1.25, 32, 32);
     this.nityHaloMat = new THREE.MeshBasicMaterial({
-      color: 0x00f0ff,
+      color: this.currentCycle.primary,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.48,
       side: THREE.BackSide,
       blending: THREE.AdditiveBlending
     });
-    const nityHalo = new THREE.Mesh(haloGeo, this.nityHaloMat);
-    this.nitySphere.add(nityHalo);
+    this.nityHalo = new THREE.Mesh(haloGeo, this.nityHaloMat);
+    this.nitySphere.add(this.nityHalo);
 
     // Anneau d'énergie orbital
     const ringGeo = new THREE.TorusGeometry(sphereRadius * 1.5, 0.6, 16, 64);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0xff007f,
+    this.nityRingMat = new THREE.MeshBasicMaterial({
+      color: this.currentCycle.secondary,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.8,
       blending: THREE.AdditiveBlending
     });
-    this.nityRing = new THREE.Mesh(ringGeo, ringMat);
+    this.nityRing = new THREE.Mesh(ringGeo, this.nityRingMat);
     this.nityRing.rotation.x = Math.PI / 2.8;
     this.nitySphere.add(this.nityRing);
 
-    // Balise lumineuse céleste
-    const beaconLight = new THREE.PointLight(0x00f0ff, 5.0, 500);
-    beaconLight.position.copy(this.nitySphere.position);
-    this.nityGroup.add(beaconLight);
+    this.nityBeaconLight = new THREE.PointLight(this.currentCycle.primary, 5.5, 500);
+    this.nityBeaconLight.position.copy(this.nitySphere.position);
+    this.nityGroup.add(this.nityBeaconLight);
 
-    // Positionnement lointain à l'horizon (z = -320)
     this.nityGroup.position.set(0, 8, -320);
     this.scene.add(this.nityGroup);
   }
 
-  // --- 9. CONTRÔLES 3D (ZQSD / FLÈCHES / SOURIS / TOUCH) ---
+  // --- 8. OBSTACLES PROCÉDURAUX & FRAGMENTS D'INFINI ---
+  initObstacles() {
+    this.obstacles = [];
+    this.crystals = [];
+    this.spawnDistance = -280;
+    this.despawnZ = 16;
+    this.obstacleTimer = 0;
+    this.crystalTimer = 0;
+
+    // Matériaux partagés
+    this.monolithMat = new THREE.MeshStandardMaterial({
+      color: 0x0a0316,
+      roughness: 0.2,
+      metalness: 0.9,
+      emissive: 0x1f063b
+    });
+    this.monolithWireMat = new THREE.MeshBasicMaterial({
+      color: this.currentCycle.primary,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.8
+    });
+
+    this.portalWireMat = new THREE.MeshBasicMaterial({
+      color: this.currentCycle.secondary,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.85
+    });
+
+    this.barrierLaserMat = new THREE.MeshBasicMaterial({
+      color: 0xff0055,
+      transparent: true,
+      opacity: 0.75,
+      side: THREE.DoubleSide
+    });
+
+    // Cristal (Fragment d'Infini)
+    this.crystalCoreMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff
+    });
+    this.crystalGlowMat = new THREE.MeshBasicMaterial({
+      color: this.currentCycle.primary,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
+  }
+
+  spawnMonolith(x) {
+    const group = new THREE.Group();
+    const width = 3.4;
+    const height = 18 + Math.random() * 12;
+    const geo = new THREE.BoxGeometry(width, height, width);
+
+    const base = new THREE.Mesh(geo, this.monolithMat);
+    const wire = new THREE.Mesh(geo, this.monolithWireMat);
+    group.add(base);
+    group.add(wire);
+
+    group.position.set(x, height / 2, this.spawnDistance);
+
+    const bbox = new THREE.Box3().setFromObject(group);
+    const obj = { type: 'monolith', mesh: group, bbox: bbox };
+    this.scene.add(group);
+    this.obstacles.push(obj);
+  }
+
+  spawnBrokenPortal(x, y) {
+    const group = new THREE.Group();
+    const pillarWidth = 1.8;
+    const archWidth = 13.0;
+    const archHeight = 15.0;
+
+    // Pilier gauche
+    const leftPillar = new THREE.Mesh(new THREE.BoxGeometry(pillarWidth, archHeight, pillarWidth), this.portalWireMat);
+    leftPillar.position.set(-archWidth / 2, archHeight / 2, 0);
+    group.add(leftPillar);
+
+    // Pilier droit (fragmenté)
+    const rightPillar = new THREE.Mesh(new THREE.BoxGeometry(pillarWidth, archHeight * 0.7, pillarWidth), this.portalWireMat);
+    rightPillar.position.set(archWidth / 2, (archHeight * 0.7) / 2, 0);
+    group.add(rightPillar);
+
+    // Fragment flottant brisé
+    const brokenChunk = new THREE.Mesh(new THREE.BoxGeometry(pillarWidth * 1.2, 3.5, pillarWidth * 1.2), this.portalWireMat);
+    brokenChunk.position.set(archWidth / 2 + 1.2, archHeight * 0.85, (Math.random() - 0.5) * 3);
+    brokenChunk.rotation.z = 0.35;
+    group.add(brokenChunk);
+
+    // Linteau supérieur brisé
+    const topBar = new THREE.Mesh(new THREE.BoxGeometry(archWidth * 0.65, pillarWidth, pillarWidth), this.portalWireMat);
+    topBar.position.set(-2, archHeight, 0);
+    group.add(topBar);
+
+    group.position.set(x, y, this.spawnDistance);
+
+    const obj = {
+      type: 'portal',
+      mesh: group,
+      subBoxes: [
+        { mesh: leftPillar, box: new THREE.Box3() },
+        { mesh: rightPillar, box: new THREE.Box3() },
+        { mesh: brokenChunk, box: new THREE.Box3() },
+        { mesh: topBar, box: new THREE.Box3() }
+      ]
+    };
+
+    this.scene.add(group);
+    this.obstacles.push(obj);
+  }
+
+  spawnLaserBarrier(y) {
+    const group = new THREE.Group();
+    const width = 28.0;
+    const height = 4.5;
+    const geo = new THREE.PlaneGeometry(width, height);
+
+    const mesh = new THREE.Mesh(geo, this.barrierLaserMat);
+    group.add(mesh);
+
+    // Cadre filaire
+    const frameGeo = new THREE.BoxGeometry(width, height, 0.4);
+    const frameWire = new THREE.Mesh(frameGeo, this.monolithWireMat);
+    group.add(frameWire);
+
+    group.position.set((Math.random() - 0.5) * 6, y, this.spawnDistance);
+
+    const bbox = new THREE.Box3().setFromObject(group);
+    const obj = { type: 'barrier', mesh: group, bbox: bbox };
+    this.scene.add(group);
+    this.obstacles.push(obj);
+  }
+
+  spawnCrystal(x, y) {
+    const group = new THREE.Group();
+
+    // Fragment d'Infini : Octaèdre taillé en diamant néon
+    const geo = new THREE.OctahedronGeometry(0.7, 0);
+    const core = new THREE.Mesh(geo, this.crystalCoreMat);
+    group.add(core);
+
+    const aura = new THREE.Mesh(new THREE.OctahedronGeometry(1.05, 0), this.crystalGlowMat);
+    group.add(aura);
+
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(1.4, 0.05, 8, 24),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })
+    );
+    ring.rotation.x = Math.PI / 2.5;
+    group.add(ring);
+
+    group.position.set(x, y, this.spawnDistance);
+
+    const obj = {
+      mesh: group,
+      ring: ring,
+      radius: 1.2,
+      collected: false
+    };
+
+    this.scene.add(group);
+    this.crystals.push(obj);
+  }
+
+  // --- 9. DISLOCATION EN PARTICULES (CRASH VISUEL) ---
+  initDislocationFX() {
+    this.particleCount = 320;
+    const geo = new THREE.BufferGeometry();
+    this.disPos = new Float32Array(this.particleCount * 3);
+    this.disVel = new Float32Array(this.particleCount * 3);
+    this.disCol = new Float32Array(this.particleCount * 3);
+
+    for (let i = 0; i < this.particleCount; i++) {
+      this.disPos[i * 3 + 1] = -100;
+      const r = Math.random();
+      if (r < 0.4) {
+        this.disCol[i * 3] = 0.0; this.disCol[i * 3 + 1] = 0.94; this.disCol[i * 3 + 2] = 1.0;
+      } else if (r < 0.7) {
+        this.disCol[i * 3] = 1.0; this.disCol[i * 3 + 1] = 0.18; this.disCol[i * 3 + 2] = 0.65;
+      } else {
+        this.disCol[i * 3] = 0.74; this.disCol[i * 3 + 1] = 0.33; this.disCol[i * 3 + 2] = 0.98;
+      }
+    }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(this.disPos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(this.disCol, 3));
+
+    this.disMat = new THREE.PointsMaterial({
+      size: 2.4,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending
+    });
+
+    this.disParticles = new THREE.Points(geo, this.disMat);
+    this.scene.add(this.disParticles);
+    this.isDislocating = false;
+  }
+
+  triggerCrash(reason) {
+    if (this.state !== this.STATE_PLAYING) return;
+
+    this.state = this.STATE_DYING;
+    this.dyingTimer = 0;
+    this.isDislocating = true;
+    this.avatarMesh.visible = false;
+    this.shadowMesh.visible = false;
+    this.heartLight.visible = false;
+
+    // Dislocation en 320 particules néon
+    const p = this.playerGroup.position;
+    this.disMat.opacity = 1.0;
+    const pos = this.disParticles.geometry.attributes.position.array;
+
+    for (let i = 0; i < this.particleCount; i++) {
+      pos[i * 3] = p.x + (Math.random() - 0.5) * 1.5;
+      pos[i * 3 + 1] = p.y + (Math.random() - 0.5) * 1.5;
+      pos[i * 3 + 2] = p.z + (Math.random() - 0.5) * 1.5;
+
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const spd = 12 + Math.random() * 30;
+
+      this.disVel[i * 3] = Math.sin(phi) * Math.cos(theta) * spd;
+      this.disVel[i * 3 + 1] = Math.cos(phi) * spd + 5.0;
+      this.disVel[i * 3 + 2] = Math.sin(phi) * Math.sin(theta) * spd;
+    }
+    this.disParticles.geometry.attributes.position.needsUpdate = true;
+
+    // Son de crash
+    if (this.isAudioActive && window.Tone) {
+      this.playCrashSound();
+    }
+
+    if (this.deathReasonText) {
+      this.deathReasonText.innerHTML = reason === 'energy'
+        ? 'SIGNAL ÉTEINT &bull; CŒUR ÉPUISÉ'
+        : 'IMPACT CRITIQUE &bull; AVATAR DÉSINTÉGRÉ';
+    }
+  }
+
+  // --- 10. MOTEUR AUDIO TONE.JS (ANALYSERNODE & 8 CYCLES) ---
+  initAudioEngine() {
+    this.isAudioActive = false;
+    this.bassEnergy = 0;
+    this.trebleEnergy = 0;
+
+    // Analyseur FFT Tone.js
+    if (window.Tone) {
+      this.fftAnalyser = new Tone.Analyser('fft', 32);
+    }
+  }
+
+  setupToneSynth() {
+    if (!window.Tone) return;
+
+    // Synthétiseur de Kick rythmique puissant
+    this.kickSynth = new Tone.MembraneSynth({
+      pitchDecay: 0.05,
+      octaves: 6,
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.001, decay: 0.35, sustain: 0.01, release: 0.4 }
+    }).connect(this.fftAnalyser).toDestination();
+
+    // Synthétiseur de basse Cyber-Baroque
+    this.bassSynth = new Tone.MonoSynth({
+      oscillator: { type: 'sawtooth' },
+      filter: { Q: 3, type: 'lowpass', rolloff: -24 },
+      envelope: { attack: 0.02, decay: 0.3, sustain: 0.4, release: 0.5 },
+      filterEnvelope: { attack: 0.02, decay: 0.2, sustain: 0.2, baseFrequency: 80, octaves: 4 }
+    }).connect(this.fftAnalyser).toDestination();
+
+    // Boucle rythmique Tone.Loop calée sur le tempo (BPM)
+    Tone.Transport.bpm.value = this.currentCycle.bpm;
+
+    const bassNotes = ['C2', 'Eb2', 'F2', 'G2', 'Bb1'];
+    let step = 0;
+
+    this.rhythmLoop = new Tone.Loop((time) => {
+      // Coup de basse (Kick) sur chaque temps
+      this.kickSynth.triggerAttackRelease('C1', '8n', time, 0.9);
+
+      // Ligne de basse syncopée
+      if (step % 2 === 0) {
+        const note = bassNotes[Math.floor(Math.random() * bassNotes.length)];
+        this.bassSynth.triggerAttackRelease(note, '16n', time, 0.7);
+      }
+      step++;
+    }, '4n');
+
+    this.rhythmLoop.start(0);
+    Tone.Transport.start();
+  }
+
+  playCollectSound() {
+    if (!this.isAudioActive || !window.Tone) return;
+    const synth = new Tone.PolySynth(Tone.Synth, {
+      envelope: { attack: 0.005, decay: 0.2, sustain: 0, release: 0.2 }
+    }).toDestination();
+    synth.triggerAttackRelease(['C5', 'G5', 'C6'], '16n');
+  }
+
+  playCrashSound() {
+    if (!window.Tone) return;
+    const noise = new Tone.NoiseSynth({
+      noise: { type: 'pink' },
+      envelope: { attack: 0.005, decay: 0.6, sustain: 0 }
+    }).toDestination();
+    noise.triggerAttackRelease('8n');
+  }
+
+  toggleAudio() {
+    if (!window.Tone) return;
+
+    if (!this.isAudioActive) {
+      Tone.start().then(() => {
+        this.isAudioActive = true;
+        this.btnAudioToggle.classList.add('active');
+        this.audioIcon.textContent = '🔊';
+        this.audioLabel.textContent = 'SON ACTIVÉ';
+
+        // Lancement du synthétiseur et boucle
+        this.setupToneSynth();
+      });
+    } else {
+      Tone.Transport.stop();
+      this.isAudioActive = false;
+      this.btnAudioToggle.classList.remove('active');
+      this.audioIcon.textContent = '🔇';
+      this.audioLabel.textContent = 'ACTIVER LE SON';
+    }
+  }
+
+  // --- 11. PROGRESSION D'ALBUM : CHANGEMENT DES 8 CYCLES ---
+  setCycle(index) {
+    this.currentCycleIndex = (index + CYCLES.length) % CYCLES.length;
+    this.currentCycle = CYCLES[this.currentCycleIndex];
+
+    // Mise à jour de l'UI
+    if (this.cycleNameText) {
+      this.cycleNameText.textContent = `CYCLE ${this.currentCycle.id} • ${this.currentCycle.name}`;
+      this.cycleNameText.style.color = `#${this.currentCycle.primary.toString(16).padStart(6, '0')}`;
+    }
+    if (this.neonAccentTitle) {
+      this.neonAccentTitle.style.color = `#${this.currentCycle.primary.toString(16).padStart(6, '0')}`;
+    }
+
+    // Mise à jour du BPM audio Tone.js
+    if (window.Tone && Tone.Transport) {
+      Tone.Transport.bpm.rampTo(this.currentCycle.bpm, 1.2);
+    }
+
+    // Mise à jour des couleurs de la scène (transition fluide)
+    this.scene.background.set(this.currentCycle.fog);
+    this.scene.fog.color.set(this.currentCycle.fog);
+
+    this.ambientLight.color.set(this.currentCycle.secondary);
+    this.keyLight.color.set(this.currentCycle.primary);
+    this.backRimLight.color.set(this.currentCycle.secondary);
+
+    this.gridWireMat.color.set(this.currentCycle.primary);
+    this.gridRailMat.color.set(this.currentCycle.secondary);
+
+    this.playerHaloMat.color.set(this.currentCycle.secondary);
+    this.shadowMat.color.set(this.currentCycle.primary);
+
+    this.nitySphereMat.emissive.set(this.currentCycle.primary);
+    this.nityHaloMat.color.set(this.currentCycle.primary);
+    this.nityConeMat.emissive.set(this.currentCycle.secondary);
+    this.nityRingMat.color.set(this.currentCycle.secondary);
+    this.nityBeaconLight.color.set(this.currentCycle.primary);
+
+    this.monolithWireMat.color.set(this.currentCycle.primary);
+    this.portalWireMat.color.set(this.currentCycle.secondary);
+    this.crystalGlowMat.color.set(this.currentCycle.primary);
+  }
+
+  // --- 12. CONTRÔLES 3D & ENTRÉES ---
   initInputs() {
-    this.inputAxisX = 0; // -1 (gauche) à +1 (droite)
-    this.inputAxisY = 0; // -1 (piqué) à +1 (cabré/montée)
-
-    this.keyLeft = false;
-    this.keyRight = false;
-    this.keyUp = false;
-    this.keyDown = false;
-
+    this.inputAxisX = 0;
+    this.inputAxisY = 0;
+    this.keyLeft = false; this.keyRight = false;
+    this.keyUp = false; this.keyDown = false;
     this.isPointerDown = false;
-    this.pointerStartX = 0;
-    this.pointerStartY = 0;
+    this.pointerStartX = 0; this.pointerStartY = 0;
 
     window.addEventListener('keydown', (e) => {
       if (['ArrowLeft', 'KeyA', 'KeyQ'].includes(e.code)) this.keyLeft = true;
@@ -502,13 +902,11 @@ class GameEngine {
 
     window.addEventListener('pointermove', (e) => {
       if (this.isPointerDown) {
-        // Drag 2D
         const diffX = (e.clientX - this.pointerStartX) / (window.innerWidth * 0.2);
-        const diffY = (this.pointerStartY - e.clientY) / (window.innerHeight * 0.2); // Vers le haut = positif
+        const diffY = (this.pointerStartY - e.clientY) / (window.innerHeight * 0.2);
         this.inputAxisX = Math.max(-1, Math.min(1, diffX));
         this.inputAxisY = Math.max(-1, Math.min(1, diffY));
       } else {
-        // Suivi curseur libre
         const normX = (e.clientX / window.innerWidth) * 2 - 1;
         const normY = -((e.clientY / window.innerHeight) * 2 - 1);
         this.inputAxisX = Math.abs(normX) > 0.1 ? Math.sign(normX) * ((Math.abs(normX) - 0.1) / 0.9) : 0;
@@ -516,188 +914,365 @@ class GameEngine {
       }
     });
 
-    const resetPointer = () => {
+    const resetP = () => {
       this.isPointerDown = false;
       this.updateInputAxes();
     };
-    window.addEventListener('pointerup', resetPointer);
-    window.addEventListener('pointercancel', resetPointer);
+    window.addEventListener('pointerup', resetP);
+    window.addEventListener('pointercancel', resetP);
   }
 
   updateInputAxes() {
-    // Latéral (X)
     if (this.keyLeft && !this.keyRight) this.inputAxisX = -1;
     else if (this.keyRight && !this.keyLeft) this.inputAxisX = 1;
     else if (!this.keyLeft && !this.keyRight && !this.isPointerDown) this.inputAxisX = 0;
 
-    // Vertical (Y - Vol)
     if (this.keyUp && !this.keyDown) this.inputAxisY = 1;
     else if (this.keyDown && !this.keyUp) this.inputAxisY = -1;
     else if (!this.keyUp && !this.keyDown && !this.isPointerDown) this.inputAxisY = 0;
   }
 
-  // --- 10. GESTION DU REDIMENSIONNEMENT ---
-  initResize() {
-    window.addEventListener('resize', () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
+  initUIEvents() {
+    if (this.btnAudioToggle) {
+      this.btnAudioToggle.addEventListener('click', () => this.toggleAudio());
+    }
+    if (this.btnPrevCycle) {
+      this.btnPrevCycle.addEventListener('click', () => this.setCycle(this.currentCycleIndex - 1));
+    }
+    if (this.btnNextCycle) {
+      this.btnNextCycle.addEventListener('click', () => this.setCycle(this.currentCycleIndex + 1));
+    }
+    if (this.btnRestart) {
+      this.btnRestart.addEventListener('click', () => this.resetGame());
+    }
 
-      this.camera.aspect = width / height;
-      this.camera.updateProjectionMatrix();
-
-      this.renderer.setSize(width, height);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-      this.composer.setSize(width, height);
-      this.bloomPass.setSize(width, height);
+    window.addEventListener('keydown', (e) => {
+      if ((e.code === 'Space' || e.code === 'Enter') && this.state === this.STATE_GAMEOVER) {
+        this.resetGame();
+      }
     });
   }
 
-  // --- 11. BOUCLE PRINCIPALE & PHYSIQUE DE GLIDER ---
+  resetGame() {
+    this.gameOverModal.classList.add('hidden');
+    this.distance = 0;
+    this.energy = 100.0;
+    this.baseSpeed = 68.0;
+    this.currentSpeed = 68.0;
+    this.boostTimer = 0;
+
+    this.playerGroup.position.set(0, this.minAltitude, 0);
+    this.avatarMesh.rotation.set(0, 0, 0);
+    this.avatarMesh.visible = true;
+    this.shadowMesh.visible = true;
+    this.heartLight.visible = true;
+    this.disMat.opacity = 0;
+
+    // Vider les obstacles et cristaux existants
+    for (const obs of this.obstacles) this.scene.remove(obs.mesh);
+    this.obstacles = [];
+    for (const c of this.crystals) this.scene.remove(c.mesh);
+    this.crystals = [];
+
+    this.state = this.STATE_PLAYING;
+  }
+
+  triggerSpeedBoost() {
+    this.energy = 100.0;
+    this.boostTimer = 2.5; // Boost pendant 2.5 secondes
+    this.playCollectSound();
+
+    if (this.speedBoostFX) {
+      this.speedBoostFX.classList.add('active');
+      setTimeout(() => this.speedBoostFX.classList.remove('active'), 350);
+    }
+  }
+
+  initResize() {
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(w, h);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.composer.setSize(w, h);
+      this.bloomPass.setSize(w, h);
+    });
+  }
+
+  // --- 13. BOUCLE DE RENDU ET LOGIQUE DE JEU ---
   animate() {
     requestAnimationFrame(this.animate);
 
     const dt = Math.min(this.clock.getDelta(), 0.1);
     const time = performance.now() * 0.001;
 
-    // --- A. DÉPLACEMENT LATÉRAL & ROULIS (ROLL) ---
-    if (this.inputAxisX !== 0) {
-      this.playerGroup.position.x += this.inputAxisX * this.lateralSpeed * dt;
-      this.playerGroup.position.x = Math.max(-this.maxX, Math.min(this.maxX, this.playerGroup.position.x));
+    // --- A. ANALYSE AUDIO RÉACTIVE TONE.JS ---
+    let bassLevel = 0;
+    if (this.isAudioActive && this.fftAnalyser) {
+      const values = this.fftAnalyser.getValue();
+      // Basses fréquences (Kick)
+      let sumBass = 0;
+      for (let i = 0; i < 4; i++) {
+        sumBass += Math.max(0, values[i] + 100);
+      }
+      bassLevel = sumBass / (4 * 100);
+      this.bassEnergy = Math.max(0, Math.min(1, bassLevel));
     }
 
-    // Inclinaison latérale (roll)
-    const targetRoll = -this.inputAxisX * 0.45;
-    this.avatarMesh.rotation.z += (targetRoll - this.avatarMesh.rotation.z) * 10.0 * dt;
+    if (this.state === this.STATE_PLAYING) {
+      // --- B. VITESSE CROISSANTE & SPEED BOOST ---
+      // Accélération naturelle avec la distance
+      this.baseSpeed = 68.0 + (this.distance / 1200.0) * 15.0;
 
-    // --- B. PHYSIQUE DE VOL (GLIDER) & ÉNERGIE DU CŒUR ---
-    const pos = this.playerGroup.position;
-    const isClimbing = this.inputAxisY > 0.1;
-    const isDiving = this.inputAxisY < -0.1;
-
-    let verticalVelocity = 0;
-
-    if (isClimbing) {
-      // Montée : Infi consomme l'énergie de son cœur
-      if (this.energy > 0) {
-        // Perte progressive de la vitesse d'ascension si l'énergie faiblit ou avec l'altitude
-        const energyFactor = this.energy / this.maxEnergy;
-        const altitudePenalty = (pos.y / this.maxAltitude) * 6.0;
-        const effectiveClimbSpeed = Math.max(3.0, (this.verticalSpeed - altitudePenalty) * energyFactor);
-
-        verticalVelocity = effectiveClimbSpeed;
-        const consumption = 20.0 + (pos.y / this.maxAltitude) * 15.0;
-        this.energy = Math.max(0, this.energy - consumption * dt);
+      if (this.boostTimer > 0) {
+        this.boostTimer -= dt;
+        this.currentSpeed = this.baseSpeed + 45.0; // Boost de +45 KM/H
+        // Warp de FOV cinématique
+        this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV + 12, 6 * dt);
       } else {
-        // Énergie épuisée : impossible de monter, descente automatique
-        verticalVelocity = -4.5;
+        this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV, 4 * dt);
       }
-    } else if (isDiving) {
-      // Piqué : Infi accélère vers le bas et recharge son énergie
-      verticalVelocity = -this.verticalSpeed * 1.35;
-      this.energy = Math.min(this.maxEnergy, this.energy + 24.0 * dt);
-      // Accélération vers l'avant en piqué
-      this.currentForwardSpeed = Math.min(115.0, this.currentForwardSpeed + 50.0 * dt);
-    } else {
-      // Vol stationnaire / neutre : retour vers la vitesse nominale
-      this.currentForwardSpeed += (this.baseForwardSpeed - this.currentForwardSpeed) * 3.0 * dt;
+      this.camera.updateProjectionMatrix();
 
-      // Si l'énergie est à 0 et qu'on est en altitude, descente automatique vers le sol
-      if (this.energy <= 0 && pos.y > this.minAltitude) {
-        verticalVelocity = -5.0;
+      // --- C. MANIABILITÉ GLIDER & VOL D'INFI ---
+      const p = this.playerGroup.position;
+
+      // Latéral
+      if (this.inputAxisX !== 0) {
+        p.x += this.inputAxisX * this.lateralSpeed * dt;
+        p.x = Math.max(-this.maxX, Math.min(this.maxX, p.x));
+      }
+      const targetRoll = -this.inputAxisX * 0.45;
+      this.avatarMesh.rotation.z += (targetRoll - this.avatarMesh.rotation.z) * 10.0 * dt;
+
+      // Vertical (Vol)
+      const isClimbing = this.inputAxisY > 0.1;
+      const isDiving = this.inputAxisY < -0.1;
+      let vertVel = 0;
+
+      if (isClimbing) {
+        if (this.energy > 0) {
+          const eFactor = this.energy / this.maxEnergy;
+          const altPen = (p.y / this.maxAltitude) * 6.0;
+          vertVel = Math.max(3.0, (this.verticalSpeed - altPen) * eFactor);
+          const cons = 20.0 + (p.y / this.maxAltitude) * 15.0;
+          this.energy = Math.max(0, this.energy - cons * dt);
+        } else {
+          vertVel = -4.5; // Descente auto
+        }
+      } else if (isDiving) {
+        vertVel = -this.verticalSpeed * 1.35;
+        this.energy = Math.min(this.maxEnergy, this.energy + 24.0 * dt);
+        if (this.boostTimer <= 0) {
+          this.currentSpeed = Math.min(115.0, this.currentSpeed + 45.0 * dt);
+        }
+      } else {
+        if (this.boostTimer <= 0) {
+          this.currentSpeed += (this.baseSpeed - this.currentSpeed) * 3.0 * dt;
+        }
+        if (this.energy <= 0 && p.y > this.minAltitude) {
+          vertVel = -5.0;
+        }
+      }
+
+      if (p.y <= 2.2) {
+        this.energy = Math.min(this.maxEnergy, this.energy + 28.0 * dt);
+      }
+
+      p.y += vertVel * dt;
+      p.y = Math.max(this.minAltitude, Math.min(this.maxAltitude, p.y));
+
+      const targetPitch = this.inputAxisY * 0.42;
+      this.avatarMesh.rotation.x += (targetPitch - this.avatarMesh.rotation.x) * 8.0 * dt;
+
+      // --- D. PULSATION DU CŒUR SYNCHRO BPM ---
+      const bpmFactor = this.currentCycle.bpm / 120.0;
+      const energyRatio = Math.max(0.05, this.energy / this.maxEnergy);
+      const pulseFreq = bpmFactor * (1.2 + energyRatio * 2.8);
+      const heartbeat = Math.pow(Math.sin(time * Math.PI * pulseFreq), 4);
+
+      const lightInt = (1.0 + energyRatio * 4.2) * (0.6 + heartbeat * 0.7);
+      this.heartLight.intensity = lightInt;
+      this.heartMat.emissiveIntensity = (1.5 + energyRatio * 3.5) * (0.7 + heartbeat * 0.6);
+      const hScale = 0.42 * (1.0 + heartbeat * 0.15 * energyRatio);
+      this.heartMesh.scale.set(hScale, hScale, hScale);
+
+      // Ombre dynamique
+      const alt = p.y - this.minAltitude;
+      this.shadowMat.opacity = Math.max(0.04, 0.35 - (alt / this.maxAltitude) * 0.3);
+      this.shadowMesh.scale.set(1.0 + (alt / this.maxAltitude) * 1.6, 1.0 + (alt / this.maxAltitude) * 1.6, 1.0);
+
+      // Bounding sphere du joueur
+      this.playerBoundingSphere.center.copy(p);
+
+      // --- E. DÉFILEMENT DE LA GRILLE & AUDIO-RÉACTIVITÉ SUR KICK ---
+      const deltaZ = this.currentSpeed * dt;
+      for (let i = 0; i < this.gridSections.length; i++) {
+        const sec = this.gridSections[i];
+        sec.position.z += deltaZ;
+        if (sec.position.z >= this.sectionLength) sec.position.z -= this.sectionLength * 2;
+      }
+
+      // La grille pulse sur les coups de basse
+      this.gridWireMat.opacity = 0.7 + this.bassEnergy * 0.3;
+
+      // --- F. SPAWN & GESTION DES OBSTACLES ---
+      this.obstacleTimer += dt;
+      if (this.obstacleTimer >= 1.0) {
+        this.obstacleTimer = 0;
+        const lanes = [-12, -6, 0, 6, 12];
+        const lx = lanes[Math.floor(Math.random() * lanes.length)];
+        const r = Math.random();
+        if (r < 0.4) {
+          this.spawnMonolith(lx);
+        } else if (r < 0.75) {
+          this.spawnBrokenPortal((Math.random() - 0.5) * 8, 0);
+        } else {
+          this.spawnLaserBarrier(6 + Math.random() * 10);
+        }
+      }
+
+      for (let i = this.obstacles.length - 1; i >= 0; i--) {
+        const obs = this.obstacles[i];
+        obs.mesh.position.z += deltaZ;
+
+        if (obs.subBoxes) {
+          for (const sub of obs.subBoxes) sub.box.setFromObject(sub.mesh);
+        } else {
+          obs.bbox.setFromObject(obs.mesh);
+        }
+
+        // Collision check
+        if (Math.abs(obs.mesh.position.z - p.z) < 7.0) {
+          let hit = false;
+          if (obs.subBoxes) {
+            for (const sub of obs.subBoxes) {
+              if (sub.box.intersectsSphere(this.playerBoundingSphere)) hit = true;
+            }
+          } else if (obs.bbox.intersectsSphere(this.playerBoundingSphere)) {
+            hit = true;
+          }
+          if (hit) {
+            this.triggerCrash('collision');
+          }
+        }
+
+        if (obs.mesh.position.z > this.despawnZ) {
+          this.scene.remove(obs.mesh);
+          this.obstacles.splice(i, 1);
+        }
+      }
+
+      // --- G. SPAWN & COLLECTE DES CRISTAUX (FRAGMENTS D'INFINI) ---
+      this.crystalTimer += dt;
+      if (this.crystalTimer >= 2.4) {
+        this.crystalTimer = 0;
+        const cx = (Math.random() - 0.5) * 24;
+        const cy = Math.random() < 0.5 ? 2.2 : (7 + Math.random() * 11);
+        this.spawnCrystal(cx, cy);
+      }
+
+      for (let i = this.crystals.length - 1; i >= 0; i--) {
+        const cr = this.crystals[i];
+        cr.mesh.position.z += deltaZ;
+        cr.mesh.rotation.y += 2.5 * dt;
+        cr.ring.rotation.z += 3.5 * dt;
+
+        if (!cr.collected && cr.mesh.position.distanceTo(p) < (cr.radius + this.playerRadius * 0.85)) {
+          cr.collected = true;
+          this.triggerSpeedBoost();
+        }
+
+        if (cr.mesh.position.z > this.despawnZ || cr.collected) {
+          this.scene.remove(cr.mesh);
+          this.crystals.splice(i, 1);
+        }
+      }
+
+      // Check énergie à zéro
+      if (this.energy <= 0 && p.y <= this.minAltitude + 0.1) {
+        this.triggerCrash('energy');
+      }
+
+      // Stats
+      this.distance += this.currentSpeed * dt;
+      if (this.currentSpeed > this.maxSpeed) this.maxSpeed = this.currentSpeed;
+
+      // Suivi caméra 3e personne
+      const tCamX = p.x * 0.35;
+      const tCamY = Math.max(4.0, p.y + 3.2);
+      const tCamZ = p.z + 9.5;
+      this.camera.position.x += (tCamX - this.camera.position.x) * 6.0 * dt;
+      this.camera.position.y += (tCamY - this.camera.position.y) * 5.0 * dt;
+      this.camera.position.z += (tCamZ - this.camera.position.z) * 5.0 * dt;
+      this.cameraTarget.set(p.x * 0.2, Math.max(1.8, p.y * 0.6), -16);
+      this.camera.lookAt(this.cameraTarget);
+
+      this.updateHUD();
+
+    } else if (this.state === this.STATE_DYING) {
+      // Animation de dislocation
+      this.dyingTimer += dt;
+      const pos = this.disParticles.geometry.attributes.position.array;
+      const grav = -18.0;
+
+      for (let i = 0; i < this.particleCount; i++) {
+        pos[i * 3] += this.disVel[i * 3] * dt;
+        pos[i * 3 + 1] += this.disVel[i * 3 + 1] * dt;
+        pos[i * 3 + 2] += this.disVel[i * 3 + 2] * dt;
+        this.disVel[i * 3 + 1] += grav * dt;
+        if (pos[i * 3 + 1] < 0.2) {
+          pos[i * 3 + 1] = 0.2;
+          this.disVel[i * 3 + 1] = -this.disVel[i * 3 + 1] * 0.4;
+        }
+      }
+      this.disParticles.geometry.attributes.position.needsUpdate = true;
+      this.disMat.opacity = Math.max(0, 1.0 - Math.pow(this.dyingTimer / 1.5, 2));
+
+      if (this.dyingTimer >= 1.4) {
+        this.state = this.STATE_GAMEOVER;
+        this.gameOverModal.classList.remove('hidden');
+        if (this.finalDistanceText) this.finalDistanceText.textContent = `${Math.round(this.distance)} M`;
+        if (this.finalSpeedText) this.finalSpeedText.textContent = `${Math.round(this.maxSpeed * 3.6)} KM/H`;
       }
     }
 
-    // Vol au ras du sol (< 2.2m) : recharge douce continue (effet de sol)
-    if (pos.y <= 2.2) {
-      this.energy = Math.min(this.maxEnergy, this.energy + 28.0 * dt);
-    }
-
-    // Application du déplacement vertical
-    pos.y += verticalVelocity * dt;
-    pos.y = Math.max(this.minAltitude, Math.min(this.maxAltitude, pos.y));
-
-    // Tangage (Pitch) : piqué vers le bas ou cabré vers le haut
-    const targetPitch = this.inputAxisY * 0.42;
-    this.avatarMesh.rotation.x += (targetPitch - this.avatarMesh.rotation.x) * 8.0 * dt;
-
-    // --- C. PULSATION DU CŒUR LIÉE À L'ÉNERGIE D'INFI ---
-    const energyRatio = Math.max(0.05, this.energy / this.maxEnergy);
-    // Fréquence rapide à 100%, lente quand l'énergie faiblit
-    const pulseFrequency = 1.0 + energyRatio * 3.5;
-    const heartbeat = Math.pow(Math.sin(time * Math.PI * pulseFrequency), 4);
-
-    // Intensité lumineuse et émissive dynamique
-    const lightIntensity = (1.0 + energyRatio * 4.2) * (0.6 + heartbeat * 0.7);
-    this.heartLight.intensity = lightIntensity;
-    this.heartMat.emissiveIntensity = (1.5 + energyRatio * 3.5) * (0.7 + heartbeat * 0.6);
-
-    const heartScale = 0.42 * (1.0 + heartbeat * 0.15 * energyRatio);
-    this.heartMesh.scale.set(heartScale, heartScale, heartScale);
-
-    // Ombre dynamique selon l'altitude
-    const altitude = pos.y - this.minAltitude;
-    this.shadowMat.opacity = Math.max(0.04, 0.35 - (altitude / this.maxAltitude) * 0.3);
-    const shadowScale = 1.0 + (altitude / this.maxAltitude) * 1.6;
-    this.shadowMesh.scale.set(shadowScale, shadowScale, shadowScale);
-
-    // --- D. DÉFILEMENT DE LA GRILLE FILAIRE ---
-    const deltaZ = this.currentForwardSpeed * dt;
-    for (let i = 0; i < this.gridSections.length; i++) {
-      const section = this.gridSections[i];
-      section.position.z += deltaZ;
-      if (section.position.z >= this.sectionLength) {
-        section.position.z -= this.sectionLength * 2;
-      }
-    }
-
-    // --- E. ANIMATION DE NITY (OSCILLATION ET PULSATION DU HALO) ---
+    // --- H. ANIMATION DE NITY & RÉACTIVITÉ SUR KICK ---
     if (this.nityGroup) {
       this.nityGroup.position.y = 8 + Math.sin(time * 1.1) * 1.8;
       this.nitySphere.rotation.y += 0.3 * dt;
       this.nityRing.rotation.z += 0.6 * dt;
-      this.nityHaloMat.opacity = 0.35 + Math.sin(time * 2.5) * 0.15;
+
+      // L'aura de Nity pulse en direct sur le Kick de basse !
+      const kickPulse = 1.0 + this.bassEnergy * 0.35;
+      this.nityHalo.scale.set(kickPulse, kickPulse, kickPulse);
+      this.nityHaloMat.opacity = 0.45 + this.bassEnergy * 0.4;
     }
 
-    // --- F. SUIVI DE CAMÉRA CINÉMATIQUE 3E PERSONNE EN X ET Y ---
-    const targetCamX = pos.x * 0.35;
-    const targetCamY = Math.max(4.0, pos.y + 3.2);
-    const targetCamZ = pos.z + 9.5;
-
-    this.camera.position.x += (targetCamX - this.camera.position.x) * 6.0 * dt;
-    this.camera.position.y += (targetCamY - this.camera.position.y) * 5.0 * dt;
-    this.camera.position.z += (targetCamZ - this.camera.position.z) * 5.0 * dt;
-
-    this.cameraTarget.set(pos.x * 0.2, Math.max(1.8, pos.y * 0.6), -16);
-    this.camera.lookAt(this.cameraTarget);
-
-    // --- G. MISE À JOUR DU HUD ---
-    this.updateHUD(this.energy, this.currentForwardSpeed, pos.y);
-
-    // --- H. RENDU AVEC POST-PROCESSING BLOOM ---
+    // --- I. RENDU POST-PROCESSING BLOOM ---
     this.composer.render();
   }
 
-  updateHUD(energy, speed, altitude) {
+  updateHUD() {
     if (this.energyBar) {
-      this.energyBar.style.width = `${Math.max(0, Math.min(100, energy))}%`;
-      if (energy < 25) {
-        this.energyBar.classList.add('critical');
-      } else {
-        this.energyBar.classList.remove('critical');
-      }
+      this.energyBar.style.width = `${Math.max(0, Math.min(100, this.energy))}%`;
+      if (this.energy < 25) this.energyBar.classList.add('critical');
+      else this.energyBar.classList.remove('critical');
     }
-
     if (this.speedText) {
-      this.speedText.textContent = `${Math.round(speed * 3.6)} KM/H`;
+      this.speedText.textContent = `${Math.round(this.currentSpeed * 3.6)} KM/H`;
     }
-
     if (this.altitudeText) {
-      this.altitudeText.textContent = `${Math.round(altitude * 10)} M`;
+      this.altitudeText.textContent = `${Math.round(this.playerGroup.position.y * 10)} M`;
+    }
+    if (this.distanceText) {
+      this.distanceText.textContent = `${Math.round(this.distance)} M`;
     }
   }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  new GameEngine();
+  new SoundriseGame();
 });
