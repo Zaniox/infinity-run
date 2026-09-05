@@ -176,19 +176,6 @@ export class TargetManager {
     this.nityRing.position.y = 1.6;
     this.nityAvatar.add(this.nityRing);
 
-    // D. Aura sphérique pulsante
-    const auraGeo = new THREE.SphereGeometry(2.6, 24, 24);
-    this.nityAuraMat = new THREE.MeshBasicMaterial({
-      color: 0x00f0ff,
-      transparent: true,
-      opacity: 0.35,
-      blending: THREE.AdditiveBlending,
-      side: THREE.BackSide
-    });
-    this.nityAura = new THREE.Mesh(auraGeo, this.nityAuraMat);
-    this.nityAura.position.y = 1.6;
-    this.nityAvatar.add(this.nityAura);
-
     // E. Cœur de Nity sur la poitrine
     const heartMesh = new THREE.Mesh(this.buildHeartGeometry(), new THREE.MeshStandardMaterial({
       color: 0xffffff,
@@ -449,11 +436,11 @@ export class TargetManager {
       this.nityAvatar.rotation.x += (targetPitch - this.nityAvatar.rotation.x) * 5.0 * dt;
       this.nityAvatar.rotation.z += (targetRoll - this.nityAvatar.rotation.z) * 5.0 * dt;
 
-      // Rotation de son halo et pulsation de son aura sur les basses
+      // Rotation de son halo céleste et pulsation sur les basses
       this.nityRing.rotation.z += 2.2 * dt;
-      const auraScale = 1.0 + Math.pow(bassEnergy, 1.8) * 0.55;
-      this.nityAura.scale.set(auraScale, auraScale, auraScale);
-      this.nityAuraMat.opacity = 0.35 + bassEnergy * 0.45;
+      const ringPulse = 1.0 + Math.pow(bassEnergy, 1.8) * 0.18;
+      this.nityRing.scale.set(ringPulse, ringPulse, 1.0);
+      this.nityRingMat.opacity = 0.75 + bassEnergy * 0.25;
       this.nityHeadMat.emissiveIntensity = 0.8 + bassEnergy * 2.4;
 
       if (this.nityHeartMesh) {

@@ -458,6 +458,25 @@ export class Player {
     this.boostExtraSpeed = 40.0;
   }
 
+  // Animation d'attente cinématique dans le Menu Principal
+  updateIdle(dt, bpm, bassEnergy) {
+    const time = performance.now() * 0.001;
+    this.group.position.set(0, 2.5 + Math.sin(time * 1.5) * 0.18, 0);
+    this.avatar.rotation.y = Math.sin(time * 0.8) * 0.12;
+    this.avatar.rotation.z = Math.sin(time * 1.2) * 0.05;
+    this.avatar.rotation.x = Math.sin(time * 0.9) * 0.03;
+
+    // Pulsation douce du cœur sur le tempo
+    const bps = (bpm || 130) / 60.0;
+    const beatPhase = (time * bps * Math.PI * 2) % (Math.PI * 2);
+    const heartbeat = Math.pow(Math.sin(beatPhase), 6) * 0.6 + bassEnergy * 0.25;
+    this.heartLight.intensity = 3.0 + heartbeat * 2.5;
+    this.heartMat.emissiveIntensity = 3.2 + heartbeat * 2.0;
+    if (this.fbxHeartMaterial) {
+      this.fbxHeartMaterial.emissiveIntensity = 3.5 + heartbeat * 2.0;
+    }
+  }
+
   // Mise à jour de la physique de vol, de l'énergie et des animations
   update(dt, inputAxisX, inputAxisY, bpm, bassEnergy) {
     const time = performance.now() * 0.001;

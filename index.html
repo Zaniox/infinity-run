@@ -52,8 +52,45 @@
     <!-- Écran Flash Cosmique (Feinte du Cycle 8) -->
     <div id="cosmic-flash" class="cosmic-flash"></div>
 
+    <!-- MENU PRINCIPAL PLAY / ACCUEIL CINÉMATOGRAPHIQUE -->
+    <div id="start-menu" class="start-menu-overlay">
+      <div class="start-menu-card">
+        <div class="menu-brand-badge">// OODAÏSOUND OFFICIAL GAME</div>
+        <h1 class="menu-title">// SOUNDRISE <span class="neon-title">: INFINITY RUN</span></h1>
+        <p class="menu-subtitle">ODYSSÉE GLIDER 3D &bull; RACE THE SUN FEEL &bull; SYNCHRONISATION ÉLÉMENTAIRE</p>
+
+        <!-- Sélecteur de Cycle de départ -->
+        <div class="menu-cycle-box">
+          <div class="menu-cycle-label">SÉLECTIONNEZ LE CYCLE DE DÉPART</div>
+          <div class="menu-cycle-control">
+            <button id="menu-btn-prev" class="btn-cycle-nav" title="Cycle précédent">◄</button>
+            <div id="menu-cycle-display" class="menu-cycle-tag">
+              <span id="menu-cycle-badge" class="cycle-pill">CYCLE 1</span>
+              <span id="menu-cycle-title">CHUTE &bull; NOIR (EAU)</span>
+            </div>
+            <button id="menu-btn-next" class="btn-cycle-nav" title="Cycle suivant">►</button>
+          </div>
+          <div id="menu-cycle-troll" class="menu-troll-hint">TROMBES D'EAU ABYSSALES : Piliers noirs tombant du ciel en piqué</div>
+        </div>
+
+        <!-- Bouton Géant JOUER / PLAY -->
+        <button id="btn-play-game" class="btn-play-giant">
+          <span class="btn-play-icon">▶</span>
+          <span class="btn-play-text">JOUER &bull; DÉCOLLER</span>
+          <span class="btn-play-sub">[ ESPACE ou ENTRÉE ]</span>
+        </button>
+
+        <!-- Guide des Commandes -->
+        <div class="menu-controls-grid">
+          <div class="ctrl-item"><kbd>Q</kbd> <kbd>D</kbd> ou <kbd>◄</kbd> <kbd>►</kbd> <span>Virage & Roulis</span></div>
+          <div class="ctrl-item"><kbd>Z</kbd> <kbd>S</kbd> ou <kbd>▲</kbd> <kbd>▼</kbd> <span>Cabrer / Piquer</span></div>
+          <div class="ctrl-item"><span class="neon-heart">♥</span> <span>Collectez les Cœurs de Nity</span></div>
+        </div>
+      </div>
+    </div>
+
     <!-- HUD en Vol Minimaliste & Épuré -->
-    <div id="hud-overlay" class="hud-overlay">
+    <div id="hud-overlay" class="hud-overlay hidden">
       <!-- Notification d'accueil temporaire -->
       <div id="intro-hint" class="intro-hint">
         <span class="intro-title">// NITY EST DANS LE TROU NOIR &bull; PLONGEZ DANS L'HORIZON</span>
@@ -168,6 +205,32 @@
         <button id="btn-restart" class="btn-restart">
           <span class="btn-restart-text">REPRENDRE LA TRAVERSÉE</span>
           <span class="btn-restart-sub">[ ESPACE ou ENTRÉE ]</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL TROLL DU CYCLE 8 (FEINTE COSMIQUE INFINIE) -->
+    <div id="troll-modal" class="modal-overlay hidden">
+      <div class="modal-card troll-card">
+        <div class="troll-emoji">💀 😈 🛸</div>
+        <div class="modal-badge troll-badge">// FEINTE COSMIQUE &bull; FAUSSE VICTOIRE</div>
+        <h2 class="modal-title troll-title">TU CROYAIS L'ATTRAPER ?!</h2>
+        <div class="modal-reason troll-reason">
+          ET BIEN NON ! C'EST L'INFINI ! ON RECOMMENCE TOUT !
+        </div>
+        <div class="troll-subtext">
+          Nity s'est dématérialisée au moment du contact physique.<br>
+          Le continuum s'effondre : retour immédiat au <strong>Cycle 1 (Chute)</strong> avec vitesse augmentée !
+        </div>
+        <div class="troll-loop-badge">
+          BOUCLE TEMPORELLE ACTIVÉE : <span id="troll-loop-val" class="highlight-loop">∞ 2</span>
+        </div>
+        <div class="troll-trophy">
+          🏆 NOUVEAU TROPHÉE : « TROLLÉ PAR L'INFINI »
+        </div>
+        <button id="btn-troll-continue" class="btn-restart btn-troll-cta">
+          <span class="btn-restart-text">RELANCER LA BOUCLE</span>
+          <span class="btn-restart-sub">[ ESPACE ou CLIQUEZ ]</span>
         </button>
       </div>
     </div>

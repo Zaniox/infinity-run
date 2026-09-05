@@ -17,9 +17,14 @@ export class UIManager {
   }
 
   cacheDOMElements() {
-    // Écran d'accueil
-    this.startScreen = document.getElementById('start-screen');
-    this.btnStart = document.getElementById('btn-start');
+    // Menu d'accueil cinématique
+    this.startMenu = document.getElementById('start-menu');
+    this.btnPlayGame = document.getElementById('btn-play-game');
+    this.menuBtnPrev = document.getElementById('menu-btn-prev');
+    this.menuBtnNext = document.getElementById('menu-btn-next');
+    this.menuCycleBadge = document.getElementById('menu-cycle-badge');
+    this.menuCycleTitle = document.getElementById('menu-cycle-title');
+    this.menuCycleTroll = document.getElementById('menu-cycle-troll');
 
     // HUD en jeu
     this.hudOverlay = document.getElementById('hud-overlay');
@@ -29,7 +34,7 @@ export class UIManager {
     this.hudHearts = document.getElementById('hud-hearts');
     this.hudCycleName = document.getElementById('hud-cycle-name');
 
-    // Audio & Navigation de cycle
+    // Audio & Navigation de cycle dans le HUD
     this.btnAudioToggle = document.getElementById('btn-audio-toggle');
     this.audioIcon = document.getElementById('audio-icon');
     this.audioLabel = document.getElementById('audio-label');
@@ -52,20 +57,34 @@ export class UIManager {
     this.finalRankSub = document.getElementById('final-rank-sub');
     this.btnRestart = document.getElementById('btn-restart');
 
-    // Éléments de la Feinte Cosmique & Climax
+    // Éléments de la Feinte Cosmique & Modal Troll du Cycle 8
     this.cosmicFlash = document.getElementById('cosmic-flash');
     this.hudLoop = document.getElementById('hud-loop');
     this.climaxAlert = document.getElementById('climax-alert');
     this.climaxTitle = document.getElementById('climax-title');
+    this.trollModal = document.getElementById('troll-modal');
+    this.trollLoopVal = document.getElementById('troll-loop-val');
+    this.btnTrollContinue = document.getElementById('btn-troll-continue');
   }
 
   bindEvents() {
-    // Démarrage initial (geste utilisateur requis pour Web Audio)
-    if (this.btnStart) {
-      this.btnStart.addEventListener('click', () => {
-        if (this.startScreen) this.startScreen.classList.add('hidden');
-        if (this.hudOverlay) this.hudOverlay.classList.remove('hidden');
+    // Clic sur JOUER dans le Menu Principal
+    if (this.btnPlayGame) {
+      this.btnPlayGame.addEventListener('click', () => {
+        this.hideStartMenu();
         if (this.onStart) this.onStart();
+      });
+    }
+
+    // Sélecteur de cycle dans le Menu Principal
+    if (this.menuBtnPrev) {
+      this.menuBtnPrev.addEventListener('click', () => {
+        if (this.onPrevCycle) this.onPrevCycle();
+      });
+    }
+    if (this.menuBtnNext) {
+      this.menuBtnNext.addEventListener('click', () => {
+        if (this.onNextCycle) this.onNextCycle();
       });
     }
 
@@ -79,7 +98,7 @@ export class UIManager {
       });
     }
 
-    // Navigation des cycles
+    // Navigation des cycles en vol (HUD)
     if (this.btnPrevCycle) {
       this.btnPrevCycle.addEventListener('click', () => {
         if (this.onPrevCycle) this.onPrevCycle();
@@ -91,7 +110,7 @@ export class UIManager {
       });
     }
 
-    // Bouton de redémarrage
+    // Bouton de redémarrage (Game Over)
     if (this.btnRestart) {
       this.btnRestart.addEventListener('click', () => {
         this.hideGameOver();
@@ -99,12 +118,30 @@ export class UIManager {
       });
     }
 
-    // Raccourcis clavier pour relancer
+    // Bouton de continuation du Troll Modal
+    if (this.btnTrollContinue) {
+      this.btnTrollContinue.addEventListener('click', () => {
+        this.hideTrollModal();
+        if (this.onTrollContinue) this.onTrollContinue();
+      });
+    }
+
+    // Raccourcis clavier
     window.addEventListener('keydown', (e) => {
-      if ((e.code === 'Space' || e.code === 'Enter') && this.isGameOverVisible()) {
-        e.preventDefault();
-        this.hideGameOver();
-        if (this.onRestart) this.onRestart();
+      if ((e.code === 'Space' || e.code === 'Enter')) {
+        if (this.isStartMenuVisible()) {
+          e.preventDefault();
+          this.hideStartMenu();
+          if (this.onStart) this.onStart();
+        } else if (this.isTrollModalVisible()) {
+          e.preventDefault();
+          this.hideTrollModal();
+          if (this.onTrollContinue) this.onTrollContinue();
+        } else if (this.isGameOverVisible()) {
+          e.preventDefault();
+          this.hideGameOver();
+          if (this.onRestart) this.onRestart();
+        }
       }
     });
   }
@@ -287,5 +324,61 @@ export class UIManager {
 
   isGameOverVisible() {
     return this.gameOverModal && !this.gameOverModal.classList.contains('hidden');
+  }
+
+  // --- GESTION DU MENU PRINCIPAL PLAY ---
+  hideStartMenu() {
+    if (this.startMenu) {
+      this.startMenu.classList.add('hidden');
+    }
+    if (this.hudOverlay) {
+      this.hudOverlay.classList.remove('hidden');
+    }
+  }
+
+  showStartMenu() {
+    if (this.startMenu) {
+      this.startMenu.classList.remove('hidden');
+    }
+    if (this.hudOverlay) {
+      this.hudOverlay.classList.add('hidden');
+    }
+  }
+
+  isStartMenuVisible() {
+    return this.startMenu && !this.startMenu.classList.contains('hidden');
+  }
+
+  updateMenuCycle(cycle) {
+    if (this.menuCycleBadge) {
+      this.menuCycleBadge.textContent = `CYCLE ${cycle.id}`;
+    }
+    if (this.menuCycleTitle) {
+      this.menuCycleTitle.textContent = `${cycle.name.toUpperCase()} • ${cycle.colorName.toUpperCase()} (${cycle.element.toUpperCase()})`;
+    }
+    if (this.menuCycleTroll) {
+      this.menuCycleTroll.textContent = cycle.troll || cycle.subtitle;
+    }
+  }
+
+  // --- GESTION DU MODAL TROLL DU CYCLE 8 ---
+  showTrollModal(loopCount, onContinue) {
+    this.onTrollContinue = onContinue;
+    if (this.trollLoopVal) {
+      this.trollLoopVal.textContent = `∞ ${loopCount}`;
+    }
+    if (this.trollModal) {
+      this.trollModal.classList.remove('hidden');
+    }
+  }
+
+  hideTrollModal() {
+    if (this.trollModal) {
+      this.trollModal.classList.add('hidden');
+    }
+  }
+
+  isTrollModalVisible() {
+    return this.trollModal && !this.trollModal.classList.contains('hidden');
   }
 }

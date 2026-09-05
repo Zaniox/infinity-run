@@ -16,10 +16,11 @@ class GameApp {
     this.clock = new THREE.Clock();
 
     // États de jeu
+    this.STATE_MENU = 'MENU';
     this.STATE_PLAYING = 'PLAYING';
     this.STATE_DYING = 'DYING';
     this.STATE_GAMEOVER = 'GAMEOVER';
-    this.state = this.STATE_PLAYING;
+    this.state = this.STATE_MENU;
 
     // Statistiques de vol
     this.distance = 0;
@@ -65,6 +66,7 @@ class GameApp {
     // Initialisation du premier cycle
     const track = this.audio.getCurrentTrack();
     this.onTrackChange(this.audio.currentTrackIndex, track);
+    this.ui.updateMenuCycle(this.world.cycle);
 
     // Déclenchement automatique de l'audio au premier clic ou touche
     const startAudioOnGesture = () => {
@@ -118,6 +120,7 @@ class GameApp {
 
   startGame() {
     this.state = this.STATE_PLAYING;
+    this.ui.hideStartMenu();
     if (!this.audio.isPlaying) this.audio.start();
     const track = this.audio.getCurrentTrack();
     this.onTrackChange(this.audio.currentTrackIndex, track);
@@ -149,6 +152,7 @@ class GameApp {
     this.target.setCycleColors(cycle.primary, cycle.secondary);
     this.target.setCycleIndex(index);
     this.ui.updateCycleBadge(cycle);
+    this.ui.updateMenuCycle(cycle);
     this.ui.showCycleToast(cycle);
     this.cycle8Distance = 0;
     if (index !== 7) {
@@ -227,11 +231,31 @@ class GameApp {
     requestAnimationFrame(this.animate);
 
     const dt = Math.min(this.clock.getDelta(), 0.1);
+    const time = performance.now() * 0.001;
 
     // 1. Analyse audio en temps réel (bande 20-120 Hz)
     this.audio.update(dt);
     const bass = this.audio.bassEnergy;
     const currentBpm = this.audio.getCurrentTrack().bpm || 130;
+
+    if (this.state === this.STATE_MENU) {
+      // Animation cinématique d'attente dans le Menu Principal
+      this.player.updateIdle(dt, currentBpm, bass);
+      this.world.updateElements(dt, 16.0, bass, time);
+      this.target.update(dt, 0, this.player.group.position, bass);
+
+      // Caméra d'exposition orbitant doucement pour mettre en valeur Infi et le décor
+      const camOrbitX = Math.sin(time * 0.35) * 4.2;
+      const camOrbitY = 4.2 + Math.cos(time * 0.45) * 0.35;
+      const camOrbitZ = 9.8 + Math.cos(time * 0.3) * 1.2;
+
+      this.camera.position.set(camOrbitX, camOrbitY, camOrbitZ);
+      this.cameraTarget.set(0, 2.2, -18);
+      this.camera.lookAt(this.cameraTarget);
+
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
 
     if (this.state === this.STATE_PLAYING) {
       // 2. Calcul de la vitesse de translation avec boost temporaire
@@ -350,28 +374,42 @@ class GameApp {
     // 2. SFX Riser spectral + Sub-Warp
     this.audio.playCosmicWarp();
 
-    // 3. Incrémentation de la boucle temporelle
+    // 3. Affichage du Modal Troll officiel (Feinte Cosmique Infinie)
+    const nextLoop = this.loopCount + 1;
+    this.ui.showTrollModal(nextLoop, () => {
+      this.continueAfterTroll();
+    });
+  }
+
+  continueAfterTroll() {
+    // 1. Flash de transition
+    this.ui.triggerFlash();
+
+    // 2. Incrémentation de la boucle temporelle
     this.loopCount++;
     this.ui.updateLoopCount(this.loopCount);
 
-    // 4. Annonce de la feinte cosmique dans le HUD
-    this.ui.showClimaxAlert(`// FEINTE COSMIQUE ! BOUCLE ∞ ${this.loopCount} ACTIVÉE • RETOUR AU CYCLE 1`, true);
+    // 3. Annonce de la feinte cosmique dans le HUD
+    this.ui.showClimaxAlert(`// FEINTE COSMIQUE ! BOUCLE ∞ ${this.loopCount} ACTIVÉE • RETOUR CYCLE 1 (VITESSE +20%)`, true);
 
-    // 5. Augmentation permanente de la vitesse (prestige & challenge)
+    // 4. Augmentation permanente de la vitesse (prestige & challenge)
     this.baseSpeed += 16.0;
     this.currentSpeed = this.baseSpeed;
     this.player.boostExtraSpeed = 0;
 
-    // 6. Réinitialisation de Nity et reboot temporel au Cycle 1 (Chute)
+    // 5. Réinitialisation de Nity et reboot temporel au Cycle 1 (Chute)
+    this.player.reset();
+    this.player.group.position.set(0, 3.5, 0);
     this.target.reset();
+    this.world.reset();
     this.cycle8Distance = 0;
     this.audio.playTrack(0);
 
-    // 7. Masquer l'alerte après 3.8s et réarmer
+    // 6. Masquer l'alerte après 4s et réarmer
     setTimeout(() => {
       this.ui.hideClimaxAlert();
       this.isClimaxFeinteActive = false;
-    }, 3800);
+    }, 4000);
   }
 }
 

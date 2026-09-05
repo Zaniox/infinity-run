@@ -61,7 +61,7 @@ export const CYCLES_DATA = [
     subtitle: "Jaune • Électricité (Plasma & Foudre)",
     element: "Électricité",
     colorName: "Jaune",
-    troll: "LEURRES ÉLECTRIQUES : Prismes chargés à haute tension générant des arcs de foudre",
+    troll: "PYLÔNES TESLA & ARCS DE FOUDRE : Décharges plasma haute-tension entre pylônes",
     sky: 0x141202,
     fog: 0x241d03,
     ground: 0x1a1602,
@@ -69,7 +69,7 @@ export const CYCLES_DATA = [
     primary: 0xeab308,
     secondary: 0xfef08a,
     lightIntensity: 2.2,
-    style: "decoy"
+    style: "tesla"
   },
   {
     id: 5,
@@ -161,6 +161,9 @@ export class World {
     this.obstacleTimer = 0;
     this.spawnDistance = -240; // Spawne au cœur de la brume 100% opaque
     this.despawnZ = 20;
+
+    // Bassin d'ondulations d'eau pour le Cycle 1 (Chute / Eau)
+    this.setupWaterRipplesPool();
   }
 
   // Configuration de l'éclairage cinématographique avec PCFSoftShadowMap
@@ -829,6 +832,29 @@ export class World {
     this.updateActiveElement(this.currentCycleIndex);
   }
 
+  // --- SYSTÈME D'ONDULATIONS D'EAU (CYCLE 1 - CHUTE / EAU) ---
+  setupWaterRipplesPool() {
+    this.ripples = [];
+    this.rippleGeo = new THREE.RingGeometry(0.8, 1.4, 32);
+    this.rippleGeo.rotateX(-Math.PI / 2);
+    this.rippleMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+  }
+
+  spawnWaterRipple(x, z) {
+    const mesh = new THREE.Mesh(this.rippleGeo, this.rippleMat.clone());
+    mesh.position.set(x, 0.08, z);
+    mesh.scale.set(1, 1, 1);
+    this.scene.add(mesh);
+    this.ripples.push({ mesh, scale: 1.0, maxScale: 14.0, opacity: 0.85 });
+  }
+
   // --- LES 8 TROLLS ET OBSTACLES PAR CYCLE ---
 
   // 1. Monolithe classique
@@ -867,7 +893,7 @@ export class World {
     mesh.receiveShadow = true;
 
     const bbox = new THREE.Box3().setFromObject(mesh);
-    const obj = { mesh, bbox, type: 'falling', targetY: h / 2, fallSpeed: 42.0 };
+    const obj = { mesh, bbox, type: 'falling', targetY: h / 2, fallSpeed: 42.0, hasSplashed: false };
 
     this.scene.add(mesh);
     this.obstacles.push(obj);
@@ -943,24 +969,106 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 4 (Amour) : Prisme foudroyant haute-tension (Jaune / Électricité)
-  spawnDecoyArch(x) {
-    const geo = new THREE.OctahedronGeometry(6.5, 0);
-    const mat = new THREE.MeshStandardMaterial({
-      color: 0xfacc15,
-      emissive: 0xeab308,
-      emissiveIntensity: 1.4,
-      roughness: 0.15,
-      metalness: 0.85
+  // Troll 4 (Amour) : Pylônes Tesla haute-tension avec arcs de foudre réels (Jaune / Électricité)
+  spawnTeslaGate(x) {
+    const group = new THREE.Group();
+    const subBoxes = [];
+    const pylonH = 18.0;
+    const pylonR = 0.9;
+    const gap = 15.0;
+
+    const metalMat = new THREE.MeshStandardMaterial({
+      color: 0x1c1917,
+      roughness: 0.25,
+      metalness: 0.92
     });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, 5.5, this.spawnDistance);
-    mesh.castShadow = true;
 
-    const bbox = new THREE.Box3().setFromObject(mesh);
-    const obj = { mesh, bbox, type: 'decoy' };
+    const electrodeMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xfacc15,
+      emissiveIntensity: 3.8,
+      roughness: 0.08,
+      metalness: 0.6
+    });
 
-    this.scene.add(mesh);
+    // Pylône gauche
+    const pylonGeo = new THREE.CylinderGeometry(pylonR * 0.7, pylonR, pylonH, 12);
+    const leftPylon = new THREE.Mesh(pylonGeo, metalMat);
+    leftPylon.position.set(-gap / 2, pylonH / 2, 0);
+    leftPylon.castShadow = true;
+    group.add(leftPylon);
+    subBoxes.push({ mesh: leftPylon, box: new THREE.Box3() });
+
+    const leftSphere = new THREE.Mesh(new THREE.SphereGeometry(1.6, 16, 16), electrodeMat);
+    leftSphere.position.set(-gap / 2, pylonH, 0);
+    group.add(leftSphere);
+
+    // Pylône droit
+    const rightPylon = new THREE.Mesh(pylonGeo, metalMat);
+    rightPylon.position.set(gap / 2, pylonH / 2, 0);
+    rightPylon.castShadow = true;
+    group.add(rightPylon);
+    subBoxes.push({ mesh: rightPylon, box: new THREE.Box3() });
+
+    const rightSphere = new THREE.Mesh(new THREE.SphereGeometry(1.6, 16, 16), electrodeMat);
+    rightSphere.position.set(gap / 2, pylonH, 0);
+    group.add(rightSphere);
+
+    // Anneaux de bobine Tesla
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xeab308 });
+    const ringGeo = new THREE.TorusGeometry(1.3, 0.16, 8, 20);
+    for (let h = 5; h <= 15; h += 3.5) {
+      const ringL = new THREE.Mesh(ringGeo, ringMat);
+      ringL.rotation.x = Math.PI / 2;
+      ringL.position.set(-gap / 2, h, 0);
+      group.add(ringL);
+
+      const ringR = new THREE.Mesh(ringGeo, ringMat);
+      ringR.rotation.x = Math.PI / 2;
+      ringR.position.set(gap / 2, h, 0);
+      group.add(ringR);
+    }
+
+    // Arc de foudre haute tension entre les électrodes
+    const arcSegments = 16;
+    const arcGeo = new THREE.BufferGeometry();
+    const arcPos = new Float32Array(arcSegments * 2 * 3);
+    arcGeo.setAttribute('position', new THREE.BufferAttribute(arcPos, 3));
+
+    const arcMat = new THREE.LineBasicMaterial({
+      color: 0xfff066,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending
+    });
+    const arcLine = new THREE.LineSegments(arcGeo, arcMat);
+    group.add(arcLine);
+
+    // Boîte de collision centrale pour l'arc de plasma
+    const hazardMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(gap * 0.8, 3.4, 2.5),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hazardMesh.position.set(0, pylonH, 0);
+    group.add(hazardMesh);
+    subBoxes.push({ mesh: hazardMesh, box: new THREE.Box3() });
+
+    group.position.set(x, 0, this.spawnDistance);
+
+    const obj = {
+      mesh: group,
+      subBoxes,
+      type: 'tesla',
+      arcLine,
+      arcPos,
+      arcSegments,
+      leftX: -gap / 2,
+      rightX: gap / 2,
+      arcY: pylonH,
+      flickerTimer: 0
+    };
+
+    this.scene.add(group);
     this.obstacles.push(obj);
   }
 
@@ -1099,8 +1207,9 @@ export class World {
           else this.spawnMonolith(lx);
           break;
 
+        case 'tesla':
         case 'decoy': // Cycle 4 : Amour
-          if (Math.random() < 0.4) this.spawnDecoyArch(lx);
+          if (Math.random() < 0.55) this.spawnTeslaGate(lx);
           else this.spawnMonolith(lx);
           break;
 
@@ -1144,8 +1253,45 @@ export class World {
       }
 
       // Logique spécifique des trolls
-      if (obs.type === 'falling' && obs.mesh.position.y > obs.targetY) {
-        obs.mesh.position.y = Math.max(obs.targetY, obs.mesh.position.y - obs.fallSpeed * dt);
+      if (obs.type === 'falling') {
+        if (obs.mesh.position.y > obs.targetY) {
+          obs.mesh.position.y = Math.max(obs.targetY, obs.mesh.position.y - obs.fallSpeed * dt);
+          if (obs.mesh.position.y <= obs.targetY && !obs.hasSplashed) {
+            obs.hasSplashed = true;
+            this.spawnWaterRipple(obs.mesh.position.x, obs.mesh.position.z);
+          }
+        }
+      } else if (obs.type === 'tesla') {
+        obs.flickerTimer += dt;
+        if (obs.flickerTimer > 0.035) {
+          obs.flickerTimer = 0;
+          const segs = obs.arcSegments;
+          const p = obs.arcPos;
+          let curX = obs.leftX;
+          let curY = obs.arcY;
+          let curZ = 0;
+          const stepX = (obs.rightX - obs.leftX) / segs;
+
+          for (let s = 0; s < segs; s++) {
+            p[s * 6] = curX;
+            p[s * 6 + 1] = curY;
+            p[s * 6 + 2] = curZ;
+
+            const nextX = (s === segs - 1) ? obs.rightX : (curX + stepX);
+            const nextY = (s === segs - 1) ? obs.arcY : (obs.arcY + (Math.random() - 0.5) * 2.4);
+            const nextZ = (s === segs - 1) ? 0 : ((Math.random() - 0.5) * 2.2);
+
+            p[s * 6 + 3] = nextX;
+            p[s * 6 + 4] = nextY;
+            p[s * 6 + 5] = nextZ;
+
+            curX = nextX;
+            curY = nextY;
+            curZ = nextZ;
+          }
+          obs.arcLine.geometry.attributes.position.needsUpdate = true;
+          obs.arcLine.material.opacity = 0.75 + Math.random() * 0.25;
+        }
       } else if (obs.type === 'sliding') {
         obs.mesh.position.x += obs.dir * obs.speed * dt;
         if (Math.abs(obs.mesh.position.x) > 10.0) obs.dir *= -1;
@@ -1188,6 +1334,21 @@ export class World {
         this.obstacles.splice(i, 1);
       }
     }
+
+    // 5. Défilement et expansion des ondulations d'eau (Cycle 1 - Chute / Eau)
+    for (let i = this.ripples.length - 1; i >= 0; i--) {
+      const rip = this.ripples[i];
+      rip.mesh.position.z += deltaZ;
+      rip.scale += 14.0 * dt;
+      rip.mesh.scale.set(rip.scale, rip.scale, rip.scale);
+      rip.opacity = Math.max(0, 0.85 * (1.0 - rip.scale / rip.maxScale));
+      rip.mesh.material.opacity = rip.opacity;
+      if (rip.scale >= rip.maxScale || rip.mesh.position.z > this.despawnZ) {
+        this.scene.remove(rip.mesh);
+        rip.mesh.material.dispose();
+        this.ripples.splice(i, 1);
+      }
+    }
   }
 
   reset() {
@@ -1196,5 +1357,11 @@ export class World {
     }
     this.obstacles = [];
     this.obstacleTimer = 0;
+
+    for (const rip of this.ripples) {
+      this.scene.remove(rip.mesh);
+      rip.mesh.material.dispose();
+    }
+    this.ripples = [];
   }
 }
