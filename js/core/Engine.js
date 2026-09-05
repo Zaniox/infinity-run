@@ -15,12 +15,11 @@ export class Engine {
 
   initScene() {
     this.scene = new THREE.Scene();
-    // Brume volumétrique violet foncé profonde pour fondre l'horizon
+    // Brume volumétrique violet foncé
     this.scene.fog = new THREE.FogExp2(0x050110, 0.0055);
   }
 
   initCamera() {
-    // Caméra perspective 3e personne en légère plongée
     this.camera = new THREE.PerspectiveCamera(
       64,
       this.width / this.height,
@@ -41,27 +40,32 @@ export class Engine {
     this.renderer.setSize(this.width, this.height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.25;
+    this.renderer.toneMappingExposure = 1.3;
   }
 
   initLights() {
     // Ambiance violet sombre
-    const ambientLight = new THREE.AmbientLight(0x280540, 1.6);
+    const ambientLight = new THREE.AmbientLight(0x300550, 1.8);
     this.scene.add(ambientLight);
 
-    // Key Light magenta puissant (reflets vernis supérieurs)
-    const keyLight = new THREE.DirectionalLight(0xff2ea6, 3.2);
-    keyLight.position.set(12, 20, 10);
-    this.scene.add(keyLight);
+    // Rim light / Backlight violet puissant créant le halo lumineux du pourtour (comme image 1)
+    const backRimLight = new THREE.DirectionalLight(0xbd00ff, 4.5);
+    backRimLight.position.set(0, 8, -10);
+    this.scene.add(backRimLight);
 
-    // Rim Light cyan néon électrique (contour réflexif sur les flancs)
-    const rimLight = new THREE.DirectionalLight(0x00f0ff, 2.8);
-    rimLight.position.set(-12, 12, -6);
-    this.scene.add(rimLight);
+    // Lumière cyan brillante avant-droite (crée le reflet cyan visible sur l'image 1)
+    const cyanSpecLight = new THREE.DirectionalLight(0x00f0ff, 3.2);
+    cyanSpecLight.position.set(8, 6, 8);
+    this.scene.add(cyanSpecLight);
 
-    // Lumière rasante douce au sol
-    const groundGlow = new THREE.PointLight(0x7928ca, 2.0, 40);
-    groundGlow.position.set(0, 1.0, 5);
+    // Key light magenta avant-gauche (reflet magenta supérieur gauche)
+    const magentaLight = new THREE.DirectionalLight(0xff2ea6, 3.5);
+    magentaLight.position.set(-8, 14, 8);
+    this.scene.add(magentaLight);
+
+    // Lumière rasante au sol
+    const groundGlow = new THREE.PointLight(0x9333ea, 2.5, 40);
+    groundGlow.position.set(0, 1.0, 4);
     this.scene.add(groundGlow);
     this.groundGlow = groundGlow;
   }
