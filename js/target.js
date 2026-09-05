@@ -263,6 +263,9 @@ export class TargetManager {
         if (this.proceduralNity) {
           this.proceduralNity.visible = false;
         }
+        if (this.nityHeartMesh) {
+          this.nityHeartMesh.visible = false;
+        }
       },
       undefined,
       (err) => {

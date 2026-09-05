@@ -17,6 +17,35 @@
   </script>
 </head>
 <body>
+  <!-- Détection automatique d'ouverture locale directe (file://) -->
+  <script>
+    if (window.location.protocol === 'file:') {
+      window.addEventListener('DOMContentLoaded', () => {
+        const warn = document.createElement('div');
+        warn.id = 'file-protocol-warning';
+        warn.innerHTML = `
+          <div style="position:fixed;inset:0;background:rgba(2,3,8,0.96);z-index:9999999;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#f8fafc;padding:24px;">
+            <div style="max-width:620px;background:rgba(18,12,30,0.95);border:2px solid #00f0ff;border-radius:14px;padding:32px;box-shadow:0 0 60px rgba(0,240,255,0.3);text-align:center;">
+              <div style="font-size:46px;margin-bottom:12px;">🛸</div>
+              <h2 style="color:#00f0ff;font-size:24px;margin:0 0 16px;letter-spacing:1.5px;">// SOUNDRISE : INFINITY RUN</h2>
+              <div style="background:rgba(255,46,166,0.12);border:1px solid rgba(255,46,166,0.5);border-radius:8px;padding:14px;margin-bottom:20px;color:#ff8ad8;font-size:14px;line-height:1.6;text-align:left;">
+                <strong>⚠️ OUVERTURE DIRECTE DÉTECTÉE (file://) :</strong><br>
+                Les navigateurs modernes bloquent le moteur WebGL, les sons et les modèles 3D (.fbx) lors d'un double-clic direct sur un fichier HTML (règle de sécurité CORS locale).
+              </div>
+              <div style="text-align:left;background:rgba(0,0,0,0.5);border-radius:8px;padding:18px 22px;font-size:14px;line-height:1.8;margin-bottom:20px;color:#e2e8f0;">
+                <p style="margin:0 0 10px;color:#00f0ff;font-weight:600;">POUR JOUER EN 1 CLIC :</p>
+                <p style="margin:0 0 8px;">1. Double-cliquez sur le fichier <strong><code style="color:#00f0ff;background:rgba(0,240,255,0.12);padding:2px 8px;border-radius:4px;">Lancer-Jeu.bat</code></strong> à la racine du dossier.</p>
+                <p style="margin:0;">2. <strong>Ou sur GitHub Pages</strong> : Cliquez sur <em>« Push origin »</em> dans GitHub Desktop pour jouer en ligne depuis n'importe quel appareil !</p>
+              </div>
+              <div style="font-size:12px;color:#64748b;">// 60 FPS garantis • Modèles officiels Infi & Nity • 8 Niveaux synchronisés</div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(warn);
+      });
+    }
+  </script>
+
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
 

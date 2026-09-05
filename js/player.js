@@ -121,33 +121,62 @@ export class Player {
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
 
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const targetHeight = 2.7;
-        const scale = targetHeight / (maxDim || 1);
+        const targetHeight = 2.8;
+        const scale = targetHeight / (size.y || 274.5);
         fbx.scale.setScalar(scale);
 
-        fbx.position.set(-center.x * scale, -center.y * scale - 0.4, -center.z * scale);
+        // Centrage précis dans le conteneur avatar
+        fbx.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
 
-        // Différenciation des matériaux : Visière / Symbole Infini lumineux vs Armure cyber-métallique
+        // Application des matériaux officiels dédiés aux sous-maillages de l'FBX
         fbx.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
             const name = (child.name || '').toLowerCase();
-            if (name.includes('infinity') || name.includes('glow') || name.includes('eye') || name.includes('visor')) {
+
+            if (name.includes('heart')) {
+              // Cœur émissif sur la poitrine (Heartbit)
+              this.fbxHeartMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: 0xff2ea6,
+                emissiveIntensity: 4.5,
+                roughness: 0.1,
+                metalness: 0.1
+              });
+              child.material = this.fbxHeartMaterial;
+            } else if (name.includes('infinity') || name.includes('visor')) {
+              // Visière symbole Infini 3D sur le visage (INFINITY003)
+              this.fbxVisorMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: 0x00f0ff,
+                emissiveIntensity: 4.2,
+                roughness: 0.08,
+                metalness: 0.15
+              });
+              child.material = this.fbxVisorMaterial;
+            } else if (name.includes('brow')) {
+              // Sourcils célestes néon (OODAI_BROWS)
               child.material = new THREE.MeshStandardMaterial({
                 color: 0xffffff,
-                emissive: 0xbd00ff,
-                emissiveIntensity: 3.6,
-                roughness: 0.1,
-                metalness: 0.2
+                emissive: 0xffffff,
+                emissiveIntensity: 3.2,
+                roughness: 0.1
+              });
+            } else if (name.includes('pyra') || name.includes('wolf')) {
+              // Épaulettes / cape cyber-sombre
+              child.material = new THREE.MeshStandardMaterial({
+                color: 0x181228,
+                metalness: 0.85,
+                roughness: 0.25
               });
             } else {
+              // Corps et tête cyber-métallique (NEW_BODY001 & NEW_OODAI_HEAD)
               child.material = new THREE.MeshStandardMaterial({
-                color: 0x0c0618,
-                metalness: 0.88,
-                roughness: 0.16,
-                envMapIntensity: 1.2
+                color: 0x120d20,
+                metalness: 0.90,
+                roughness: 0.20,
+                envMapIntensity: 1.5
               });
             }
           }
@@ -156,11 +185,18 @@ export class Player {
         this.fbxModel = fbx;
         this.avatar.add(fbx);
 
-        // Masquer le torse et la tête procédurale de secours pour laisser place au modèle officiel Infi.fbx
+        // Masquer ABSOLUMENT tous les éléments procéduraux pour ne laisser que le modèle FBX pur
         if (this.proceduralTorso) this.proceduralTorso.visible = false;
         if (this.headMesh) this.headMesh.visible = false;
         if (this.headHalo) this.headHalo.visible = false;
+        if (this.visorMesh) this.visorMesh.visible = false;
+        if (this.heartMesh) this.heartMesh.visible = false;
         if (this.facePlane) this.facePlane.visible = false;
+
+        // Positionner la lumière du cœur sur la poitrine d'Infi
+        if (this.heartLight) {
+          this.heartLight.position.set(0.15, 0.38, 0.35);
+        }
       },
       undefined,
       (err) => {
@@ -513,6 +549,9 @@ export class Player {
     const lightInt = (1.2 + energyRatio * 4.0) * (0.6 + heartbeat * 0.8);
     this.heartLight.intensity = lightInt;
     this.heartMat.emissiveIntensity = (1.6 + energyRatio * 3.6) * (0.7 + heartbeat * 0.7);
+    if (this.fbxHeartMaterial) {
+      this.fbxHeartMaterial.emissiveIntensity = (2.2 + energyRatio * 4.0) * (0.7 + heartbeat * 0.7);
+    }
     const hScale = 0.42 * (1.0 + heartbeat * 0.2 * energyRatio);
     this.heartMesh.scale.set(hScale, hScale, hScale);
 
