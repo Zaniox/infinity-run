@@ -14,7 +14,6 @@ import { LeaderboardManager } from './leaderboard.js';
 
 class GameApp {
   constructor() {
-    console.log('>>> GameApp constructor starting <<<');
     this.canvas = document.getElementById('game-canvas');
     this.clock = new THREE.Clock();
     window.gameApp = this;
@@ -592,14 +591,11 @@ class GameApp {
   }
 }
 
-console.log('>>> main.js script evaluating. readyState:', document.readyState);
 // Initialisation au chargement du DOM ou immédiatement si déjà chargé
 if (document.readyState === 'loading') {
   window.addEventListener('DOMContentLoaded', () => {
-    console.log('>>> DOMContentLoaded fired, creating GameApp <<<');
     new GameApp();
   });
 } else {
-  console.log('>>> DOM already ready, creating GameApp immediately <<<');
   new GameApp();
 }
