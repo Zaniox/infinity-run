@@ -10,6 +10,7 @@ export const CYCLES_DATA = [
     id: 1,
     name: "Chute",
     subtitle: "Gravité / Abysse",
+    troll: "CHUTE CÉLESTE : Monolithes qui tombent du ciel en piqué",
     sky: 0x05010a,
     fog: 0x12021a,
     ground: 0x100418,
@@ -23,6 +24,7 @@ export const CYCLES_DATA = [
     id: 2,
     name: "Résilience",
     subtitle: "Terre / Métal",
+    troll: "PISTONS COULISSANTS : Portes de blindage qui se referment",
     sky: 0x010c08,
     fog: 0x03160e,
     ground: 0x04140c,
@@ -30,12 +32,13 @@ export const CYCLES_DATA = [
     primary: 0x00ff88,
     secondary: 0x00b4d8,
     lightIntensity: 1.7,
-    style: "ramp"
+    style: "sliding"
   },
   {
     id: 3,
     name: "Obsession",
     subtitle: "Vortex / Spirale",
+    troll: "VORTEX EN ROTATION : Arches géantes tournant en hélice",
     sky: 0x01081a,
     fog: 0x021226,
     ground: 0x031224,
@@ -43,12 +46,13 @@ export const CYCLES_DATA = [
     primary: 0x00f0ff,
     secondary: 0x3b82f6,
     lightIntensity: 1.9,
-    style: "chevrons"
+    style: "spiral"
   },
   {
     id: 4,
     name: "Amour",
     subtitle: "Lumière / Éther",
+    troll: "LEURRE PRISMATIQUE : Faux cœurs et prismes flottants",
     sky: 0x120412,
     fog: 0x240d22,
     ground: 0x1c081a,
@@ -56,12 +60,13 @@ export const CYCLES_DATA = [
     primary: 0xf472b6,
     secondary: 0xfbbf24,
     lightIntensity: 2.0,
-    style: "arches"
+    style: "decoy"
   },
   {
     id: 5,
     name: "Bonheur",
     subtitle: "Énergie Solaire",
+    troll: "ÉRUPTIONS SOLAIRES : Nappe de lasers horizontaux à raser",
     sky: 0x140a02,
     fog: 0x261504,
     ground: 0x221004,
@@ -69,12 +74,13 @@ export const CYCLES_DATA = [
     primary: 0xfbbf24,
     secondary: 0xf97316,
     lightIntensity: 2.1,
-    style: "plateaus"
+    style: "solar"
   },
   {
     id: 6,
     name: "Chaos",
     subtitle: "Entropie / Feu",
+    troll: "SÉISME D'ENTROPIE : Piliers sismiques vacillant sur les kicks",
     sky: 0x120103,
     fog: 0x220205,
     ground: 0x1c0206,
@@ -82,12 +88,13 @@ export const CYCLES_DATA = [
     primary: 0xff003c,
     secondary: 0xff7700,
     lightIntensity: 1.8,
-    style: "shattered"
+    style: "quake"
   },
   {
     id: 7,
     name: "Ambition",
     subtitle: "Ascension / Cristal",
+    troll: "POUSSÉE CRISTALLINE : Aiguilles jaillissant vers le ciel",
     sky: 0x030a16,
     fog: 0x061628,
     ground: 0x061426,
@@ -100,7 +107,8 @@ export const CYCLES_DATA = [
   {
     id: 8,
     name: "Folie",
-    subtitle: "Distorsion",
+    subtitle: "Distorsion & Feinte Finale",
+    troll: "LA FEINTE COSMIQUE : Distorsion de réalité et boucle infinie",
     sky: 0x120114,
     fog: 0x220226,
     ground: 0x1a0220,
@@ -108,7 +116,7 @@ export const CYCLES_DATA = [
     primary: 0xe879f9,
     secondary: 0xc084fc,
     lightIntensity: 1.9,
-    style: "twisted"
+    style: "glitch"
   }
 ];
 
@@ -118,21 +126,21 @@ export class World {
     this.currentCycleIndex = 0;
     this.cycle = CYCLES_DATA[0];
 
-    // Initialisation de la brume volumétrique atmosphérique (Race the Sun)
+    // Brume calibrée pour masquer 100% des apparitions d'obstacles à l'horizon (z = -240)
     this.scene.background = new THREE.Color(this.cycle.sky);
-    this.scene.fog = new THREE.FogExp2(this.cycle.fog, 0.0042);
+    this.scene.fog = new THREE.Fog(this.cycle.fog, 55, 240);
 
     // Éclairage directionnel & ombres nettes
     this.setupLighting();
 
-    // Terrain solide uni sans grille filaire
+    // Terrain solide uni à 3 sections coulissantes (aucun chargement visible)
     this.setupSolidTerrain();
 
     // Gestionnaire d'obstacles procéduraux
     this.obstacles = [];
     this.obstacleTimer = 0;
-    this.spawnDistance = -280;
-    this.despawnZ = 25;
+    this.spawnDistance = -240; // Spawne au cœur de la brume 100% opaque
+    this.despawnZ = 20;
   }
 
   // Configuration de l'éclairage cinématographique avec PCFSoftShadowMap
@@ -168,7 +176,7 @@ export class World {
   // Terrain solide uni avec léger relief doux (aucun néon filaire)
   setupSolidTerrain() {
     this.trackWidth = 140;
-    this.sectionLength = 260;
+    this.sectionLength = 180;
     this.terrainSections = [];
 
     // Matériau solide mat avec texture d'ombres propre (sans brillance aveuglante)
@@ -179,20 +187,18 @@ export class World {
       flatShading: false
     });
 
-    // 2 grandes sections coulissantes pour un sol infini fluide
-    for (let i = 0; i < 2; i++) {
-      const geo = new THREE.PlaneGeometry(this.trackWidth, this.sectionLength, 28, 48);
-
-      // Génération d'un relief doux organique sur les côtés (Race the Sun)
+    // 3 grandes sections coulissantes pour couvrir de +90 à -450 sans couture
+    for (let i = 0; i < 3; i++) {
+      const geo = new THREE.PlaneGeometry(this.trackWidth, this.sectionLength, 32, 48);
       const pos = geo.attributes.position;
+
       for (let j = 0; j < pos.count; j++) {
         const x = pos.getX(j);
         const y = pos.getY(j);
-        // Les bords extérieurs s'élèvent en douces falaises/dunes
         const distFromCenter = Math.abs(x);
-        if (distFromCenter > 28) {
-          const elev = Math.pow((distFromCenter - 28) / 38, 2) * 9.0;
-          const noise = Math.sin(x * 0.12) * Math.cos(y * 0.08) * 1.5;
+        if (distFromCenter > 26) {
+          const elev = Math.pow((distFromCenter - 26) / 36, 2) * 8.5;
+          const noise = Math.sin(x * 0.12) * Math.cos(y * 0.08) * 1.4;
           pos.setZ(j, elev + noise);
         }
       }
@@ -200,7 +206,7 @@ export class World {
 
       const mesh = new THREE.Mesh(geo, this.groundMaterial);
       mesh.rotation.x = -Math.PI / 2;
-      mesh.position.z = -i * this.sectionLength;
+      mesh.position.z = -i * this.sectionLength + this.sectionLength * 0.5;
       mesh.receiveShadow = true;
 
       this.scene.add(mesh);
@@ -233,162 +239,302 @@ export class World {
     this.monolithMaterial.color.set(this.cycle.monolith);
   }
 
-  // --- SPAWN D'OBSTACLES GÉOMÉTRIQUES ÉPURÉS (STYLE RACE THE SUN) ---
+  // --- LES 8 TROLLS ET OBSTACLES PAR CYCLE ---
 
-  // 1. Monolithe vertical imposant biseauté
+  // 1. Monolithe classique
   spawnMonolith(x, scaleY = 1.0) {
     const w = 4.0 + Math.random() * 3.5;
-    const h = (24.0 + Math.random() * 28.0) * scaleY;
+    const h = (22.0 + Math.random() * 26.0) * scaleY;
     const d = 5.0 + Math.random() * 4.0;
 
     const geo = new THREE.BoxGeometry(w, h, d);
     const mesh = new THREE.Mesh(geo, this.monolithMaterial);
     mesh.position.set(x, h / 2, this.spawnDistance);
-
-    // Léger dévers pour le style "structures qui s'affaissent"
-    if (this.cycle.style === 'falling') {
-      mesh.rotation.z = (Math.random() - 0.5) * 0.16;
-      mesh.rotation.x = (Math.random() - 0.5) * 0.12;
-    } else if (this.cycle.style === 'twisted') {
-      mesh.rotation.y = Math.PI / 4 + (Math.random() - 0.5) * 0.3;
-    }
-
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
     const bbox = new THREE.Box3().setFromObject(mesh);
-    const obj = { mesh, bbox };
+    const obj = { mesh, bbox, type: 'standard' };
 
     this.scene.add(mesh);
     this.obstacles.push(obj);
   }
 
-  // 2. Aiguille triangulaire / Obélisque acéré
-  spawnNeedle(x, scaleY = 1.0) {
-    const r = 3.2 + Math.random() * 2.2;
-    const h = (30.0 + Math.random() * 34.0) * scaleY;
-    const geo = new THREE.ConeGeometry(r, h, 4); // Cône à 4 pans (pyramide élancée)
+  // Troll 1 (Chute) : Monolithe tombant du ciel en piqué gravitationnel
+  spawnFallingPillar(x) {
+    const w = 5.0, h = 28.0, d = 5.0;
+    const geo = new THREE.BoxGeometry(w, h, d);
     const mesh = new THREE.Mesh(geo, this.monolithMaterial);
-
-    mesh.position.set(x, h / 2, this.spawnDistance);
-    mesh.rotation.y = Math.PI / 4;
+    mesh.position.set(x, 48.0, this.spawnDistance); // Tombe depuis le ciel
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
     const bbox = new THREE.Box3().setFromObject(mesh);
-    const obj = { mesh, bbox };
+    const obj = { mesh, bbox, type: 'falling', targetY: h / 2, fallSpeed: 42.0 };
 
     this.scene.add(mesh);
     this.obstacles.push(obj);
   }
 
-  // 3. Muraille / Falaise biseautée avec ouverture
-  spawnWallWithGate(gapX) {
+  // Troll 2 (Résilience) : Porte blindée à pistons coulissants au rythme du beat
+  spawnSlidingGate(gapX) {
     const group = new THREE.Group();
-    const h = 26.0;
-    const thickness = 6.0;
+    const h = 24.0, thickness = 5.0;
     const subBoxes = [];
 
-    // Pilier gauche
-    const leftW = Math.max(10, gapX + 28);
+    const leftW = Math.max(12, gapX + 28);
     const leftGeo = new THREE.BoxGeometry(leftW, h, thickness);
     const leftMesh = new THREE.Mesh(leftGeo, this.monolithMaterial);
     leftMesh.position.set(-leftW / 2 + gapX - 4.5, h / 2, 0);
     leftMesh.castShadow = true;
-    leftMesh.receiveShadow = true;
     group.add(leftMesh);
     subBoxes.push({ mesh: leftMesh, box: new THREE.Box3() });
 
-    // Pilier droit
-    const rightW = Math.max(10, 28 - gapX);
+    const rightW = Math.max(12, 28 - gapX);
     const rightGeo = new THREE.BoxGeometry(rightW, h, thickness);
     const rightMesh = new THREE.Mesh(rightGeo, this.monolithMaterial);
     rightMesh.position.set(rightW / 2 + gapX + 4.5, h / 2, 0);
     rightMesh.castShadow = true;
-    rightMesh.receiveShadow = true;
     group.add(rightMesh);
     subBoxes.push({ mesh: rightMesh, box: new THREE.Box3() });
 
-    // Arche supérieure (optionnelle pour forcer le vol rasant)
-    if (Math.random() < 0.6) {
-      const lintelGeo = new THREE.BoxGeometry(16.0, 6.0, thickness);
-      const lintelMesh = new THREE.Mesh(lintelGeo, this.monolithMaterial);
-      lintelMesh.position.set(gapX, h - 3.0, 0);
-      lintelMesh.castShadow = true;
-      lintelMesh.receiveShadow = true;
-      group.add(lintelMesh);
-      subBoxes.push({ mesh: lintelMesh, box: new THREE.Box3() });
-    }
-
     group.position.set(0, 0, this.spawnDistance);
-    const obj = { mesh: group, subBoxes };
+    const obj = { mesh: group, subBoxes, type: 'sliding', dir: Math.random() < 0.5 ? 1 : -1, speed: 6.5 };
 
     this.scene.add(group);
     this.obstacles.push(obj);
   }
 
-  // 4. Plateau surélevé horizontal (style Bonheur / Plateaus)
-  spawnPlateau(x, y) {
-    const w = 18.0 + Math.random() * 12.0;
-    const h = 4.0;
-    const d = 26.0 + Math.random() * 18.0;
+  // Troll 3 (Obsession) : Arche tourbillonnante en rotation sur l'axe Z
+  spawnSpiralArch(gapX) {
+    const group = new THREE.Group();
+    const size = 26.0;
 
-    const geo = new THREE.BoxGeometry(w, h, d);
-    const mesh = new THREE.Mesh(geo, this.monolithMaterial);
-    mesh.position.set(x, y, this.spawnDistance);
+    const topGeo = new THREE.BoxGeometry(size, 4.0, 4.0);
+    const top = new THREE.Mesh(topGeo, this.monolithMaterial);
+    top.position.y = 12;
+    group.add(top);
+
+    const botGeo = new THREE.BoxGeometry(size, 4.0, 4.0);
+    const bot = new THREE.Mesh(botGeo, this.monolithMaterial);
+    bot.position.y = -12;
+    group.add(bot);
+
+    const subBoxes = [
+      { mesh: top, box: new THREE.Box3() },
+      { mesh: bot, box: new THREE.Box3() }
+    ];
+
+    group.position.set(gapX, 10, this.spawnDistance);
+    const obj = { mesh: group, subBoxes, type: 'spiral', rotSpeed: (Math.random() < 0.5 ? 1 : -1) * 1.6 };
+
+    this.scene.add(group);
+    this.obstacles.push(obj);
+  }
+
+  // Troll 4 (Amour) : Prisme decoy (labyrinthe de prismes d'éther)
+  spawnDecoyArch(x) {
+    const geo = new THREE.OctahedronGeometry(6.5, 0);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xf472b6,
+      emissive: 0xbe185d,
+      emissiveIntensity: 0.8,
+      roughness: 0.2
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, 5.5, this.spawnDistance);
     mesh.castShadow = true;
-    mesh.receiveShadow = true;
 
     const bbox = new THREE.Box3().setFromObject(mesh);
-    const obj = { mesh, bbox };
+    const obj = { mesh, bbox, type: 'decoy' };
 
     this.scene.add(mesh);
     this.obstacles.push(obj);
   }
 
-  // Défilement du sol et mise à jour des obstacles
-  update(dt, speed, bpm, onCollisionCheck) {
-    const deltaZ = speed * dt;
+  // Troll 5 (Bonheur) : Nappe de rayons solaires forçant le rase-mottes
+  spawnSolarBeam() {
+    const group = new THREE.Group();
+    const w = 110.0, h = 1.2, d = 4.0;
+    const geo = new THREE.BoxGeometry(w, h, d);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xfbbf24,
+      transparent: true,
+      opacity: 0.85
+    });
+    const beam = new THREE.Mesh(geo, mat);
+    beam.position.set(0, 5.8, 0);
+    group.add(beam);
 
-    // 1. Défilement continu du sol solide
+    const subBoxes = [{ mesh: beam, box: new THREE.Box3() }];
+    group.position.set(0, 0, this.spawnDistance);
+
+    const obj = { mesh: group, subBoxes, type: 'solar' };
+    this.scene.add(group);
+    this.obstacles.push(obj);
+  }
+
+  // Troll 6 (Chaos) : Piliers sismiques vacillants
+  spawnQuakePillars(x) {
+    const w = 5.0, h = 26.0, d = 5.0;
+    const geo = new THREE.BoxGeometry(w, h, d);
+    const mesh = new THREE.Mesh(geo, this.monolithMaterial);
+    mesh.position.set(x, h / 2, this.spawnDistance);
+    mesh.castShadow = true;
+
+    const bbox = new THREE.Box3().setFromObject(mesh);
+    const obj = { mesh, bbox, type: 'quake', shakePhase: Math.random() * Math.PI * 2 };
+
+    this.scene.add(mesh);
+    this.obstacles.push(obj);
+  }
+
+  // Troll 7 (Ambition) : Aiguilles cristallines géantes jaillissant du sol
+  spawnCrystalNeedle(x) {
+    const r = 3.5, h = 38.0;
+    const geo = new THREE.ConeGeometry(r, h, 4);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.9,
+      roughness: 0.1,
+      metalness: 0.8
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, -10.0, this.spawnDistance);
+    mesh.castShadow = true;
+
+    const bbox = new THREE.Box3().setFromObject(mesh);
+    const obj = { mesh, bbox, type: 'needle', targetY: h / 2, riseSpeed: 38.0 };
+
+    this.scene.add(mesh);
+    this.obstacles.push(obj);
+  }
+
+  // Troll 8 (Folie) : Monolithe glitché vacillant et instable
+  spawnGlitchMonolith(x) {
+    const w = 4.5, h = 24.0, d = 4.5;
+    const geo = new THREE.BoxGeometry(w, h, d);
+    const mesh = new THREE.Mesh(geo, this.monolithMaterial);
+    mesh.position.set(x, h / 2, this.spawnDistance);
+    mesh.castShadow = true;
+
+    const bbox = new THREE.Box3().setFromObject(mesh);
+    const obj = { mesh, bbox, type: 'glitch', glitchTimer: 0 };
+
+    this.scene.add(mesh);
+    this.obstacles.push(obj);
+  }
+
+  // Mise à jour fluide du monde avec synchronisation audio (BPM & Bass)
+  update(dt, speed, bpm, bassEnergy = 0, onCollisionCheck) {
+    const deltaZ = speed * dt;
+    const time = performance.now() * 0.001;
+
+    // 1. Défilement continu du sol sans couture
     for (const sec of this.terrainSections) {
       sec.position.z += deltaZ;
-      if (sec.position.z >= this.sectionLength) {
-        sec.position.z -= this.sectionLength * 2;
+      if (sec.position.z >= this.sectionLength * 1.5) {
+        sec.position.z -= this.sectionLength * 3;
       }
     }
 
-    // Suivi de la lumière du soleil
+    // 2. Synchronisation de la lumière avec la basse (Kick)
+    const audioLightBoost = 1.0 + bassEnergy * 0.35;
+    this.sunLight.intensity = this.cycle.lightIntensity * audioLightBoost;
+    this.hemiLight.intensity = 0.55 * (1.0 + bassEnergy * 0.4);
     this.sunLight.target.position.z = -deltaZ;
 
-    // 2. Génération cadencée sur le tempo musical (BPM)
+    // 3. Cadencement des obstacles sur le BPM et les Trolls
     const beatInterval = 60.0 / (bpm || 130);
-    const measureBeats = speed > 90.0 ? 3.0 : 4.0;
+    const measureBeats = speed > 95.0 ? 2.8 : 3.6;
     this.obstacleTimer += dt;
 
     if (this.obstacleTimer >= beatInterval * measureBeats) {
       this.obstacleTimer = 0;
 
-      const lanes = [-14, -8, 0, 8, 14];
+      const lanes = [-15, -9, 0, 9, 15];
       const lx = lanes[Math.floor(Math.random() * lanes.length)];
-      const r = Math.random();
 
-      if (this.cycle.style === 'needles') {
-        this.spawnNeedle(lx);
-      } else if (this.cycle.style === 'plateaus' && r < 0.4) {
-        this.spawnPlateau((Math.random() - 0.5) * 16, 6 + Math.random() * 8);
-      } else if (r < 0.35) {
-        this.spawnWallWithGate((Math.random() - 0.5) * 14);
-      } else {
-        this.spawnMonolith(lx);
+      switch (this.cycle.style) {
+        case 'falling': // Cycle 1 : Chute
+          if (Math.random() < 0.5) this.spawnFallingPillar(lx);
+          else this.spawnMonolith(lx);
+          break;
+
+        case 'sliding': // Cycle 2 : Résilience
+          if (Math.random() < 0.45) this.spawnSlidingGate((Math.random() - 0.5) * 12);
+          else this.spawnMonolith(lx);
+          break;
+
+        case 'spiral': // Cycle 3 : Obsession
+          if (Math.random() < 0.5) this.spawnSpiralArch((Math.random() - 0.5) * 8);
+          else this.spawnMonolith(lx);
+          break;
+
+        case 'decoy': // Cycle 4 : Amour
+          if (Math.random() < 0.4) this.spawnDecoyArch(lx);
+          else this.spawnMonolith(lx);
+          break;
+
+        case 'solar': // Cycle 5 : Bonheur
+          if (Math.random() < 0.4) this.spawnSolarBeam();
+          else this.spawnMonolith(lx);
+          break;
+
+        case 'quake': // Cycle 6 : Chaos
+          if (Math.random() < 0.6) this.spawnQuakePillars(lx);
+          else this.spawnMonolith(lx);
+          break;
+
+        case 'needles': // Cycle 7 : Ambition
+          if (Math.random() < 0.55) this.spawnCrystalNeedle(lx);
+          else this.spawnMonolith(lx);
+          break;
+
+        case 'glitch': // Cycle 8 : Folie
+          this.spawnGlitchMonolith(lx);
+          break;
+
+        default:
+          this.spawnMonolith(lx);
+          break;
       }
     }
 
-    // 3. Déplacement, mise à jour des boîtes et test de collision
+    // 4. Déplacement, émersion progressive et comportement des trolls
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const obs = this.obstacles[i];
       obs.mesh.position.z += deltaZ;
 
+      // Émersion sans pop-in (grossissement fluide à l'horizon)
+      const distFromSpawn = obs.mesh.position.z - this.spawnDistance;
+      if (distFromSpawn < 40.0) {
+        const prog = Math.min(1.0, Math.max(0.01, distFromSpawn / 40.0));
+        obs.mesh.scale.set(prog, prog, prog);
+      } else {
+        obs.mesh.scale.set(1, 1, 1);
+      }
+
+      // Logique spécifique des trolls
+      if (obs.type === 'falling' && obs.mesh.position.y > obs.targetY) {
+        obs.mesh.position.y = Math.max(obs.targetY, obs.mesh.position.y - obs.fallSpeed * dt);
+      } else if (obs.type === 'sliding') {
+        obs.mesh.position.x += obs.dir * obs.speed * dt;
+        if (Math.abs(obs.mesh.position.x) > 10.0) obs.dir *= -1;
+      } else if (obs.type === 'spiral') {
+        obs.mesh.rotation.z += obs.rotSpeed * dt;
+      } else if (obs.type === 'quake') {
+        obs.mesh.rotation.z = Math.sin(time * 12.0 + obs.shakePhase) * (0.05 + bassEnergy * 0.12);
+      } else if (obs.type === 'needle' && obs.mesh.position.y < obs.targetY) {
+        obs.mesh.position.y = Math.min(obs.targetY, obs.mesh.position.y + obs.riseSpeed * dt);
+      } else if (obs.type === 'glitch') {
+        if (Math.random() < 0.08) {
+          obs.mesh.position.x += (Math.random() - 0.5) * 1.5;
+        }
+      }
+
+      // Boîtes de collision
       if (obs.subBoxes) {
         for (const sub of obs.subBoxes) {
           sub.box.setFromObject(sub.mesh);
@@ -397,7 +543,7 @@ export class World {
         obs.bbox.setFromObject(obs.mesh);
       }
 
-      // Test de collision avec le joueur si fourni
+      // Test de collision avec le joueur
       if (onCollisionCheck && Math.abs(obs.mesh.position.z) < 8.0) {
         let hit = false;
         if (obs.subBoxes) {
@@ -407,12 +553,9 @@ export class World {
         } else if (onCollisionCheck(obs.bbox)) {
           hit = true;
         }
-        if (hit) {
-          // Collision confirmée
-        }
       }
 
-      // Recyclage des obstacles dépassés
+      // Despawn derrière Infi
       if (obs.mesh.position.z > this.despawnZ) {
         this.scene.remove(obs.mesh);
         this.obstacles.splice(i, 1);
@@ -427,4 +570,5 @@ export class World {
     this.obstacles = [];
     this.obstacleTimer = 0;
   }
+}
 }

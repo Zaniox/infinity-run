@@ -33,6 +33,24 @@ html, body {
   display: block;
 }
 
+/* Flash Cosmique Blinding pour la Feinte du Cycle 8 */
+.cosmic-flash {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at 50% 50%, #ffffff 0%, #d8b4fe 30%, #00f0ff 70%, #ffffff 100%);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease-out;
+}
+
+.cosmic-flash.active {
+  opacity: 1;
+  transition: opacity 0.08s ease-in;
+}
+
 /* --- ÉCRAN DE DÉMARRAGE CINÉMATOGRAPHIQUE --- */
 .overlay-screen {
   position: absolute;
@@ -505,12 +523,95 @@ html, body {
   text-shadow: 0 0 10px #ff2ea6;
 }
 
+.telemetry-value.highlight-loop {
+  color: #facc15;
+  text-shadow: 0 0 14px rgba(250, 204, 21, 0.85);
+  font-weight: 900;
+}
+
 .telemetry-target {
   font-size: 0.82rem;
   letter-spacing: 0.14em;
   color: #e0f2fe;
   font-weight: 700;
   text-shadow: 0 0 10px rgba(0, 240, 255, 0.7);
+}
+
+/* Alerte Climax Cycle 8 & Feinte Cosmique */
+.climax-alert {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: rgba(15, 5, 28, 0.9);
+  border: 2px solid #f43f5e;
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(244, 63, 94, 0.6), 0 0 80px rgba(0, 0, 0, 0.85);
+  z-index: 25;
+  pointer-events: none;
+  animation: climaxPulse 0.9s infinite alternate ease-in-out;
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.climax-alert.hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px);
+  pointer-events: none;
+}
+
+.climax-alert.feinte-mode {
+  border-color: #00f0ff;
+  box-shadow: 0 0 45px rgba(0, 240, 255, 0.8), 0 0 90px rgba(0, 0, 0, 0.9);
+  animation: climaxFeintePulse 0.6s infinite alternate ease-in-out;
+}
+
+.climax-badge {
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  font-weight: 800;
+  color: #f43f5e;
+  text-shadow: 0 0 10px #f43f5e;
+}
+
+.climax-alert.feinte-mode .climax-badge {
+  color: #00f0ff;
+  text-shadow: 0 0 10px #00f0ff;
+}
+
+.climax-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  color: #ffffff;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.85);
+  text-align: center;
+}
+
+@keyframes climaxPulse {
+  0% {
+    box-shadow: 0 0 25px rgba(244, 63, 94, 0.4);
+    border-color: rgba(244, 63, 94, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 55px rgba(244, 63, 94, 0.95), 0 0 25px #ffffff;
+    border-color: #ffffff;
+  }
+}
+
+@keyframes climaxFeintePulse {
+  0% {
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
+    border-color: rgba(0, 240, 255, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 65px rgba(0, 240, 255, 1.0), 0 0 30px #ffffff;
+    border-color: #ffffff;
+  }
 }
 
 .hud-footer {

@@ -27,6 +27,9 @@ class GameApp {
     this.baseSpeed = 68.0;
     this.currentSpeed = 68.0;
     this.heartsCount = 0;
+    this.loopCount = 1;
+    this.cycle8Distance = 0.0;
+    this.isClimaxFeinteActive = false;
 
     // Entrées utilisateur
     this.inputAxisX = 0;
@@ -123,6 +126,11 @@ class GameApp {
     this.heartsCount = 0;
     this.baseSpeed = 68.0;
     this.currentSpeed = 68.0;
+    this.loopCount = 1;
+    this.cycle8Distance = 0;
+    this.isClimaxFeinteActive = false;
+    this.ui.updateLoopCount(this.loopCount);
+    this.ui.hideClimaxAlert();
 
     this.player.reset();
     this.player.group.position.set(0, 3.5, 0);
@@ -137,8 +145,13 @@ class GameApp {
     this.world.setCycle(index);
     const cycle = this.world.cycle;
     this.target.setCycleColors(cycle.primary, cycle.secondary);
+    this.target.setCycleIndex(index);
     this.ui.updateCycleBadge(cycle);
     this.ui.showCycleToast(cycle);
+    this.cycle8Distance = 0;
+    if (index !== 7) {
+      this.ui.hideClimaxAlert();
+    }
   }
 
   bindInputEvents() {
@@ -240,10 +253,10 @@ class GameApp {
         this.audio.playCrash();
       }
 
-      // 4. Défilement du monde et des obstacles
+      // 4. Défilement du monde et des obstacles (avec réactivité aux basses)
       const playerPos = this.player.group.position;
 
-      this.world.update(dt, this.currentSpeed, currentBpm, (box) => {
+      this.world.update(dt, this.currentSpeed, currentBpm, bass, (box) => {
         // Test de collision entre la sphère du joueur et la boîte d'obstacle
         if (box.intersectsSphere(this.player.boundingSphere)) {
           this.player.triggerCrash();
@@ -264,13 +277,36 @@ class GameApp {
         this.heartsCount++;
       });
 
-      // 6. Mise à jour des statistiques
+      // 6. Gestion du Climax du Cycle 8 (Rattrapage de Nity & Feinte Temporelle)
+      if (this.audio.currentTrackIndex === 7 && !this.isClimaxFeinteActive) {
+        this.cycle8Distance += this.currentSpeed * dt;
+        const trackProgress = this.audio.getTrackProgress();
+
+        // Rapprochement progressif vers Nity dès 480m ou 65% du morceau
+        const distRatio = Math.min(1.0, Math.max(0, (this.cycle8Distance - 480) / 420));
+        const audioRatio = Math.min(1.0, Math.max(0, (trackProgress.progress - 0.65) / 0.28));
+        const climaxRatio = Math.max(distRatio, audioRatio);
+
+        if (climaxRatio > 0.05) {
+          this.target.setClimaxDistance(climaxRatio);
+          const percent = Math.min(99, Math.round(climaxRatio * 100));
+          this.ui.showClimaxAlert(`// RATTRAPAGE DE NITY EN COURS... (${percent}%)`);
+          this.player.boostExtraSpeed = Math.max(this.player.boostExtraSpeed, climaxRatio * 28.0);
+          this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV + 16 * climaxRatio, 4 * dt);
+        }
+
+        if (climaxRatio >= 0.98) {
+          this.triggerClimaxFeinte();
+        }
+      }
+
+      // 7. Mise à jour des statistiques
       this.distance += this.currentSpeed * dt;
       if (this.currentSpeed > this.maxSpeed) {
         this.maxSpeed = this.currentSpeed;
       }
 
-      // 7. Suivi caméra 3e personne cinématographique (Infi au premier plan, Nity en ligne de mire à z = -58)
+      // 8. Suivi caméra 3e personne cinématographique (Infi au premier plan, Nity en ligne de mire à z = -58)
       const tCamX = playerPos.x * 0.36;
       const tCamY = Math.max(3.6, playerPos.y + 2.7);
       const tCamZ = playerPos.z + 8.8;
@@ -283,7 +319,7 @@ class GameApp {
       this.cameraTarget.set(playerPos.x * 0.22, Math.max(2.4, playerPos.y * 0.45 + 1.8), -52);
       this.camera.lookAt(this.cameraTarget);
 
-      // 8. Télémétrie HUD
+      // 9. Télémétrie HUD
       this.ui.updateHUD(this.player.energy, this.distance, this.currentSpeed, this.heartsCount);
 
     } else if (this.state === this.STATE_DYING) {
@@ -297,8 +333,43 @@ class GameApp {
       }
     }
 
-    // 9. Rendu de la scène
+    // 10. Rendu de la scène
     this.renderer.render(this.scene, this.camera);
+  }
+
+  // Séquence de Climax du Cycle 8 : Rattrapage de Nity puis Feinte Cosmique (Recommencement en boucle)
+  triggerClimaxFeinte() {
+    if (this.isClimaxFeinteActive) return;
+    this.isClimaxFeinteActive = true;
+
+    // 1. Flash blanc/cyan aveuglant
+    this.ui.triggerFlash();
+
+    // 2. SFX Riser spectral + Sub-Warp
+    this.audio.playCosmicWarp();
+
+    // 3. Incrémentation de la boucle temporelle
+    this.loopCount++;
+    this.ui.updateLoopCount(this.loopCount);
+
+    // 4. Annonce de la feinte cosmique dans le HUD
+    this.ui.showClimaxAlert(`// FEINTE COSMIQUE ! BOUCLE ∞ ${this.loopCount} ACTIVÉE • RETOUR AU CYCLE 1`, true);
+
+    // 5. Augmentation permanente de la vitesse (prestige & challenge)
+    this.baseSpeed += 16.0;
+    this.currentSpeed = this.baseSpeed;
+    this.player.boostExtraSpeed = 0;
+
+    // 6. Réinitialisation de Nity et reboot temporel au Cycle 1 (Chute)
+    this.target.reset();
+    this.cycle8Distance = 0;
+    this.audio.playTrack(0);
+
+    // 7. Masquer l'alerte après 3.8s et réarmer
+    setTimeout(() => {
+      this.ui.hideClimaxAlert();
+      this.isClimaxFeinteActive = false;
+    }, 3800);
   }
 }
 

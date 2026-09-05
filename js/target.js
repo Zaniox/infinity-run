@@ -4,6 +4,7 @@
  * flux gravitationnels d'accrétion et sillage de cœurs à collecter.
  */
 import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
 export class TargetManager {
   constructor(scene) {
@@ -26,9 +27,13 @@ export class TargetManager {
     this.scene.add(this.nityGroup);
 
     this.createNityModel();
+    this.loadNityFBX();
 
     // 3. Courant d'aspiration gravitationnelle (Particules reliant Nity au Trou Noir)
     this.createGravitationalSuctionStream();
+
+    // Mirages de Nity (Cycle 8 Folie)
+    this.createNityMirages();
 
     // 4. Sillage de cœurs semés par Nity
     this.hearts = [];
@@ -99,6 +104,10 @@ export class TargetManager {
     this.nityAvatar = new THREE.Group();
     this.nityGroup.add(this.nityAvatar);
 
+    // Silhouette procédurale initiale (masquée dès chargement de Nity.fbx)
+    this.proceduralNity = new THREE.Group();
+    this.nityAvatar.add(this.proceduralNity);
+
     // A. Tête sphérique chrome/irisée avec reflets néon (Image 2)
     const headGeo = new THREE.SphereGeometry(1.35, 32, 32);
     this.nityHeadMat = new THREE.MeshStandardMaterial({
@@ -111,7 +120,7 @@ export class TargetManager {
     this.nityHead = new THREE.Mesh(headGeo, this.nityHeadMat);
     this.nityHead.position.y = 2.4;
     this.nityHead.castShadow = true;
-    this.nityAvatar.add(this.nityHead);
+    this.proceduralNity.add(this.nityHead);
 
     // Visage éthéré : Arcs lumineux célestes sur la tête
     const eyeGeo = new THREE.TorusGeometry(0.55, 0.05, 12, 24, Math.PI * 0.9);
@@ -124,13 +133,13 @@ export class TargetManager {
     leftEye.position.set(-0.4, 2.5, 1.15);
     leftEye.rotation.x = Math.PI * 0.15;
     leftEye.rotation.z = Math.PI;
-    this.nityAvatar.add(leftEye);
+    this.proceduralNity.add(leftEye);
 
     const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
     rightEye.position.set(0.4, 2.5, 1.15);
     rightEye.rotation.x = Math.PI * 0.15;
     rightEye.rotation.z = Math.PI;
-    this.nityAvatar.add(rightEye);
+    this.proceduralNity.add(rightEye);
 
     // B. Manteau conique élancé (silhouette géométrique d'Amor / Image 2)
     const mantleGeo = new THREE.ConeGeometry(1.65, 3.8, 32);
@@ -144,14 +153,14 @@ export class TargetManager {
     this.nityMantle = new THREE.Mesh(mantleGeo, this.nityMantleMat);
     this.nityMantle.position.y = -0.2;
     this.nityMantle.castShadow = true;
-    this.nityAvatar.add(this.nityMantle);
+    this.proceduralNity.add(this.nityMantle);
 
     // Ligne verticale lumineuse sur le manteau
     const spineGeo = new THREE.CylinderGeometry(0.04, 0.04, 3.4, 16);
     const spineMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
     const spine = new THREE.Mesh(spineGeo, spineMat);
     spine.position.set(0, -0.2, 1.1);
-    this.nityAvatar.add(spine);
+    this.proceduralNity.add(spine);
 
     // C. Halo céleste en lévitation orbitale
     const haloGeo = new THREE.TorusGeometry(2.4, 0.06, 16, 48);
@@ -190,6 +199,87 @@ export class TargetManager {
     heartMesh.position.set(0, 1.2, 0.95);
     this.nityHeartMesh = heartMesh;
     this.nityAvatar.add(heartMesh);
+  }
+
+  loadNityFBX() {
+    const loader = new FBXLoader();
+    loader.load(
+      'models/Nity.fbx',
+      (fbx) => {
+        console.log('[Target] Corps officiel Nity.fbx chargé avec succès !');
+
+        const box = new THREE.Box3().setFromObject(fbx);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const targetHeight = 4.4;
+        const scale = targetHeight / (maxDim || 1);
+        fbx.scale.setScalar(scale);
+
+        fbx.position.set(-center.x * scale, -center.y * scale + 1.2, -center.z * scale);
+
+        fbx.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0x080416,
+              metalness: 0.92,
+              roughness: 0.14,
+              emissive: 0x00f0ff,
+              emissiveIntensity: 0.65
+            });
+          }
+        });
+
+        this.fbxModel = fbx;
+        this.nityAvatar.add(fbx);
+
+        if (this.proceduralNity) {
+          this.proceduralNity.visible = false;
+        }
+      },
+      undefined,
+      (err) => {
+        console.info('[Target] Note : Fallback procédural Nity actif :', err);
+      }
+    );
+  }
+
+  // --- MIRAGES DE NITY (Troll du Cycle 8 Folie) ---
+  createNityMirages() {
+    this.mirageGroup = new THREE.Group();
+    this.mirageGroup.visible = false;
+
+    // Clone gauche
+    this.mirageLeft = new THREE.Group();
+    this.mirageLeft.position.set(-14, this.nityBaseY, this.nityBaseZ - 6);
+    this.mirageGroup.add(this.mirageLeft);
+
+    // Clone droit
+    this.mirageRight = new THREE.Group();
+    this.mirageRight.position.set(14, this.nityBaseY, this.nityBaseZ - 6);
+    this.mirageGroup.add(this.mirageRight);
+
+    // Représentations fantomatiques semi-transparentes
+    const mirageMat = new THREE.MeshBasicMaterial({
+      color: 0xe879f9,
+      transparent: true,
+      opacity: 0.45,
+      blending: THREE.AdditiveBlending
+    });
+
+    [this.mirageLeft, this.mirageRight].forEach((m) => {
+      const h = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 16), mirageMat);
+      h.position.y = 2.4;
+      const b = new THREE.Mesh(new THREE.ConeGeometry(1.5, 3.6, 16), mirageMat);
+      b.position.y = -0.2;
+      m.add(h);
+      m.add(b);
+    });
+
+    this.scene.add(this.mirageGroup);
   }
 
   // --- 3. COURANT GRAVITATIONNEL D'ASPIRATION (NITY -> TROU NOIR) ---
@@ -418,6 +508,21 @@ export class TargetManager {
     if (this.suctionMat) this.suctionMat.color.set(primaryHex);
   }
 
+  setCycleIndex(cycleIndex) {
+    this.currentCycle = cycleIndex;
+    // Mirages actifs uniquement pendant le Cycle 8 (Folie / Distorsion)
+    if (this.mirageGroup) {
+      this.mirageGroup.visible = (cycleIndex === 7);
+    }
+  }
+
+  // Animation de Nity lors du rattrapage (Climax du Cycle 8)
+  setClimaxDistance(distRatio) {
+    // distRatio va de 0 (normal à z=-58) à 1.0 (très proche d'Infi à z=-10)
+    const targetZ = -58 + distRatio * 46.0;
+    this.nityGroup.position.z = THREE.MathUtils.lerp(this.nityGroup.position.z, targetZ, 0.1);
+  }
+
   reset() {
     for (const h of this.hearts) {
       this.scene.remove(h.mesh);
@@ -425,6 +530,7 @@ export class TargetManager {
     this.hearts = [];
     this.heartSpawnTimer = 0;
     this.nityGroup.position.set(0, this.nityBaseY, this.nityBaseZ);
+    if (this.mirageGroup) this.mirageGroup.visible = false;
   }
 }
 

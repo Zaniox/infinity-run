@@ -51,6 +51,12 @@ export class UIManager {
     this.finalRankBadge = document.getElementById('final-rank-badge');
     this.finalRankSub = document.getElementById('final-rank-sub');
     this.btnRestart = document.getElementById('btn-restart');
+
+    // Éléments de la Feinte Cosmique & Climax
+    this.cosmicFlash = document.getElementById('cosmic-flash');
+    this.hudLoop = document.getElementById('hud-loop');
+    this.climaxAlert = document.getElementById('climax-alert');
+    this.climaxTitle = document.getElementById('climax-title');
   }
 
   bindEvents() {
@@ -169,6 +175,40 @@ export class UIManager {
     this.toastTimer = setTimeout(() => {
       this.cycleToast.classList.add('hidden');
     }, 3200);
+  }
+
+  triggerFlash() {
+    if (this.cosmicFlash) {
+      this.cosmicFlash.classList.add('active');
+      setTimeout(() => {
+        this.cosmicFlash.classList.remove('active');
+      }, 420);
+    }
+  }
+
+  updateLoopCount(loop) {
+    if (this.hudLoop) {
+      this.hudLoop.textContent = `∞ ${loop}`;
+    }
+  }
+
+  showClimaxAlert(text, isFeinte = false) {
+    if (!this.climaxAlert) return;
+    if (this.climaxTitle) {
+      this.climaxTitle.textContent = text;
+    }
+    if (isFeinte) {
+      this.climaxAlert.classList.add('feinte-mode');
+    } else {
+      this.climaxAlert.classList.remove('feinte-mode');
+    }
+    this.climaxAlert.classList.remove('hidden');
+  }
+
+  hideClimaxAlert() {
+    if (this.climaxAlert) {
+      this.climaxAlert.classList.add('hidden');
+    }
   }
 
   // Calcul du score et attribution des Rangs officiels SUBA

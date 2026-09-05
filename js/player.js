@@ -4,6 +4,7 @@
  * Cœur Émissif Dynamique, Physique Glider Race the Sun et Particules de Dislocation.
  */
 import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
 export class Player {
   constructor(scene) {
@@ -36,6 +37,7 @@ export class Player {
 
     // Construction du modèle 3D
     this.createModel();
+    this.loadFBXModel();
     this.createDislocationParticles();
 
     // Positionnement initial
@@ -54,23 +56,26 @@ export class Player {
       envMapIntensity: 1.0
     });
 
-    // Torse conique inversé minimaliste & cou
+    // Torse procédural initial (remplacé automatiquement par Infi.fbx dès chargement)
+    this.proceduralTorso = new THREE.Group();
+    this.avatar.add(this.proceduralTorso);
+
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 0.42, 24), this.darkMetalMat);
     neck.position.set(0, -0.92, 0);
     neck.castShadow = true;
-    this.avatar.add(neck);
+    this.proceduralTorso.add(neck);
 
     const chest = new THREE.Mesh(new THREE.ConeGeometry(0.95, 1.4, 4), this.darkMetalMat);
     chest.rotation.x = Math.PI;
     chest.rotation.y = Math.PI / 4;
     chest.position.set(0, -1.35, 0);
     chest.castShadow = true;
-    this.avatar.add(chest);
+    this.proceduralTorso.add(chest);
 
     const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.28, 0.65), this.darkMetalMat);
     shoulders.position.set(0, -1.05, 0);
     shoulders.castShadow = true;
-    this.avatar.add(shoulders);
+    this.proceduralTorso.add(shoulders);
 
     // 2. Tête sphérique brillante, légèrement translucide
     const headGeo = new THREE.SphereGeometry(headRadius, 64, 64);
@@ -102,6 +107,54 @@ export class Player {
 
     // 4. Cœur géométrique émissif blanc/rose sur la poitrine gauche
     this.createInfiHeart();
+  }
+
+  loadFBXModel() {
+    const loader = new FBXLoader();
+    loader.load(
+      'models/Infi.fbx',
+      (fbx) => {
+        console.log('[Player] Corps officiel Infi.fbx chargé avec succès !');
+
+        // Bounding box & normalisation
+        const box = new THREE.Box3().setFromObject(fbx);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const targetHeight = 2.7;
+        const scale = targetHeight / (maxDim || 1);
+        fbx.scale.setScalar(scale);
+
+        fbx.position.set(-center.x * scale, -center.y * scale - 0.5, -center.z * scale);
+
+        // Matériau cyber-métallique sombre doux
+        fbx.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0x0c0618,
+              metalness: 0.88,
+              roughness: 0.16,
+              envMapIntensity: 1.2
+            });
+          }
+        });
+
+        this.fbxModel = fbx;
+        this.avatar.add(fbx);
+
+        // Remplacement du torse de secours
+        if (this.proceduralTorso) {
+          this.proceduralTorso.visible = false;
+        }
+      },
+      undefined,
+      (err) => {
+        console.info('[Player] Note : Fallback procédural Infi actif (chargement FBX différé ou non supporté) :', err);
+      }
+    );
   }
 
   createInfiVisor(headRadius) {

@@ -20,6 +20,9 @@
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
 
+    <!-- Écran Flash Cosmique (Feinte du Cycle 8) -->
+    <div id="cosmic-flash" class="cosmic-flash"></div>
+
     <!-- HUD en Vol Minimaliste & Épuré -->
     <div id="hud-overlay" class="hud-overlay">
       <!-- Notification d'accueil temporaire -->
@@ -65,8 +68,18 @@
         <p id="cycle-toast-desc" class="cycle-toast-desc">Gravité / Abysse</p>
       </div>
 
+      <!-- Alerte Climax Cycle 8 & Feinte Cosmique -->
+      <div id="climax-alert" class="climax-alert hidden">
+        <div class="climax-badge">// DISTORSION DE L'HORIZON</div>
+        <div id="climax-title" class="climax-title">RATTRAPAGE DE NITY EN COURS...</div>
+      </div>
+
       <!-- Télémétrie de vol -->
       <aside class="hud-telemetry">
+        <div class="telemetry-item">
+          <span class="telemetry-tag">BOUCLE TEMPORELLE</span>
+          <span id="hud-loop" class="telemetry-value highlight-loop">∞ 1</span>
+        </div>
         <div class="telemetry-item">
           <span class="telemetry-tag">DISTANCE</span>
           <span id="hud-distance" class="telemetry-value">0 M</span>

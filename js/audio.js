@@ -66,6 +66,7 @@ export class AudioManager {
     // Variables du synthétiseur procédural
     this.synthInterval = null;
     this.synthMasterGain = null;
+    this.synthTrackTimer = 0.0;
   }
 
   getCurrentTrack() {
@@ -132,6 +133,7 @@ export class AudioManager {
     this.audioElement.pause();
     this.audioElement.src = track.file;
     this.audioElement.currentTime = 0;
+    this.synthTrackTimer = 0;
 
     const playPromise = this.audioElement.play();
     if (playPromise !== undefined) {
@@ -297,6 +299,54 @@ export class AudioManager {
     whiteNoise.stop(now + 0.55);
   }
 
+  // SFX : Feinte Cosmique / Téléportation Warp (Riser spectral + sub-warp)
+  playCosmicWarp() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+
+    const now = this.audioCtx.currentTime;
+
+    // Riser oscillateur harmonique
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(1280, now + 1.2);
+
+    const filter = this.audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(350, now);
+    filter.frequency.exponentialRampToValueAtTime(4500, now + 1.2);
+
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.45, now + 1.0);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.45);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.audioCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + 1.5);
+  }
+
+  // Progression de la piste courante (0.0 à 1.0)
+  getTrackProgress() {
+    if (this.mode === 'mp3' && this.audioElement.duration && !isNaN(this.audioElement.duration) && this.audioElement.duration > 0) {
+      return {
+        currentTime: this.audioElement.currentTime,
+        duration: this.audioElement.duration,
+        progress: Math.min(1.0, this.audioElement.currentTime / this.audioElement.duration)
+      };
+    }
+    const synthDuration = 65.0;
+    const cur = this.synthTrackTimer || 0;
+    return {
+      currentTime: cur,
+      duration: synthDuration,
+      progress: Math.min(1.0, cur / synthDuration)
+    };
+  }
+
   toggleMute() {
     this.isMuted = !this.isMuted;
     if (this.isMuted) {
@@ -311,6 +361,15 @@ export class AudioManager {
 
   // Analyse en direct des fréquences dans la boucle d'animation
   update(dt) {
+    // Avancement automatique du timer synthétiseur
+    if (this.isPlaying) {
+      this.synthTrackTimer = (this.synthTrackTimer || 0) + dt;
+      if (this.mode === 'synth' && this.synthTrackTimer >= 65.0) {
+        this.synthTrackTimer = 0;
+        this.nextTrack();
+      }
+    }
+
     if (!this.isInitialized || !this.analyser || !this.isPlaying || this.isMuted) {
       this.bassEnergy *= Math.max(0, 1 - 8 * dt);
       this.midEnergy *= Math.max(0, 1 - 8 * dt);
