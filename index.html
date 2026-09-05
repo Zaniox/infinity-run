@@ -40,11 +40,35 @@
         </div>
 
         <div class="hud-header-right">
-          <!-- Bouton Contrôle Audio Tone.js -->
-          <button id="btn-audio-toggle" class="btn-audio">
-            <span id="audio-icon">🔇</span>
-            <span id="audio-label">ACTIVER LE SON</span>
-          </button>
+          <!-- Panneau Audio & Fréquences Tone.js -->
+          <div class="hud-audio-panel">
+            <button id="btn-audio-toggle" class="btn-audio">
+              <span id="audio-icon">🔇</span>
+              <span id="audio-label">ACTIVER LE SON</span>
+            </button>
+
+            <!-- VU-Mètre Fréquentiel (Basses, Médiums, Aigus) -->
+            <div id="audio-freq-meter" class="audio-freq-meter" title="Analyseur FFT Tone.js">
+              <div class="freq-col">
+                <div id="freq-bar-bass" class="freq-fill freq-bass"></div>
+                <span class="freq-lbl">BAS</span>
+              </div>
+              <div class="freq-col">
+                <div id="freq-bar-mid" class="freq-fill freq-mid"></div>
+                <span class="freq-lbl">MÉD</span>
+              </div>
+              <div class="freq-col">
+                <div id="freq-bar-treble" class="freq-fill freq-treble"></div>
+                <span class="freq-lbl">AIG</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statut Piste Audio & Progression -->
+          <div class="hud-track-status">
+            <span id="audio-mode-badge" class="badge-source">MODE SYNTHÉ</span>
+            <span id="audio-track-title" class="track-title">Piste : cycle1.mp3</span>
+          </div>
 
           <!-- Jauge d'Énergie du Cœur d'Infi -->
           <div class="hud-heart-gauge">
@@ -57,6 +81,13 @@
           </div>
         </div>
       </header>
+
+      <!-- Toast / Bannière de Transition de Cycle -->
+      <div id="cycle-toast" class="cycle-toast hidden">
+        <div class="cycle-toast-header">NOUVEAU CYCLE OODAÏSOUND</div>
+        <h2 id="cycle-toast-name" class="cycle-toast-name">CYCLE 1 &bull; ÉVEIL</h2>
+        <p id="cycle-toast-desc" class="cycle-toast-desc">Cyan / Violet &bull; 128 BPM</p>
+      </div>
 
       <!-- Télémétrie de vol (Vitesse, Altitude, Distance) -->
       <aside class="hud-telemetry">

@@ -12,14 +12,14 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 // Données des 8 Cycles de l'œuvre "Soundrise : Infinity"
 const CYCLES = [
-  { id: 1, name: "ÉVEIL", bpm: 128, primary: 0x00f0ff, secondary: 0xbd00ff, fog: 0x050112, light: 0x00f0ff, desc: "Cyan / Violet" },
-  { id: 2, name: "CHUTE", bpm: 134, primary: 0xff007f, secondary: 0x7928ca, fog: 0x0e0114, light: 0xff007f, desc: "Magenta / Pourpre" },
-  { id: 3, name: "CHAOS", bpm: 142, primary: 0xff003c, secondary: 0xff7700, fog: 0x140103, light: 0xff003c, desc: "Rouge / Braise" },
-  { id: 4, name: "AMBITION", bpm: 130, primary: 0xffb703, secondary: 0xfb8500, fog: 0x140801, light: 0xffb703, desc: "Or / Ambre" },
-  { id: 5, name: "RENAISSANCE", bpm: 136, primary: 0x00ff88, secondary: 0x00b4d8, fog: 0x011408, light: 0x00ff88, desc: "Émeraude / Cyan" },
-  { id: 6, name: "ZÉNITH", bpm: 140, primary: 0x38bdf8, secondary: 0x6366f1, fog: 0x030817, light: 0x38bdf8, desc: "Bleu Glace / Indigo" },
-  { id: 7, name: "NÉANT", bpm: 125, primary: 0xa855f7, secondary: 0xe2e8f0, fog: 0x020108, light: 0xa855f7, desc: "Violet Sombre / Argent" },
-  { id: 8, name: "INFINI", bpm: 146, primary: 0xffffff, secondary: 0xfef08a, fog: 0x0d091a, light: 0xffffff, desc: "Blanc Pur / Céleste" }
+  { id: 1, name: "ÉVEIL", bpm: 128, primary: 0x00f0ff, secondary: 0xbd00ff, fog: 0x050114, desc: "Cyan & Violet • 128 BPM" },
+  { id: 2, name: "CHUTE", bpm: 134, primary: 0xa855f7, secondary: 0xec4899, fog: 0x0c0116, desc: "Violet & Pourpre • 134 BPM" },
+  { id: 3, name: "CHAOS", bpm: 142, primary: 0xff003c, secondary: 0xff7700, fog: 0x160204, desc: "Rouge & Braise • 142 BPM" },
+  { id: 4, name: "AMBITION", bpm: 130, primary: 0xffb703, secondary: 0xfb8500, fog: 0x160b02, desc: "Or & Ambre • 130 BPM" },
+  { id: 5, name: "RENAISSANCE", bpm: 136, primary: 0x00ff88, secondary: 0x00b4d8, fog: 0x01160a, desc: "Émeraude & Turquoise • 136 BPM" },
+  { id: 6, name: "ZÉNITH", bpm: 140, primary: 0x38bdf8, secondary: 0x6366f1, fog: 0x030a1c, desc: "Bleu Givre & Indigo • 140 BPM" },
+  { id: 7, name: "NÉANT", bpm: 125, primary: 0xc084fc, secondary: 0xe2e8f0, fog: 0x020108, desc: "Violet Sombre & Argent • 125 BPM" },
+  { id: 8, name: "INFINI", bpm: 146, primary: 0xffffff, secondary: 0xfef08a, fog: 0x0e0a20, desc: "Blanc Céleste & Or Divin • 146 BPM" }
 ];
 
 class SoundriseGame {
@@ -62,7 +62,7 @@ class SoundriseGame {
     this.initObstacles();
     this.initDislocationFX();
 
-    // Moteur Audio Tone.js
+    // Moteur Audio Tone.js & Chargeur des 8 Cycles
     this.initAudioEngine();
 
     // Événements d'interface
@@ -85,6 +85,16 @@ class SoundriseGame {
     this.btnAudioToggle = document.getElementById('btn-audio-toggle');
     this.audioIcon = document.getElementById('audio-icon');
     this.audioLabel = document.getElementById('audio-label');
+
+    this.audioModeBadge = document.getElementById('audio-mode-badge');
+    this.audioTrackTitle = document.getElementById('audio-track-title');
+    this.freqBarBass = document.getElementById('freq-bar-bass');
+    this.freqBarMid = document.getElementById('freq-bar-mid');
+    this.freqBarTreble = document.getElementById('freq-bar-treble');
+
+    this.cycleToast = document.getElementById('cycle-toast');
+    this.cycleToastName = document.getElementById('cycle-toast-name');
+    this.cycleToastDesc = document.getElementById('cycle-toast-desc');
 
     this.btnPrevCycle = document.getElementById('btn-prev-cycle');
     this.btnNextCycle = document.getElementById('btn-next-cycle');
@@ -736,12 +746,53 @@ class SoundriseGame {
   // --- 10. MOTEUR AUDIO TONE.JS (ANALYSERNODE & 8 CYCLES) ---
   initAudioEngine() {
     this.isAudioActive = false;
+    this.audioMode = 'synth'; // 'mp3' | 'synth'
     this.bassEnergy = 0;
+    this.midEnergy = 0;
     this.trebleEnergy = 0;
+    this.mediaSourceNode = null;
+    this.toastTimeout = null;
 
-    // Analyseur FFT Tone.js
+    // Analyseur FFT Tone.js (64 bandes)
     if (window.Tone) {
-      this.fftAnalyser = new Tone.Analyser('fft', 32);
+      this.fftAnalyser = new Tone.Analyser('fft', 64);
+    }
+
+    // Lecteur Audio HTML5 pour les 8 morceaux locaux de l'album /audio/
+    this.audioElement = new Audio();
+    this.audioElement.preload = 'auto';
+
+    // Événement ended : Enchaînement automatique vers le cycle suivant !
+    this.audioElement.addEventListener('ended', () => {
+      console.log(`[Audio] Morceau Cycle ${this.currentCycle.id} terminé. Transition automatique vers le cycle suivant.`);
+      this.nextCycle();
+    });
+
+    // Événement error : Bascule automatique et transparente vers la synthèse Tone.js si MP3 absent
+    this.audioElement.addEventListener('error', (err) => {
+      if (this.isAudioActive && this.audioMode !== 'synth') {
+        console.info(`[Audio] Piste locale audio/cycle${this.currentCycle.id}.mp3 non trouvée. Bascule sur le synthétiseur procédural.`);
+        this.fallbackToSynth();
+      }
+    });
+
+    this.audioElement.addEventListener('play', () => {
+      this.setAudioModeBadge('mp3');
+    });
+  }
+
+  setupMediaSourceNode() {
+    if (this.mediaSourceNode || !window.Tone) return;
+    try {
+      const rawContext = Tone.getContext().rawContext;
+      this.mediaSourceNode = rawContext.createMediaElementSource(this.audioElement);
+      if (this.fftAnalyser && this.fftAnalyser.input) {
+        this.mediaSourceNode.connect(this.fftAnalyser.input);
+      }
+      this.mediaSourceNode.connect(rawContext.destination);
+    } catch (err) {
+      console.warn('[Audio] Routage MediaElementSource indisponible dans ce contexte (mode direct actif):', err);
+      this.mediaSourceNode = null;
     }
   }
 
@@ -771,19 +822,72 @@ class SoundriseGame {
     let step = 0;
 
     this.rhythmLoop = new Tone.Loop((time) => {
-      // Coup de basse (Kick) sur chaque temps
-      this.kickSynth.triggerAttackRelease('C1', '8n', time, 0.9);
+      // Coup de basse (Kick) sur chaque temps (4n)
+      this.kickSynth.triggerAttackRelease('C1', '8n', time, 0.95);
 
       // Ligne de basse syncopée
       if (step % 2 === 0) {
         const note = bassNotes[Math.floor(Math.random() * bassNotes.length)];
-        this.bassSynth.triggerAttackRelease(note, '16n', time, 0.7);
+        this.bassSynth.triggerAttackRelease(note, '16n', time, 0.75);
       }
       step++;
     }, '4n');
 
     this.rhythmLoop.start(0);
     Tone.Transport.start();
+  }
+
+  playCycleAudio(cycleId) {
+    if (!this.isAudioActive) return;
+
+    const trackPath = `audio/cycle${cycleId}.mp3`;
+    if (this.audioTrackTitle) {
+      this.audioTrackTitle.textContent = `Piste : cycle${cycleId}.mp3`;
+    }
+
+    this.audioElement.pause();
+    this.audioElement.src = trackPath;
+    this.audioElement.currentTime = 0;
+
+    const playPromise = this.audioElement.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        // Lecture locale réussie !
+        this.setAudioModeBadge('mp3');
+        if (this.rhythmLoop) this.rhythmLoop.stop();
+        this.setupMediaSourceNode();
+      }).catch((err) => {
+        // Fichier absent (404) ou bloqué -> bascule automatique sur le synthé procédural
+        this.fallbackToSynth();
+      });
+    }
+  }
+
+  fallbackToSynth() {
+    this.audioElement.pause();
+    this.setAudioModeBadge('synth');
+    if (!this.kickSynth) {
+      this.setupToneSynth();
+    } else {
+      if (window.Tone && Tone.Transport) {
+        Tone.Transport.bpm.value = this.currentCycle.bpm;
+        if (this.rhythmLoop) this.rhythmLoop.start(0);
+        if (Tone.Transport.state !== 'started') Tone.Transport.start();
+      }
+    }
+  }
+
+  setAudioModeBadge(mode) {
+    this.audioMode = mode;
+    if (this.audioModeBadge) {
+      if (mode === 'mp3') {
+        this.audioModeBadge.textContent = '🎵 PISTE MP3';
+        this.audioModeBadge.className = 'badge-source local-mp3';
+      } else {
+        this.audioModeBadge.textContent = '⚡ SYNTHÉ TONE.JS';
+        this.audioModeBadge.className = 'badge-source';
+      }
+    }
   }
 
   playCollectSound() {
@@ -813,16 +917,26 @@ class SoundriseGame {
         this.audioIcon.textContent = '🔊';
         this.audioLabel.textContent = 'SON ACTIVÉ';
 
-        // Lancement du synthétiseur et boucle
-        this.setupToneSynth();
+        // Lancement de la piste du cycle actuel (ou fallback synthé si non trouvée)
+        this.playCycleAudio(this.currentCycle.id);
       });
     } else {
-      Tone.Transport.stop();
       this.isAudioActive = false;
+      this.audioElement.pause();
+      if (Tone.Transport) Tone.Transport.stop();
+      if (this.rhythmLoop) this.rhythmLoop.stop();
       this.btnAudioToggle.classList.remove('active');
       this.audioIcon.textContent = '🔇';
       this.audioLabel.textContent = 'ACTIVER LE SON';
     }
+  }
+
+  nextCycle() {
+    this.setCycle((this.currentCycleIndex + 1) % CYCLES.length);
+  }
+
+  prevCycle() {
+    this.setCycle((this.currentCycleIndex - 1 + CYCLES.length) % CYCLES.length);
   }
 
   // --- 11. PROGRESSION D'ALBUM : CHANGEMENT DES 8 CYCLES ---
@@ -841,8 +955,16 @@ class SoundriseGame {
 
     // Mise à jour du BPM audio Tone.js
     if (window.Tone && Tone.Transport) {
-      Tone.Transport.bpm.rampTo(this.currentCycle.bpm, 1.2);
+      Tone.Transport.bpm.rampTo(this.currentCycle.bpm, 0.8);
     }
+
+    // Jouer le morceau audio du nouveau cycle
+    if (this.isAudioActive) {
+      this.playCycleAudio(this.currentCycle.id);
+    }
+
+    // Afficher la bannière de transition du nouveau cycle
+    this.showCycleToast(this.currentCycle);
 
     // Mise à jour des couleurs de la scène (transition fluide)
     this.scene.background.set(this.currentCycle.fog);
@@ -867,6 +989,27 @@ class SoundriseGame {
     this.monolithWireMat.color.set(this.currentCycle.primary);
     this.portalWireMat.color.set(this.currentCycle.secondary);
     this.crystalGlowMat.color.set(this.currentCycle.primary);
+  }
+
+  showCycleToast(cycle) {
+    if (!this.cycleToast) return;
+    if (this.cycleToastName) {
+      this.cycleToastName.textContent = `CYCLE ${cycle.id} • ${cycle.name}`;
+      this.cycleToastName.style.color = `#${cycle.primary.toString(16).padStart(6, '0')}`;
+    }
+    if (this.cycleToastDesc) {
+      this.cycleToastDesc.textContent = cycle.desc;
+    }
+
+    const hex = `#${cycle.primary.toString(16).padStart(6, '0')}`;
+    this.cycleToast.style.borderColor = hex;
+    this.cycleToast.style.boxShadow = `0 0 35px ${hex}, 0 0 60px rgba(0, 0, 0, 0.8)`;
+    this.cycleToast.classList.remove('hidden');
+
+    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+    this.toastTimeout = setTimeout(() => {
+      if (this.cycleToast) this.cycleToast.classList.add('hidden');
+    }, 3200);
   }
 
   // --- 12. CONTRÔLES 3D & ENTRÉES ---
@@ -1008,38 +1151,60 @@ class SoundriseGame {
     const dt = Math.min(this.clock.getDelta(), 0.1);
     const time = performance.now() * 0.001;
 
-    // --- A. ANALYSE AUDIO RÉACTIVE TONE.JS ---
-    let bassLevel = 0;
+    // --- A. ANALYSE AUDIO RÉACTIVE TONE.JS (BASSES, MÉDIUMS, AIGUS) ---
+    let bassLevel = 0, midLevel = 0, trebleLevel = 0;
     if (this.isAudioActive && this.fftAnalyser) {
       const values = this.fftAnalyser.getValue();
-      // Basses fréquences (Kick)
+      // Basses fréquences (Kick / Sub) : bins 0 à 2 (~ 0 à 700 Hz)
       let sumBass = 0;
-      for (let i = 0; i < 4; i++) {
-        sumBass += Math.max(0, values[i] + 100);
+      for (let i = 0; i <= 2; i++) {
+        sumBass += Math.max(0, (values[i] + 85) / 75);
       }
-      bassLevel = sumBass / (4 * 100);
-      this.bassEnergy = Math.max(0, Math.min(1, bassLevel));
+      bassLevel = Math.min(1.0, sumBass / 3);
+
+      // Médiums (Voix, Leads synthétiseurs) : bins 3 à 8 (~ 700 à 2800 Hz)
+      let sumMid = 0;
+      for (let i = 3; i <= 8; i++) {
+        sumMid += Math.max(0, (values[i] + 90) / 75);
+      }
+      midLevel = Math.min(1.0, sumMid / 6);
+
+      // Aigus (Hi-hats, percussions fines, harmoniques) : bins 9 à 24
+      let sumTreble = 0;
+      for (let i = 9; i <= 24; i++) {
+        sumTreble += Math.max(0, (values[i] + 95) / 75);
+      }
+      trebleLevel = Math.min(1.0, sumTreble / 16);
     }
+
+    // Lissage dynamique organique par lerp
+    this.bassEnergy += (bassLevel - this.bassEnergy) * 16.0 * dt;
+    this.midEnergy += (midLevel - this.midEnergy) * 14.0 * dt;
+    this.trebleEnergy += (trebleLevel - this.trebleEnergy) * 14.0 * dt;
+
+    // Mise à jour du VU-Mètre HUD
+    if (this.freqBarBass) this.freqBarBass.style.height = `${Math.max(5, this.bassEnergy * 100)}%`;
+    if (this.freqBarMid) this.freqBarMid.style.height = `${Math.max(5, this.midEnergy * 100)}%`;
+    if (this.freqBarTreble) this.freqBarTreble.style.height = `${Math.max(5, this.trebleEnergy * 100)}%`;
 
     if (this.state === this.STATE_PLAYING) {
       // --- B. VITESSE CROISSANTE & SPEED BOOST ---
-      // Accélération naturelle avec la distance
       this.baseSpeed = 68.0 + (this.distance / 1200.0) * 15.0;
 
       if (this.boostTimer > 0) {
         this.boostTimer -= dt;
-        this.currentSpeed = this.baseSpeed + 45.0; // Boost de +45 KM/H
-        // Warp de FOV cinématique
+        this.currentSpeed = this.baseSpeed + 45.0; // Boost de +45 KM/H vers Nity
+        // Élargissement cinématique de la vision
         this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV + 12, 6 * dt);
       } else {
         this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV, 4 * dt);
       }
       this.camera.updateProjectionMatrix();
 
-      // --- C. MANIABILITÉ GLIDER & VOL D'INFI ---
+      // --- C. MANIABILITÉ DU GLIDER & VOL D'INFI ---
       const p = this.playerGroup.position;
 
-      // Latéral
+      // Déplacement et roulis latéral
       if (this.inputAxisX !== 0) {
         p.x += this.inputAxisX * this.lateralSpeed * dt;
         p.x = Math.max(-this.maxX, Math.min(this.maxX, p.x));
@@ -1047,7 +1212,7 @@ class SoundriseGame {
       const targetRoll = -this.inputAxisX * 0.45;
       this.avatarMesh.rotation.z += (targetRoll - this.avatarMesh.rotation.z) * 10.0 * dt;
 
-      // Vertical (Vol)
+      // Altitude et tangage vertical
       const isClimbing = this.inputAxisY > 0.1;
       const isDiving = this.inputAxisY < -0.1;
       let vertVel = 0;
@@ -1060,7 +1225,7 @@ class SoundriseGame {
           const cons = 20.0 + (p.y / this.maxAltitude) * 15.0;
           this.energy = Math.max(0, this.energy - cons * dt);
         } else {
-          vertVel = -4.5; // Descente auto
+          vertVel = -4.5;
         }
       } else if (isDiving) {
         vertVel = -this.verticalSpeed * 1.35;
@@ -1077,6 +1242,7 @@ class SoundriseGame {
         }
       }
 
+      // Effet de sol : vol rasant recharge le cœur
       if (p.y <= 2.2) {
         this.energy = Math.min(this.maxEnergy, this.energy + 28.0 * dt);
       }
@@ -1087,27 +1253,29 @@ class SoundriseGame {
       const targetPitch = this.inputAxisY * 0.42;
       this.avatarMesh.rotation.x += (targetPitch - this.avatarMesh.rotation.x) * 8.0 * dt;
 
-      // --- D. PULSATION DU CŒUR SYNCHRO BPM ---
-      const bpmFactor = this.currentCycle.bpm / 120.0;
+      // --- D. PULSATION DU CŒUR CALÉE SUR LE BPM DU CYCLE EN COURS ---
+      const bps = this.currentCycle.bpm / 60.0; // Battements par seconde
       const energyRatio = Math.max(0.05, this.energy / this.maxEnergy);
-      const pulseFreq = bpmFactor * (1.2 + energyRatio * 2.8);
-      const heartbeat = Math.pow(Math.sin(time * Math.PI * pulseFreq), 4);
+      const beatPhase = (time * bps * Math.PI * 2) % (Math.PI * 2);
 
-      const lightInt = (1.0 + energyRatio * 4.2) * (0.6 + heartbeat * 0.7);
+      // Onde cardiaque binaire (systole/diastole) renforcée par les impacts de basse
+      const rawHeartbeat = Math.pow(Math.sin(beatPhase), 6) + 0.3 * Math.pow(Math.sin(beatPhase * 2 + 0.4), 6);
+      const heartbeat = Math.min(1.0, rawHeartbeat) * (0.4 + 0.6 * energyRatio) + (this.bassEnergy * 0.25 * energyRatio);
+
+      const lightInt = (1.2 + energyRatio * 4.0) * (0.6 + heartbeat * 0.8);
       this.heartLight.intensity = lightInt;
-      this.heartMat.emissiveIntensity = (1.5 + energyRatio * 3.5) * (0.7 + heartbeat * 0.6);
-      const hScale = 0.42 * (1.0 + heartbeat * 0.15 * energyRatio);
+      this.heartMat.emissiveIntensity = (1.6 + energyRatio * 3.6) * (0.7 + heartbeat * 0.7);
+      const hScale = 0.42 * (1.0 + heartbeat * 0.2 * energyRatio);
       this.heartMesh.scale.set(hScale, hScale, hScale);
 
-      // Ombre dynamique
+      // Ombre portée au sol
       const alt = p.y - this.minAltitude;
       this.shadowMat.opacity = Math.max(0.04, 0.35 - (alt / this.maxAltitude) * 0.3);
       this.shadowMesh.scale.set(1.0 + (alt / this.maxAltitude) * 1.6, 1.0 + (alt / this.maxAltitude) * 1.6, 1.0);
 
-      // Bounding sphere du joueur
       this.playerBoundingSphere.center.copy(p);
 
-      // --- E. DÉFILEMENT DE LA GRILLE & AUDIO-RÉACTIVITÉ SUR KICK ---
+      // --- E. DÉFILEMENT DE LA GRILLE & RÉACTIVITÉ SUR KICK ---
       const deltaZ = this.currentSpeed * dt;
       for (let i = 0; i < this.gridSections.length; i++) {
         const sec = this.gridSections[i];
@@ -1115,12 +1283,17 @@ class SoundriseGame {
         if (sec.position.z >= this.sectionLength) sec.position.z -= this.sectionLength * 2;
       }
 
-      // La grille pulse sur les coups de basse
-      this.gridWireMat.opacity = 0.7 + this.bassEnergy * 0.3;
+      // La grille et le Bloom pulsent sur les coups de basse
+      this.gridWireMat.opacity = 0.65 + this.bassEnergy * 0.35;
+      if (this.bloomPass) {
+        this.bloomPass.strength = 1.5 + this.bassEnergy * 0.65;
+      }
 
-      // --- F. SPAWN & GESTION DES OBSTACLES ---
+      // --- F. SPAWN D'OBSTACLES SYNCHRONISÉ AU RYTHME MUSICAL (BPM) ---
+      const beatInterval = 60.0 / this.currentCycle.bpm;
+      const measureBeats = this.currentSpeed > 90.0 ? 3.0 : 4.0;
       this.obstacleTimer += dt;
-      if (this.obstacleTimer >= 1.0) {
+      if (this.obstacleTimer >= beatInterval * measureBeats) {
         this.obstacleTimer = 0;
         const lanes = [-12, -6, 0, 6, 12];
         const lx = lanes[Math.floor(Math.random() * lanes.length)];
@@ -1144,7 +1317,7 @@ class SoundriseGame {
           obs.bbox.setFromObject(obs.mesh);
         }
 
-        // Collision check
+        // Test de collision
         if (Math.abs(obs.mesh.position.z - p.z) < 7.0) {
           let hit = false;
           if (obs.subBoxes) {
@@ -1167,7 +1340,7 @@ class SoundriseGame {
 
       // --- G. SPAWN & COLLECTE DES CRISTAUX (FRAGMENTS D'INFINI) ---
       this.crystalTimer += dt;
-      if (this.crystalTimer >= 2.4) {
+      if (this.crystalTimer >= beatInterval * 8.0) {
         this.crystalTimer = 0;
         const cx = (Math.random() - 0.5) * 24;
         const cy = Math.random() < 0.5 ? 2.2 : (7 + Math.random() * 11);
@@ -1191,7 +1364,7 @@ class SoundriseGame {
         }
       }
 
-      // Check énergie à zéro
+      // Alerte énergie à zéro
       if (this.energy <= 0 && p.y <= this.minAltitude + 0.1) {
         this.triggerCrash('energy');
       }
@@ -1213,7 +1386,6 @@ class SoundriseGame {
       this.updateHUD();
 
     } else if (this.state === this.STATE_DYING) {
-      // Animation de dislocation
       this.dyingTimer += dt;
       const pos = this.disParticles.geometry.attributes.position.array;
       const grav = -18.0;
@@ -1246,9 +1418,11 @@ class SoundriseGame {
       this.nityRing.rotation.z += 0.6 * dt;
 
       // L'aura de Nity pulse en direct sur le Kick de basse !
-      const kickPulse = 1.0 + this.bassEnergy * 0.35;
-      this.nityHalo.scale.set(kickPulse, kickPulse, kickPulse);
-      this.nityHaloMat.opacity = 0.45 + this.bassEnergy * 0.4;
+      const kickScale = 1.0 + Math.pow(this.bassEnergy, 1.6) * 0.48;
+      this.nityHalo.scale.set(kickScale, kickScale, kickScale);
+      this.nityHaloMat.opacity = 0.4 + this.bassEnergy * 0.55;
+      this.nityBeaconLight.intensity = 8.0 + this.bassEnergy * 18.0;
+      this.nitySphereMat.emissiveIntensity = 2.0 + this.bassEnergy * 3.0;
     }
 
     // --- I. RENDU POST-PROCESSING BLOOM ---

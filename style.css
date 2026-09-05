@@ -138,7 +138,14 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 12px;
+  gap: 10px;
+}
+
+/* Panneau Audio Tone.js & VU-Mètre */
+.hud-audio-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* Bouton Audio Tone.js */
@@ -172,6 +179,142 @@ html, body {
   border-color: #00f0ff;
   color: #00f0ff;
   box-shadow: 0 0 18px rgba(0, 240, 255, 0.5);
+}
+
+/* Mini VU-Mètre Fréquentiel (Basses, Médiums, Aigus) */
+.audio-freq-meter {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 28px;
+  padding: 4px 8px;
+  background: rgba(10, 3, 22, 0.75);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.freq-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 14px;
+  height: 100%;
+  gap: 2px;
+}
+
+.freq-fill {
+  width: 100%;
+  height: 15%;
+  min-height: 2px;
+  border-radius: 2px;
+  transition: height 0.06s ease-out;
+}
+
+.freq-bass {
+  background: linear-gradient(0deg, #ff007f, #00f0ff);
+  box-shadow: 0 0 8px #ff007f;
+}
+
+.freq-mid {
+  background: linear-gradient(0deg, #a855f7, #38bdf8);
+  box-shadow: 0 0 8px #a855f7;
+}
+
+.freq-treble {
+  background: linear-gradient(0deg, #3b82f6, #fef08a);
+  box-shadow: 0 0 8px #3b82f6;
+}
+
+.freq-lbl {
+  font-size: 0.52rem;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Statut Piste Audio */
+.hud-track-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+}
+
+.badge-source {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  background: rgba(168, 85, 247, 0.2);
+  border: 1px solid #a855f7;
+  color: #d8b4fe;
+}
+
+.badge-source.local-mp3 {
+  background: rgba(0, 240, 255, 0.2);
+  border-color: #00f0ff;
+  color: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+.track-title {
+  color: #cbd5e1;
+  font-family: 'Consolas', monospace;
+  font-size: 0.66rem;
+}
+
+/* Toast / Bannière de Transition de Cycle */
+.cycle-toast {
+  position: absolute;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 3, 28, 0.9);
+  border: 1px solid #00f0ff;
+  border-radius: 12px;
+  padding: 12px 28px;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.5), 0 0 60px rgba(189, 0, 255, 0.25);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 20;
+  opacity: 1;
+  pointer-events: none;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cycle-toast.hidden {
+  opacity: 0;
+  transform: translate(-50%, -15px);
+}
+
+.cycle-toast-header {
+  font-size: 0.6rem;
+  letter-spacing: 0.28em;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cycle-toast-name {
+  font-size: 1.3rem;
+  letter-spacing: 0.22em;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 3px 0;
+  text-shadow: 0 0 15px currentColor;
+}
+
+.cycle-toast-desc {
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: #cbd5e1;
+  font-weight: 600;
 }
 
 /* Jauge d'Énergie du Cœur */
