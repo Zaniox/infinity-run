@@ -16,16 +16,18 @@ html, body {
 }
 
 #game-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
   background: radial-gradient(circle at 50% 40%, #10041e 0%, #05010a 85%);
 }
 
 #game-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   display: block;
@@ -177,6 +179,46 @@ html, body {
   font-size: 0.72rem;
   letter-spacing: 0.1em;
   color: #94a3b8;
+}
+
+.intro-hint {
+  position: absolute;
+  top: 85px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(16, 4, 30, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.5);
+  border-radius: 12px;
+  padding: 10px 24px;
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+  animation: fadeOutIntro 1.2s ease 4.5s forwards;
+  z-index: 10;
+}
+
+@keyframes fadeOutIntro {
+  to { opacity: 0; visibility: hidden; }
+}
+
+.intro-title {
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  font-weight: 800;
+  color: #00f0ff;
+  text-shadow: 0 0 10px #00f0ff;
+}
+
+.intro-sub {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: #e2e8f0;
+  font-weight: 600;
 }
 
 /* --- HUD EN VOL MINIMALISTE --- */

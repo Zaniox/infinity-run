@@ -16,11 +16,10 @@ class GameApp {
     this.clock = new THREE.Clock();
 
     // États de jeu
-    this.STATE_START = 'START';
     this.STATE_PLAYING = 'PLAYING';
     this.STATE_DYING = 'DYING';
     this.STATE_GAMEOVER = 'GAMEOVER';
-    this.state = this.STATE_START;
+    this.state = this.STATE_PLAYING;
 
     // Statistiques de vol
     this.distance = 0;
@@ -43,6 +42,7 @@ class GameApp {
     // Instanciation des Modules
     this.world = new World(this.scene);
     this.player = new Player(this.scene);
+    this.player.group.position.set(0, 3.5, 0); // Altitude de vol saine initiale
     this.target = new TargetManager(this.scene);
 
     this.audio = new AudioManager((cycleIndex, track) => {
@@ -56,6 +56,20 @@ class GameApp {
       () => this.audio.prevTrack(),
       () => this.audio.nextTrack()
     );
+
+    // Initialisation du premier cycle
+    const track = this.audio.getCurrentTrack();
+    this.onTrackChange(this.audio.currentTrackIndex, track);
+
+    // Déclenchement automatique de l'audio au premier clic ou touche
+    const startAudioOnGesture = () => {
+      if (this.audio && !this.audio.isPlaying) {
+        this.audio.start();
+        if (this.ui) this.ui.setAudioState(true);
+      }
+    };
+    window.addEventListener('keydown', startAudioOnGesture, { once: true });
+    window.addEventListener('pointerdown', startAudioOnGesture, { once: true });
 
     // Événements d'entrées et redimensionnement
     this.bindInputEvents();
@@ -94,13 +108,12 @@ class GameApp {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.25;
+    this.renderer.toneMappingExposure = 1.0;
   }
 
-  // Démarrage sur le clic "Commencer la traversée"
   startGame() {
     this.state = this.STATE_PLAYING;
-    this.audio.start();
+    if (!this.audio.isPlaying) this.audio.start();
     const track = this.audio.getCurrentTrack();
     this.onTrackChange(this.audio.currentTrackIndex, track);
   }
@@ -112,6 +125,7 @@ class GameApp {
     this.currentSpeed = 68.0;
 
     this.player.reset();
+    this.player.group.position.set(0, 3.5, 0);
     this.target.reset();
     this.world.reset();
 

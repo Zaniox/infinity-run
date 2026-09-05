@@ -20,46 +20,14 @@
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
 
-    <!-- Écran de Démarrage Cinématographique (Geste utilisateur Web Audio) -->
-    <div id="start-screen" class="overlay-screen">
-      <div class="start-card">
-        <div class="start-badge">// MISSION SOUNDRISE</div>
-        <h1 class="start-title">// SOUNDRISE<br /><span class="start-highlight">INFINITY RUN</span></h1>
-        
-        <p class="start-narrative">
-          Nity vient d'être aspirée par un immense trou noir gravitationnel au cœur de l'univers.
-          Infi plonge à pleine vitesse dans l'horizon des événements pour la rattraper avant qu'elle ne disparaisse à jamais.
-        </p>
-
-        <div class="start-features">
-          <div class="feature-item">
-            <span class="feature-icon">✦</span>
-            <span class="feature-text">Vol Glider & rase-mottes (Race the Sun)</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">♥</span>
-            <span class="feature-text">Sillage de cœurs semé par Nity</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">🎵</span>
-            <span class="feature-text">Synchronisation Web Audio 8 Cycles</span>
-          </div>
-        </div>
-
-        <button id="btn-start" class="btn-start">
-          <span class="btn-start-label">COMMENCER LA TRAVERSÉE</span>
-          <span class="btn-start-sub">[ CLIC OU TOUCHE POUR DÉMARRER ]</span>
-        </button>
-
-        <div class="start-controls-hint">
-          <span class="key-hint">▲</span> <span class="key-hint">▼</span> ou <span class="key-hint">Z</span> / <span class="key-hint">S</span> Cabrer / Piquer &bull;
-          <span class="key-hint">◄</span> <span class="key-hint">►</span> ou <span class="key-hint">Q</span> / <span class="key-hint">D</span> Virage &bull; Souris / Tactile
-        </div>
-      </div>
-    </div>
-
     <!-- HUD en Vol Minimaliste & Épuré -->
-    <div id="hud-overlay" class="hud-overlay hidden">
+    <div id="hud-overlay" class="hud-overlay">
+      <!-- Notification d'accueil temporaire -->
+      <div id="intro-hint" class="intro-hint">
+        <span class="intro-title">// NITY EST DANS LE TROU NOIR &bull; PLONGEZ DANS L'HORIZON</span>
+        <span class="intro-sub">VOL GLIDER IMMÉDIAT &bull; CLIQUEZ OU TOUCHEZ POUR ACTIVER LE SON</span>
+      </div>
+
       <header class="hud-header">
         <div class="hud-brand">
           <h1 class="hud-title">// SOUNDRISE <span class="neon-title">: INFINITY RUN</span></h1>

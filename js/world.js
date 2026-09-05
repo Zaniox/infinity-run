@@ -11,12 +11,12 @@ export const CYCLES_DATA = [
     name: "Chute",
     subtitle: "Gravité / Abysse",
     sky: 0x05010a,
-    fog: 0x14021a,
-    ground: 0x1a0728,
-    monolith: 0x240c38,
+    fog: 0x12021a,
+    ground: 0x100418,
+    monolith: 0x240838,
     primary: 0xa855f7,
     secondary: 0xec4899,
-    lightIntensity: 3.5,
+    lightIntensity: 1.8,
     style: "falling"
   },
   {
@@ -25,11 +25,11 @@ export const CYCLES_DATA = [
     subtitle: "Terre / Métal",
     sky: 0x010c08,
     fog: 0x03160e,
-    ground: 0x071e14,
-    monolith: 0x0d2e20,
+    ground: 0x04140c,
+    monolith: 0x0d281a,
     primary: 0x00ff88,
     secondary: 0x00b4d8,
-    lightIntensity: 3.2,
+    lightIntensity: 1.7,
     style: "ramp"
   },
   {
@@ -38,11 +38,11 @@ export const CYCLES_DATA = [
     subtitle: "Vortex / Spirale",
     sky: 0x01081a,
     fog: 0x021226,
-    ground: 0x041c3c,
-    monolith: 0x0a2d5e,
+    ground: 0x031224,
+    monolith: 0x09264c,
     primary: 0x00f0ff,
     secondary: 0x3b82f6,
-    lightIntensity: 3.8,
+    lightIntensity: 1.9,
     style: "chevrons"
   },
   {
@@ -51,11 +51,11 @@ export const CYCLES_DATA = [
     subtitle: "Lumière / Éther",
     sky: 0x120412,
     fog: 0x240d22,
-    ground: 0x2e122b,
-    monolith: 0x481c44,
+    ground: 0x1c081a,
+    monolith: 0x3d1439,
     primary: 0xf472b6,
     secondary: 0xfbbf24,
-    lightIntensity: 4.2,
+    lightIntensity: 2.0,
     style: "arches"
   },
   {
@@ -64,11 +64,11 @@ export const CYCLES_DATA = [
     subtitle: "Énergie Solaire",
     sky: 0x140a02,
     fog: 0x261504,
-    ground: 0x361e08,
-    monolith: 0x54300f,
+    ground: 0x221004,
+    monolith: 0x442208,
     primary: 0xfbbf24,
     secondary: 0xf97316,
-    lightIntensity: 4.5,
+    lightIntensity: 2.1,
     style: "plateaus"
   },
   {
@@ -77,11 +77,11 @@ export const CYCLES_DATA = [
     subtitle: "Entropie / Feu",
     sky: 0x120103,
     fog: 0x220205,
-    ground: 0x2e0409,
-    monolith: 0x4c0a13,
+    ground: 0x1c0206,
+    monolith: 0x3e050c,
     primary: 0xff003c,
     secondary: 0xff7700,
-    lightIntensity: 3.6,
+    lightIntensity: 1.8,
     style: "shattered"
   },
   {
@@ -90,11 +90,11 @@ export const CYCLES_DATA = [
     subtitle: "Ascension / Cristal",
     sky: 0x030a16,
     fog: 0x061628,
-    ground: 0x09223e,
-    monolith: 0x143b68,
+    ground: 0x061426,
+    monolith: 0x103054,
     primary: 0xe0f2fe,
     secondary: 0x38bdf8,
-    lightIntensity: 4.0,
+    lightIntensity: 2.0,
     style: "needles"
   },
   {
@@ -103,11 +103,11 @@ export const CYCLES_DATA = [
     subtitle: "Distorsion",
     sky: 0x120114,
     fog: 0x220226,
-    ground: 0x2d0433,
-    monolith: 0x4a0a54,
+    ground: 0x1a0220,
+    monolith: 0x3c0544,
     primary: 0xe879f9,
     secondary: 0xc084fc,
-    lightIntensity: 3.8,
+    lightIntensity: 1.9,
     style: "twisted"
   }
 ];
@@ -138,13 +138,13 @@ export class World {
   // Configuration de l'éclairage cinématographique avec PCFSoftShadowMap
   setupLighting() {
     // Lumière hémisphérique douce pour les zones d'ombre
-    this.hemiLight = new THREE.HemisphereLight(this.cycle.secondary, this.cycle.fog, 1.2);
+    this.hemiLight = new THREE.HemisphereLight(this.cycle.secondary, this.cycle.fog, 0.55);
     this.scene.add(this.hemiLight);
 
-    // Lumière directionnelle principale (Le "Soleil" de l'horizon)
-    // Angle rasant pour projeter de longues ombres dramatiques
+    // Lumière directionnelle principale (Soleil venant du dessus / côté-arrière)
+    // Projette de longues ombres dramatiques vers l'avant (Race the Sun)
     this.sunLight = new THREE.DirectionalLight(0xffffff, this.cycle.lightIntensity);
-    this.sunLight.position.set(25, 45, -120);
+    this.sunLight.position.set(40, 65, 30);
     this.sunLight.castShadow = true;
 
     // Résolution nette des ombres portées
@@ -153,7 +153,7 @@ export class World {
     this.sunLight.shadow.camera.near = 1.0;
     this.sunLight.shadow.camera.far = 420;
 
-    const d = 55;
+    const d = 60;
     this.sunLight.shadow.camera.left = -d;
     this.sunLight.shadow.camera.right = d;
     this.sunLight.shadow.camera.top = d;
@@ -161,6 +161,7 @@ export class World {
     this.sunLight.shadow.bias = -0.0004;
 
     this.scene.add(this.sunLight);
+    this.sunLight.target.position.set(0, 0, -60);
     this.scene.add(this.sunLight.target);
   }
 
@@ -170,12 +171,12 @@ export class World {
     this.sectionLength = 260;
     this.terrainSections = [];
 
-    // Matériau solide mat avec texture d'ombres propre
+    // Matériau solide mat avec texture d'ombres propre (sans brillance aveuglante)
     this.groundMaterial = new THREE.MeshStandardMaterial({
       color: this.cycle.ground,
-      roughness: 0.85,
-      metalness: 0.12,
-      flatShading: true
+      roughness: 0.92,
+      metalness: 0.08,
+      flatShading: false
     });
 
     // 2 grandes sections coulissantes pour un sol infini fluide
