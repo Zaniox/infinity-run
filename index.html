@@ -19,6 +19,9 @@
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
 
+    <!-- Flash visuel lors de la collecte d'orbes violettes -->
+    <div id="pickup-flash"></div>
+
     <!-- UI Overlay Cyber-Baroque OodaïSound -->
     <div id="hud-overlay">
       <header class="hud-header">
@@ -38,15 +41,19 @@
         </div>
       </header>
 
-      <!-- Télémétrie de vol (Vitesse & Altitude) -->
+      <!-- Télémétrie de vol (Vitesse, Altitude, Distance) -->
       <aside class="hud-telemetry">
+        <div class="telemetry-item">
+          <span class="telemetry-tag">DISTANCE</span>
+          <span id="hud-distance" class="telemetry-value">0 M</span>
+        </div>
         <div class="telemetry-item">
           <span class="telemetry-tag">VITESSE</span>
           <span id="hud-speed" class="telemetry-value">234 KM/H</span>
         </div>
         <div class="telemetry-item">
           <span class="telemetry-tag">ALTITUDE</span>
-          <span id="hud-altitude" class="telemetry-value">12 M</span>
+          <span id="hud-altitude" class="telemetry-value">10 M</span>
         </div>
       </aside>
 
@@ -56,6 +63,31 @@
           <span class="key-hint">◄</span> <span class="key-hint">►</span> ou <span class="key-hint">Q</span> / <span class="key-hint">D</span> Virage &bull; Glisser Souris / Tactile 2D
         </div>
       </footer>
+    </div>
+
+    <!-- Modal Game Over Épuré Cyber-Baroque -->
+    <div id="game-over-modal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-glitch-bar"></div>
+        <h2 class="modal-title">// SESSION TERMINÉE</h2>
+        <div id="death-reason" class="modal-reason">IMPACT CRITIQUE &bull; AVATAR DÉSINTÉGRÉ</div>
+
+        <div class="modal-stats">
+          <div class="stat-box">
+            <span class="stat-label">DISTANCE PARCOURUE</span>
+            <span id="final-distance" class="stat-value">0 M</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">VITESSE MAXIMALE</span>
+            <span id="final-speed" class="stat-value">0 KM/H</span>
+          </div>
+        </div>
+
+        <button id="btn-restart" class="btn-neon-primary">
+          <span class="btn-text">RELANCER LA COURSE</span>
+          <span class="btn-subtext">[ ESPACE ou ENTRÉE ]</span>
+        </button>
+      </div>
     </div>
   </div>
 
