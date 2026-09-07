@@ -220,6 +220,26 @@ export class Player {
         this.fbxModel = fbx;
         this.modelContainer.add(fbx);
 
+        // Aura PURITY épousant rigoureusement la silhouette du corps FBX (Silhouette Cloaking)
+        this.purityBodyGroup = new THREE.Group();
+        this.purityBodyGroup.visible = false;
+        fbx.traverse((child) => {
+          if (child.isMesh && child.geometry) {
+            const auraMat = new THREE.MeshBasicMaterial({
+              color: 0x38bdf8,
+              transparent: true,
+              opacity: 0.40,
+              side: THREE.BackSide,
+              blending: THREE.AdditiveBlending,
+              depthWrite: false
+            });
+            const auraMesh = new THREE.Mesh(child.geometry, auraMat);
+            auraMesh.scale.setScalar(1.07); // Épouse fidèlement la silhouette de chaque membre
+            this.purityBodyGroup.add(auraMesh);
+          }
+        });
+        fbx.add(this.purityBodyGroup);
+
         // Masquer ABSOLUMENT tous les éléments procéduraux pour ne laisser que le modèle FBX pur
         if (this.proceduralTorso) this.proceduralTorso.visible = false;
         if (this.headMesh) this.headMesh.visible = false;
@@ -607,135 +627,50 @@ export class Player {
     return false;
   }
 
-  // --- 2. SYSTÈME SAYANFINITY LÉGENDAIRE (SUPER SAIYAN AVEC ÉCLAIRS SSJ2 & DÉBRIS EN LÉVITATION) ---
+  // --- 2. SYSTÈME PURITY (Aura bleue subtile) ---
   createSaiyanAura() {
     this.saiyanGroup = new THREE.Group();
     this.saiyanGroup.visible = false;
     this.avatar.add(this.saiyanGroup);
 
-    // A. Cœur de flamme incandescent blanc-or
-    const coreGeo = new THREE.CylinderGeometry(0.6, 2.1, 5.4, 16, 4, true);
-    this.saiyanCoreMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+    // A. Inner body glow: Capsule (1.08x)
+    this.purityInnerMat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.25,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
-    this.saiyanCore = new THREE.Mesh(coreGeo, this.saiyanCoreMat);
-    this.saiyanCore.position.y = 0.6;
-    this.saiyanGroup.add(this.saiyanCore);
+    this.purityInner = new THREE.Mesh(new THREE.CapsuleGeometry(0.54, 2.9, 4, 16), this.purityInnerMat);
+    this.purityInner.position.y = 0.0;
+    this.saiyanGroup.add(this.purityInner);
 
-    // B. Manteau de flammes Ki dorées externes
-    const coronaGeo = new THREE.CylinderGeometry(0.9, 3.2, 6.2, 16, 4, true);
-    this.saiyanCoronaMat = new THREE.MeshBasicMaterial({
-      map: getSaiyanAuraTexture(),
-      color: 0xfacc15,
+    // B. Outer shimmer shell: Capsule (1.18x)
+    this.purityOuterMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
       transparent: true,
-      opacity: 0.88,
+      opacity: 0.15,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
-    this.saiyanCorona = new THREE.Mesh(coronaGeo, this.saiyanCoronaMat);
-    this.saiyanCorona.position.y = 0.7;
-    this.saiyanGroup.add(this.saiyanCorona);
+    this.purityOuter = new THREE.Mesh(new THREE.CapsuleGeometry(0.59, 3.2, 4, 16), this.purityOuterMat);
+    this.purityOuter.position.y = 0.0;
+    this.saiyanGroup.add(this.purityOuter);
 
-    // C. 8 Piques de Ki d'énergie Super Saiyan
-    this.kiSpikes = [];
-    const spikeGeo = new THREE.ConeGeometry(0.48, 3.8, 8);
-    const spikeMat = new THREE.MeshBasicMaterial({
-      color: 0xffea00,
-      transparent: true,
-      opacity: 0.92,
-      blending: THREE.AdditiveBlending
-    });
-    for (let i = 0; i < 8; i++) {
-      const sp = new THREE.Mesh(spikeGeo, spikeMat);
-      const angle = (i / 8) * Math.PI * 2;
-      sp.position.set(Math.cos(angle) * 1.35, 0.9, Math.sin(angle) * 1.35);
-      sp.rotation.z = Math.cos(angle) * 0.28;
-      sp.rotation.x = Math.sin(angle) * 0.28;
-      this.saiyanGroup.add(sp);
-      this.kiSpikes.push(sp);
-    }
-
-    // D. Éclairs électriques SSJ2 ramifiés ultra-rapides
-    this.lightningBoltsCount = 8;
-    this.lightningSegsPerBolt = 5;
-    const totalLightningVerts = this.lightningBoltsCount * this.lightningSegsPerBolt * 2;
-    const lightningGeo = new THREE.BufferGeometry();
-    this.lightningPositions = new Float32Array(totalLightningVerts * 3);
-    lightningGeo.setAttribute('position', new THREE.BufferAttribute(this.lightningPositions, 3));
-    this.lightningMat = new THREE.LineBasicMaterial({
-      color: 0x93c5fd,
-      linewidth: 2,
-      transparent: true,
-      opacity: 0.95,
-      blending: THREE.AdditiveBlending
-    });
-    this.ssj2Lightning = new THREE.LineSegments(lightningGeo, this.lightningMat);
-    this.saiyanGroup.add(this.ssj2Lightning);
-    this.lightningTimer = 0;
-
-    // E. Fragments rocheux et cristaux défiant la gravité (Lévitation SSJ)
-    this.rockCount = 14;
-    this.levitationRocks = [];
-    const rockGeo = new THREE.DodecahedronGeometry(0.24);
-    const rockMat = new THREE.MeshStandardMaterial({
-      color: 0x271e0c,
-      emissive: 0xf59e0b,
-      emissiveIntensity: 1.8,
-      roughness: 0.4,
-      metalness: 0.6
-    });
-    for (let i = 0; i < this.rockCount; i++) {
-      const rock = new THREE.Mesh(rockGeo, rockMat);
-      rock.scale.set(
-        0.5 + Math.random() * 0.8,
-        0.5 + Math.random() * 0.8,
-        0.5 + Math.random() * 0.8
-      );
-      this.saiyanGroup.add(rock);
-      this.levitationRocks.push({
-        mesh: rock,
-        angle: (i / this.rockCount) * Math.PI * 2,
-        dist: 1.4 + Math.random() * 1.2,
-        y: Math.random() * 4.5 - 1.5,
-        speedY: 2.5 + Math.random() * 3.5,
-        rotSpeed: 2.0 + Math.random() * 4.0
-      });
-    }
-
-    // F. Glyphe d'énergie radiale sacrée au sol
-    const glyphGeo = new THREE.PlaneGeometry(6.4, 6.4);
-    this.glyphMat = new THREE.MeshBasicMaterial({
-      map: getGroundGlyphTexture(),
-      color: 0xfef08a,
-      transparent: true,
-      opacity: 0.88,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-    this.groundGlyph = new THREE.Mesh(glyphGeo, this.glyphMat);
-    this.groundGlyph.rotation.x = -Math.PI / 2;
-    this.groundGlyph.position.y = -1.2;
-    this.saiyanGroup.add(this.groundGlyph);
-
-    // G. Particules de Ki doré montant en tourbillon
-    this.kiParticleCount = 120;
+    // C. Subtle energy particles
+    this.kiParticleCount = 40;
     const kiGeo = new THREE.BufferGeometry();
     this.kiPos = new Float32Array(this.kiParticleCount * 3);
     this.kiSeeds = [];
     for (let i = 0; i < this.kiParticleCount; i++) {
       this.kiSeeds.push({
         angle: Math.random() * Math.PI * 2,
-        radius: 0.8 + Math.random() * 1.8,
-        y: Math.random() * 5.0 - 1.8,
-        speedY: 5.5 + Math.random() * 6.5,
-        rotSpeed: 3.5 + Math.random() * 4.5
+        radius: 1.5 + Math.random() * 1.0,
+        y: Math.random() * 4.0 - 1.0,
+        speedY: 1.0 + Math.random() * 2.0,
+        rotSpeed: 0.5 + Math.random() * 1.0
       });
       this.kiPos[i * 3] = 0;
       this.kiPos[i * 3 + 1] = 0;
@@ -744,18 +679,21 @@ export class Player {
     kiGeo.setAttribute('position', new THREE.BufferAttribute(this.kiPos, 3));
 
     this.kiMat = new THREE.PointsMaterial({
-      size: 3.2,
-      map: getSaiyanAuraTexture(),
+      size: 1.5,
+      color: 0x93c5fd,
       transparent: true,
-      opacity: 0.98,
+      opacity: 0.6,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
+    if (typeof getSaiyanAuraTexture !== 'undefined') {
+      this.kiMat.map = getSaiyanAuraTexture();
+    }
     this.kiPoints = new THREE.Points(kiGeo, this.kiMat);
     this.saiyanGroup.add(this.kiPoints);
 
-    // Lumière divine de Super Saiyan
-    this.saiyanLight = new THREE.PointLight(0xfacc15, 4.8, 18.0);
+    // D. Gentle point light
+    this.saiyanLight = new THREE.PointLight(0x38bdf8, 2.5, 10.0);
     this.saiyanLight.position.set(0, 1.2, 0);
     this.saiyanGroup.add(this.saiyanLight);
   }
@@ -763,6 +701,7 @@ export class Player {
   activateSayanfinity(duration = 20.0, audioManager) {
     this.saiyanTimer = duration;
     if (this.saiyanGroup) this.saiyanGroup.visible = true;
+    if (this.purityBodyGroup) this.purityBodyGroup.visible = true;
     if (audioManager) audioManager.playSuperSaiyan();
   }
 
@@ -791,7 +730,7 @@ export class Player {
     });
 
     this.laserMatSaiyan = new THREE.MeshBasicMaterial({
-      color: 0xffea00,
+      color: 0x38bdf8,
       transparent: true,
       opacity: 0.98,
       blending: THREE.AdditiveBlending
@@ -1047,97 +986,38 @@ export class Player {
       }
     }
 
-    // 11. Animation de l'Aura SAYANFINITY Légendaire (Super Saiyan avec Éclairs SSJ2 & Débris)
+    // 11. Animation de l'Aura PURITY (Force field bleu)
     if (this.saiyanTimer > 0 && this.saiyanGroup) {
       this.saiyanTimer -= dt;
       this.saiyanGroup.visible = true;
 
-      // Pulsation et rotation des flammes de Ki
-      const saiyanPulse = 1.0 + Math.sin(time * 14.0) * 0.12 + bassEnergy * 0.28;
-      if (this.saiyanCore) {
-        this.saiyanCore.scale.set(saiyanPulse, 1.0 + Math.sin(time * 10.0) * 0.1, saiyanPulse);
-        this.saiyanCore.rotation.y -= 4.8 * dt;
+      // Pulsation of the purity shells
+      const purityPulse = 1.0 + Math.sin(time * 3.0) * 0.05 + bassEnergy * 0.1;
+      if (this.purityInner) {
+        this.purityInner.scale.set(purityPulse, 1.0 + Math.sin(time * 2.0) * 0.02, purityPulse);
       }
-      if (this.saiyanCorona) {
-        this.saiyanCorona.scale.set(saiyanPulse * 1.05, 1.0 + Math.cos(time * 9.0) * 0.12, saiyanPulse * 1.05);
-        this.saiyanCorona.rotation.y += 3.6 * dt;
-      }
-
-      // Animation des pics de flammes
-      if (this.kiSpikes) {
-        for (let i = 0; i < this.kiSpikes.length; i++) {
-          const sp = this.kiSpikes[i];
-          const spPhase = time * 12.0 + i * 0.9;
-          sp.scale.set(1.0 + Math.sin(spPhase) * 0.28, 1.0 + Math.cos(spPhase) * 0.38, 1.0);
-        }
+      if (this.purityOuter) {
+        this.purityOuter.scale.set(purityPulse * 1.02, 1.0 + Math.cos(time * 2.5) * 0.03, purityPulse * 1.02);
+        this.purityOuter.rotation.y += 1.2 * dt;
       }
 
-      // Éclairs électriques SSJ2 ramifiés ultra-rapides
-      this.lightningTimer = (this.lightningTimer || 0) + dt;
-      if (this.ssj2Lightning && this.lightningTimer > 0.045) {
-        this.lightningTimer = 0;
-        const lPos = this.ssj2Lightning.geometry.attributes.position.array;
-        let pIdx = 0;
-
-        for (let b = 0; b < this.lightningBoltsCount; b++) {
-          let currX = (Math.random() - 0.5) * 1.2;
-          let currY = Math.random() * 2.8 - 0.5;
-          let currZ = (Math.random() - 0.5) * 1.2;
-
-          for (let s = 0; s < this.lightningSegsPerBolt; s++) {
-            lPos[pIdx++] = currX;
-            lPos[pIdx++] = currY;
-            lPos[pIdx++] = currZ;
-
-            currX += (Math.random() - 0.5) * 0.9;
-            currY += (Math.random() * 0.7) - 0.1;
-            currZ += (Math.random() - 0.5) * 0.9;
-
-            lPos[pIdx++] = currX;
-            lPos[pIdx++] = currY;
-            lPos[pIdx++] = currZ;
-          }
-        }
-        this.ssj2Lightning.geometry.attributes.position.needsUpdate = true;
+      // Pulsation de l'aura silhouette exacte du corps FBX
+      if (this.purityBodyGroup) {
+        this.purityBodyGroup.visible = true;
+        const bodyPulse = 1.0 + Math.sin(time * 5.0) * 0.02;
+        this.purityBodyGroup.scale.set(bodyPulse, bodyPulse, bodyPulse);
       }
 
-      // Débris rocheux et cristaux en lévitation gravitationnelle
-      if (this.levitationRocks) {
-        for (let i = 0; i < this.levitationRocks.length; i++) {
-          const r = this.levitationRocks[i];
-          r.y += r.speedY * dt;
-          r.angle += r.rotSpeed * dt;
-          if (r.y > 4.2) {
-            r.y = -1.6;
-            r.dist = 1.2 + Math.random() * 1.6;
-          }
-          r.mesh.position.set(
-            Math.cos(r.angle) * r.dist,
-            r.y,
-            Math.sin(r.angle) * r.dist
-          );
-          r.mesh.rotation.x += 3.0 * dt;
-          r.mesh.rotation.y += 2.5 * dt;
-        }
-      }
-
-      // Glyphe d'énergie radiale sacrée au sol
-      if (this.groundGlyph) {
-        this.groundGlyph.rotation.z += 1.2 * dt;
-        const gScale = 1.0 + bassEnergy * 0.35 + Math.sin(time * 8.0) * 0.08;
-        this.groundGlyph.scale.set(gScale, gScale, gScale);
-      }
-
-      // Tourbillon des particules de Ki doré
+      // Gentle upward drift for particles
       if (this.kiPoints && this.kiSeeds) {
         const kPos = this.kiPoints.geometry.attributes.position.array;
         for (let i = 0; i < this.kiParticleCount; i++) {
           const s = this.kiSeeds[i];
           s.y += s.speedY * dt;
           s.angle += s.rotSpeed * dt;
-          if (s.y > 4.8) {
-            s.y = -1.6;
-            s.radius = 0.7 + Math.random() * 1.8;
+          if (s.y > 4.0) {
+            s.y = -1.0;
+            s.radius = 1.5 + Math.random() * 1.0;
           }
           kPos[i * 3] = Math.cos(s.angle) * s.radius;
           kPos[i * 3 + 1] = s.y;
@@ -1146,19 +1026,22 @@ export class Player {
         this.kiPoints.geometry.attributes.position.needsUpdate = true;
       }
 
-      // Métamorphose dorée sur les matériaux du vaisseau Infi
+      // Métamorphose sur les matériaux (bleu/cyan pour PURITY)
       if (this.fbxHeartMaterial) {
-        this.fbxHeartMaterial.emissive.set(0xffea00);
-        this.fbxHeartMaterial.emissiveIntensity = 8.5;
+        this.fbxHeartMaterial.emissive.set(0x00f0ff);
+        this.fbxHeartMaterial.emissiveIntensity = 6.0;
       }
       if (this.fbxVisorMaterial) {
-        this.fbxVisorMaterial.emissive.set(0xfff066);
-        this.fbxVisorMaterial.emissiveIntensity = 7.5;
+        this.fbxVisorMaterial.emissive.set(0x38bdf8);
+        this.fbxVisorMaterial.emissiveIntensity = 5.0;
       }
 
       if (this.saiyanTimer <= 0) {
         this.saiyanTimer = 0;
         this.saiyanGroup.visible = false;
+        if (this.purityBodyGroup) {
+          this.purityBodyGroup.visible = false;
+        }
         if (this.fbxHeartMaterial) {
           this.fbxHeartMaterial.emissive.set(0xff2ea6);
           this.fbxHeartMaterial.emissiveIntensity = 4.5;
@@ -1168,8 +1051,9 @@ export class Player {
           this.fbxVisorMaterial.emissiveIntensity = 4.2;
         }
       }
-    } else if (this.saiyanGroup) {
-      this.saiyanGroup.visible = false;
+    } else {
+      if (this.saiyanGroup) this.saiyanGroup.visible = false;
+      if (this.purityBodyGroup) this.purityBodyGroup.visible = false;
     }
 
     // 12. Échec si énergie à zéro au sol

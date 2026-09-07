@@ -495,10 +495,10 @@ class GameApp {
       // Détection de collecte des drops (Cœurs vitaux, Armures 1-hit, Sayanfinity 20s)
       this.target.checkDropCollisions(playerPos, this.player.radius, (type, pos) => {
         if (type === 'sayanfinity') {
-          // Rare drop : SAYANFINITY 20 secondes !
+          // Rare drop : PURITY 20 secondes !
           this.player.activateSayanfinity(20.0, this.audio);
           this.player.rechargeHeart();
-          this.ui.showClimaxAlert('⚡ SAYANFINITY ACTIVÉ ! CASSEZ LES OBSTACLES (20S)', true);
+          this.ui.showClimaxAlert('⚡ MODE PURITY ACTIVÉ • INVULNÉRABILITÉ (20S)', true);
           setTimeout(() => {
             if (this.ui) this.ui.hideClimaxAlert();
           }, 3500);

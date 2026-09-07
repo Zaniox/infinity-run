@@ -159,31 +159,41 @@ function createCycleGroundTextures() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
+    // Fond océan profond
     const grad = ctx.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, '#020610');
-    grad.addColorStop(1, '#051329');
+    grad.addColorStop(0, '#001a33');
+    grad.addColorStop(1, '#004080');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
 
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.32)';
-    ctx.lineWidth = 4;
-    for (let i = 0; i < 18; i++) {
+    // Motif de caustiques et vagues
+    ctx.globalCompositeOperation = 'screen';
+    for (let i = 0; i < 40; i++) {
       ctx.beginPath();
-      const cy = i * 30 + (i % 2 === 0 ? 6 : -6);
-      ctx.moveTo(0, cy);
-      ctx.bezierCurveTo(128, cy - 18, 256, cy + 18, 384, cy - 14);
-      ctx.bezierCurveTo(440, cy, 480, cy - 8, 512, cy);
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      const r = 20 + Math.random() * 60;
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      
+      const rGrad = ctx.createRadialGradient(x, y, r * 0.5, x, y, r);
+      rGrad.addColorStop(0, 'rgba(0, 255, 255, 0.15)');
+      rGrad.addColorStop(1, 'rgba(0, 200, 255, 0)');
+      
+      ctx.fillStyle = rGrad;
+      ctx.fill();
+      
+      ctx.lineWidth = 1 + Math.random() * 2;
+      ctx.strokeStyle = 'rgba(150, 240, 255, 0.3)';
       ctx.stroke();
     }
 
-    ctx.strokeStyle = 'rgba(186, 230, 253, 0.65)';
-    ctx.lineWidth = 1.5;
-    for (let i = 0; i < 14; i++) {
+    // Écume et bulles
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    for(let i = 0; i < 200; i++) {
       ctx.beginPath();
-      const cy = i * 38 + (i % 3 === 0 ? 8 : -8);
-      ctx.moveTo(0, cy);
-      ctx.bezierCurveTo(100, cy + 16, 280, cy - 16, 512, cy + 4);
-      ctx.stroke();
+      ctx.arc(Math.random() * 512, Math.random() * 512, Math.random() * 3, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     const tex = new THREE.CanvasTexture(canvas);
@@ -199,29 +209,46 @@ function createCycleGroundTextures() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#140f0a';
+    // Terre battue
+    ctx.fillStyle = '#2c1e16';
     ctx.fillRect(0, 0, 512, 512);
 
-    ctx.strokeStyle = '#22c55e';
-    ctx.lineWidth = 3.0;
-
-    const tileSize = 64;
-    for (let x = 0; x <= 512; x += tileSize) {
-      for (let y = 0; y <= 512; y += tileSize) {
-        ctx.fillStyle = ((x + y) % 128 === 0) ? '#1c150c' : '#171109';
-        ctx.fillRect(x + 2, y + 2, tileSize - 4, tileSize - 4);
-
-        ctx.beginPath();
-        ctx.moveTo(x, y + 16);
-        ctx.lineTo(x + tileSize, y + 48);
-        ctx.stroke();
-      }
+    // Texture granuleuse
+    for(let i=0; i<1000; i++) {
+      ctx.fillStyle = Math.random() > 0.5 ? '#1a110c' : '#4a3322';
+      ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
     }
 
-    ctx.fillStyle = 'rgba(74, 222, 128, 0.45)';
-    for (let i = 0; i < 80; i++) {
+    // Crevasses / fissures
+    ctx.strokeStyle = '#0a0705';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    for (let i = 0; i < 15; i++) {
       ctx.beginPath();
-      ctx.arc((i * 37) % 512, (i * 73) % 512, 2.5 + (i % 4), 0, Math.PI * 2);
+      let startX = Math.random() * 512;
+      let startY = Math.random() * 512;
+      ctx.moveTo(startX, startY);
+      for(let j = 0; j < 5; j++) {
+        startX += (Math.random() - 0.5) * 80;
+        startY += (Math.random() - 0.2) * 80;
+        ctx.lineTo(startX, startY);
+      }
+      ctx.stroke();
+    }
+
+    // Plaques de mousse
+    for(let i=0; i<30; i++) {
+      const cx = Math.random() * 512;
+      const cy = Math.random() * 512;
+      const r = 10 + Math.random() * 40;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, 'rgba(34, 139, 34, 0.6)');
+      g.addColorStop(1, 'rgba(34, 139, 34, 0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -238,32 +265,48 @@ function createCycleGroundTextures() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#100303';
+    // Croûte de basalte
+    ctx.fillStyle = '#0a0505';
     ctx.fillRect(0, 0, 512, 512);
-
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = '#f97316';
-
-    const drawMagmaVein = (points) => {
+    
+    for(let i=0; i<300; i++) {
+      ctx.fillStyle = '#1a0d0d';
       ctx.beginPath();
-      ctx.moveTo(points[0][0], points[0][1]);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i][0], points[i][1]);
+      ctx.arc(Math.random() * 512, Math.random() * 512, Math.random() * 5 + 2, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // Bassins de lave magmatique
+    for (let i = 0; i < 8; i++) {
+      const cx = Math.random() * 512;
+      const cy = Math.random() * 512;
+      const r = 40 + Math.random() * 60;
+      
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      grad.addColorStop(0, '#ffff00');
+      grad.addColorStop(0.3, '#ff3300');
+      grad.addColorStop(0.8, '#8b0000');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      // Formes organiques pour la lave
+      ctx.moveTo(cx + r, cy);
+      for(let a=0; a<Math.PI*2; a+=0.5) {
+        const d = r * (0.6 + Math.random() * 0.4);
+        ctx.lineTo(cx + Math.cos(a)*d, cy + Math.sin(a)*d);
       }
-      ctx.stroke();
-    };
+      ctx.closePath();
+      ctx.fill();
+    }
 
-    drawMagmaVein([[0, 60], [120, 110], [240, 70], [380, 150], [512, 120]]);
-    drawMagmaVein([[0, 240], [150, 210], [280, 270], [420, 230], [512, 280]]);
-    drawMagmaVein([[0, 420], [130, 470], [290, 410], [390, 460], [512, 440]]);
-    drawMagmaVein([[180, 0], [210, 180], [170, 340], [220, 512]]);
-    drawMagmaVein([[360, 0], [330, 190], [380, 360], [340, 512]]);
-
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = '#fef08a';
-    drawMagmaVein([[0, 60], [120, 110], [240, 70], [380, 150], [512, 120]]);
-    drawMagmaVein([[0, 240], [150, 210], [280, 270], [420, 230], [512, 280]]);
-    drawMagmaVein([[0, 420], [130, 470], [290, 410], [390, 460], [512, 440]]);
+    // Braises ardentes
+    ctx.fillStyle = '#ffaa00';
+    for(let i=0; i<100; i++) {
+      ctx.beginPath();
+      ctx.arc(Math.random() * 512, Math.random() * 512, Math.random() * 2, 0, Math.PI*2);
+      ctx.fill();
+    }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
@@ -278,31 +321,51 @@ function createCycleGroundTextures() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#121004';
+    // Fond carte mère
+    ctx.fillStyle = '#051014';
     ctx.fillRect(0, 0, 512, 512);
 
-    ctx.strokeStyle = '#eab308';
-    ctx.lineWidth = 2.5;
-
-    const step = 64;
-    for (let x = 0; x < 512; x += step) {
+    // Traces de circuits
+    ctx.strokeStyle = '#00ffcc';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'bevel';
+    ctx.shadowColor = '#00ffcc';
+    ctx.shadowBlur = 10;
+    
+    for(let i = 0; i < 20; i++) {
       ctx.beginPath();
-      ctx.moveTo(x, 0); ctx.lineTo(x, 512);
-      ctx.stroke();
-    }
-    for (let y = 0; y < 512; y += step) {
-      ctx.beginPath();
-      ctx.moveTo(0, y); ctx.lineTo(512, y);
-      ctx.stroke();
-    }
-
-    ctx.fillStyle = '#ffffff';
-    for (let x = step; x < 512; x += step * 2) {
-      for (let y = step; y < 512; y += step * 2) {
-        ctx.beginPath();
-        ctx.arc(x, y, 4.5, 0, Math.PI * 2);
-        ctx.fill();
+      let x = Math.random() * 512;
+      let y = Math.random() * 512;
+      ctx.moveTo(x, y);
+      
+      for(let j = 0; j < 4; j++) {
+        const dir = Math.floor(Math.random() * 4);
+        const dist = 30 + Math.random() * 80;
+        if(dir === 0) x += dist;
+        else if(dir === 1) x -= dist;
+        else if(dir === 2) y += dist;
+        else y -= dist;
+        
+        ctx.lineTo(x, y);
       }
+      ctx.stroke();
+      
+      // Nœud de connexion
+      ctx.fillStyle = '#ffff00';
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0; // reset
+
+    // Grille subtile
+    ctx.strokeStyle = 'rgba(0, 255, 200, 0.1)';
+    ctx.lineWidth = 1;
+    for(let i=0; i<512; i+=32) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0); ctx.lineTo(i, 512);
+      ctx.moveTo(0, i); ctx.lineTo(512, i);
+      ctx.stroke();
     }
 
     const tex = new THREE.CanvasTexture(canvas);
@@ -318,29 +381,61 @@ function createCycleGroundTextures() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#f8fafc';
+    // Marbre blanc immaculé
+    ctx.fillStyle = '#fdfdfd';
     ctx.fillRect(0, 0, 512, 512);
 
-    ctx.strokeStyle = 'rgba(234, 179, 8, 0.45)';
-    ctx.lineWidth = 2.5;
-
-    for (let i = 0; i < 10; i++) {
+    // Nuages de marbre subtils
+    ctx.globalCompositeOperation = 'multiply';
+    for(let i=0; i<15; i++) {
+      const cx = Math.random() * 512;
+      const cy = Math.random() * 512;
+      const r = 50 + Math.random() * 100;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, 'rgba(230, 230, 235, 0.5)');
+      g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = g;
       ctx.beginPath();
-      const startX = (i * 54) % 512;
-      ctx.moveTo(startX, 0);
-      ctx.bezierCurveTo(startX + 60, 180, startX - 80, 340, startX + 20, 512);
-      ctx.stroke();
+      ctx.arc(cx, cy, r, 0, Math.PI*2);
+      ctx.fill();
     }
 
-    ctx.strokeStyle = 'rgba(147, 197, 253, 0.40)';
-    ctx.lineWidth = 2.0;
-    for (let i = 0; i < 8; i++) {
+    // Veines dorées
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.shadowColor = 'rgba(218, 165, 32, 0.5)';
+    ctx.shadowBlur = 5;
+    ctx.strokeStyle = '#daa520';
+    ctx.lineWidth = 1.5;
+    
+    for(let i=0; i<8; i++) {
       ctx.beginPath();
-      const startY = (i * 68) % 512;
-      ctx.moveTo(0, startY);
-      ctx.bezierCurveTo(180, startY - 40, 360, startY + 60, 512, startY);
+      const sx = Math.random() * 512;
+      ctx.moveTo(sx, 0);
+      ctx.bezierCurveTo(
+        sx + (Math.random()-0.5)*200, 170, 
+        sx + (Math.random()-0.5)*200, 340, 
+        sx + (Math.random()-0.5)*200, 512
+      );
       ctx.stroke();
     }
+    
+    // Reflets prismatiques
+    ctx.globalCompositeOperation = 'screen';
+    for(let i=0; i<10; i++) {
+      const cx = Math.random() * 512;
+      const cy = Math.random() * 512;
+      const r = 30 + Math.random() * 40;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      const hues = [0, 120, 240];
+      const hue = hues[Math.floor(Math.random()*hues.length)];
+      g.addColorStop(0, `hsla(${hue}, 100%, 80%, 0.3)`);
+      g.addColorStop(1, `hsla(${hue}, 100%, 80%, 0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0; // reset
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
@@ -355,20 +450,51 @@ function createCycleGroundTextures() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#08080a';
+    // Obsidienne fracturée
+    const grad = ctx.createLinearGradient(0, 0, 512, 512);
+    grad.addColorStop(0, '#020202');
+    grad.addColorStop(1, '#0a0a0c');
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
 
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
-    ctx.lineWidth = 3.5;
-
-    for (let i = 0; i < 12; i++) {
+    // Éclats de verre (polygones)
+    for(let i=0; i<20; i++) {
       ctx.beginPath();
-      const y = i * 44;
-      ctx.moveTo(0, y);
-      ctx.lineTo(140, y + 15);
-      ctx.lineTo(260, y - 20);
-      ctx.lineTo(410, y + 10);
-      ctx.lineTo(512, y);
+      const cx = Math.random() * 512;
+      const cy = Math.random() * 512;
+      ctx.moveTo(cx, cy);
+      for(let j=0; j<4; j++) {
+        ctx.lineTo(cx + (Math.random()-0.5)*120, cy + (Math.random()-0.5)*120);
+      }
+      ctx.closePath();
+      
+      const polyGrad = ctx.createLinearGradient(cx, cy, cx+50, cy+50);
+      polyGrad.addColorStop(0, 'rgba(40, 40, 45, 0.4)');
+      polyGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      
+      ctx.fillStyle = polyGrad;
+      ctx.fill();
+      
+      ctx.strokeStyle = 'rgba(80, 80, 90, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Volutes fantomatiques
+    ctx.globalCompositeOperation = 'screen';
+    for(let i=0; i<15; i++) {
+      ctx.beginPath();
+      const sx = Math.random() * 512;
+      const sy = Math.random() * 512;
+      ctx.moveTo(sx, sy);
+      ctx.bezierCurveTo(
+        sx + (Math.random()-0.5)*200, sy + (Math.random()-0.5)*200,
+        sx + (Math.random()-0.5)*200, sy + (Math.random()-0.5)*200,
+        sx + (Math.random()-0.5)*200, sy + (Math.random()-0.5)*200
+      );
+      ctx.strokeStyle = 'rgba(60, 40, 100, 0.2)';
+      ctx.lineWidth = 15;
+      ctx.lineCap = 'round';
       ctx.stroke();
     }
 
@@ -385,19 +511,44 @@ function createCycleGroundTextures() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#06172d';
+    // Ciel azur
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
+    bgGrad.addColorStop(0, '#4facfe');
+    bgGrad.addColorStop(1, '#00f2fe');
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, 512, 512);
 
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.50)';
-    ctx.lineWidth = 2.5;
-
-    for (let i = 0; i < 28; i++) {
-      const x = (i * 19) % 512;
-      const y = (i * 13) % 320;
-      const len = 120 + ((i * 17) % 180);
+    // Tourbillons de nuages (radials)
+    ctx.globalCompositeOperation = 'screen';
+    for(let i = 0; i < 25; i++) {
+      const cx = Math.random() * 512;
+      const cy = Math.random() * 512;
+      const r = 60 + Math.random() * 80;
+      
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+      grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      
+      ctx.fillStyle = grad;
       ctx.beginPath();
+      // Nuages déformés par le vent
+      ctx.ellipse(cx, cy, r, r * 0.4, Math.PI / 8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Traînées de vent
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineCap = 'round';
+    for(let i = 0; i < 40; i++) {
+      ctx.beginPath();
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      const len = 50 + Math.random() * 100;
+      ctx.lineWidth = 1 + Math.random() * 2;
       ctx.moveTo(x, y);
-      ctx.lineTo(x, y + len);
+      ctx.bezierCurveTo(x + len/3, y + 10, x + 2*len/3, y - 10, x + len, y);
       ctx.stroke();
     }
 
@@ -414,29 +565,50 @@ function createCycleGroundTextures() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#090114';
+    // Vide cosmique
+    ctx.fillStyle = '#05000a';
     ctx.fillRect(0, 0, 512, 512);
 
-    ctx.strokeStyle = 'rgba(192, 132, 252, 0.45)';
-    ctx.lineWidth = 2.0;
-
-    const gridStep = 48;
-    for (let x = 0; x <= 512; x += gridStep) {
+    // Nébuleuses
+    ctx.globalCompositeOperation = 'screen';
+    for (let i = 0; i < 15; i++) {
+      const cx = Math.random() * 512;
+      const cy = Math.random() * 512;
+      const r = 80 + Math.random() * 120;
+      
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      const colors = [
+        ['rgba(138, 43, 226, 0.4)', 'rgba(138, 43, 226, 0)'], // Violet
+        ['rgba(255, 20, 147, 0.4)', 'rgba(255, 20, 147, 0)'], // Rose
+        ['rgba(0, 191, 255, 0.4)', 'rgba(0, 191, 255, 0)']  // Cyan
+      ];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      
+      grad.addColorStop(0, color[0]);
+      grad.addColorStop(1, color[1]);
+      
+      ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.moveTo(x, 0); ctx.lineTo(x, 512);
-      ctx.stroke();
-    }
-    for (let y = 0; y <= 512; y += gridStep) {
-      ctx.beginPath();
-      ctx.moveTo(0, y); ctx.lineTo(512, y);
-      ctx.stroke();
-    }
-
-    ctx.fillStyle = '#ffffff';
-    for (let i = 0; i < 90; i++) {
-      ctx.beginPath();
-      ctx.arc((i * 47) % 512, (i * 91) % 512, 1.2 + (i % 3) * 0.6, 0, Math.PI * 2);
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    // Champ d'étoiles
+    ctx.globalCompositeOperation = 'source-over';
+    for(let i=0; i<300; i++) {
+      ctx.fillStyle = Math.random() > 0.8 ? '#ffffaa' : '#ffffff';
+      ctx.beginPath();
+      const r = Math.random() * 1.5;
+      ctx.arc(Math.random() * 512, Math.random() * 512, r, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Halo pour les grosses étoiles
+      if(r > 1.2) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.beginPath();
+        ctx.arc(Math.random() * 512, Math.random() * 512, r*3, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     const tex = new THREE.CanvasTexture(canvas);
