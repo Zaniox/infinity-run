@@ -142,13 +142,14 @@ class GameApp {
   }
 
   startGame() {
-    if (!this.auth || !this.auth.isAuthenticated()) {
-      if (this.ui) this.ui.openGoogleDirectModal();
-      return;
-    }
-    if (!this.auth.hasPseudo()) {
+    // Si l'utilisateur est connecté avec Google mais n'a pas encore choisi de pseudo
+    if (this.auth && this.auth.user && this.auth.user.googleUid && !this.auth.hasPseudo()) {
       if (this.ui) this.ui.openPseudoModal();
       return;
+    }
+    // Si non connecté avec Google, s'assurer que la session invité est active
+    if (this.auth && !this.auth.isAuthenticated() && !this.auth.isGuest()) {
+      this.auth.loginAsGuest();
     }
 
     this.state = this.STATE_PLAYING;

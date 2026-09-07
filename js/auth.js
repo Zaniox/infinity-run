@@ -52,10 +52,34 @@ export class AuthManager {
   }
 
   isAuthenticated() {
-    return !!(this.user && this.user.googleUid);
+    return !!(this.user && this.user.googleUid && !this.user.isGuest);
+  }
+
+  isGuest() {
+    return !!(this.user && this.user.isGuest);
+  }
+
+  loginAsGuest() {
+    const guestUser = {
+      googleUid: null,
+      email: null,
+      name: 'Pilote Invité',
+      picture: 'https://api.dicebear.com/7.x/bottts/svg?seed=guest_pilot&backgroundColor=0f172a',
+      pseudo: 'Invité',
+      isGuest: true,
+      verified: false,
+      authMethod: 'guest',
+      connectedAt: new Date().toISOString()
+    };
+    this.user = guestUser;
+    if (this.onAuthStateChanged) {
+      this.onAuthStateChanged(this.user);
+    }
+    return guestUser;
   }
 
   hasPseudo() {
+    if (this.isGuest()) return true;
     return !!(this.user && this.user.pseudo && this.user.pseudo.trim().length >= 3);
   }
 

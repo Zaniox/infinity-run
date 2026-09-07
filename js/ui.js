@@ -213,16 +213,15 @@ export class UIManager {
       const handlePlayClick = (e) => {
         if (e) e.preventDefault();
 
-        // Si non connecté -> ouvrir le modal Google
-        if (!this.auth || !this.auth.isAuthenticated()) {
-          this.openGoogleDirectModal();
+        // Si connecté avec Google mais pas encore de pseudo -> ouvrir le modal Pseudo
+        if (this.auth && this.auth.user && this.auth.user.googleUid && !this.auth.hasPseudo()) {
+          this.openPseudoModal();
           return;
         }
 
-        // Si connecté mais pas de pseudo -> ouvrir le modal Pseudo
-        if (!this.auth.hasPseudo()) {
-          this.openPseudoModal();
-          return;
+        // Si non connecté avec Google -> activer session invité
+        if (!this.auth || !this.auth.isAuthenticated()) {
+          if (this.auth) this.auth.loginAsGuest();
         }
 
         // Prêt à décoller !
@@ -412,10 +411,18 @@ export class UIManager {
       this.btnTrollContinue.addEventListener('pointerdown', handleTrollContinue);
     }
 
-    // 11. Multijoueur 1v1
+    // 11. Multijoueur 1v1 (Compte Google Requis)
     if (this.btnOpenMultiplayer) {
       this.btnOpenMultiplayer.addEventListener('click', (e) => {
         e.preventDefault();
+        if (!this.auth || !this.auth.isAuthenticated()) {
+          this.openGoogleDirectModal();
+          if (this.googleLoginError) {
+            this.googleLoginError.textContent = 'Connexion Google requise : Le mode multijoueur (1 vs 1) nécessite un compte Google vérifié.';
+            this.googleLoginError.classList.remove('hidden');
+          }
+          return;
+        }
         this.openMultiplayerModal();
       });
     }
@@ -539,11 +546,12 @@ export class UIManager {
       if (e.code === 'Space' || e.code === 'Enter') {
         if (this.isStartMenuVisible() && !this.isAnyModalOpen()) {
           e.preventDefault();
-          if (!this.auth || !this.auth.isAuthenticated()) {
-            this.openGoogleDirectModal();
-          } else if (!this.auth.hasPseudo()) {
+          if (this.auth && this.auth.user && this.auth.user.googleUid && !this.auth.hasPseudo()) {
             this.openPseudoModal();
           } else {
+            if (!this.auth || !this.auth.isAuthenticated()) {
+              if (this.auth) this.auth.loginAsGuest();
+            }
             this.hideStartMenu();
             if (this.onStart) this.onStart();
           }
@@ -574,8 +582,8 @@ export class UIManager {
 
   // --- MISE À JOUR DE L'ÉTAT D'AUTHENTIFICATION & PROFIL ---
   updateAuthState(user) {
-    if (user && user.googleUid) {
-      // Connecté
+    if (user && user.googleUid && !user.isGuest) {
+      // Connecté avec Compte Google
       if (this.authUnlogged) this.authUnlogged.classList.add('hidden');
       if (this.authLogged) this.authLogged.classList.remove('hidden');
 
@@ -586,15 +594,20 @@ export class UIManager {
 
       if (pseudo) {
         if (this.userPseudoDisplay) this.userPseudoDisplay.textContent = `@${pseudo}`;
-        // Déverrouiller le bouton JOUER
-        if (this.btnPlayGame) this.btnPlayGame.classList.remove('locked');
+        // Déverrouiller le bouton JOUER avec statut mondial
+        if (this.btnPlayGame) {
+          this.btnPlayGame.classList.remove('locked', 'guest-mode');
+        }
         if (this.btnPlayIcon) this.btnPlayIcon.textContent = '▶';
         if (this.btnPlayText) this.btnPlayText.textContent = 'JOUER • DÉCOLLER';
-        if (this.btnPlaySub) this.btnPlaySub.textContent = '[ ESPACE ou CLIQUEZ POUR VOLER ]';
+        if (this.btnPlaySub) this.btnPlaySub.textContent = `[ CLASSEMENT MONDIAL ACTIF • @${pseudo} ]`;
       } else {
         if (this.userPseudoDisplay) this.userPseudoDisplay.textContent = 'Non défini';
         // Bouton invitant à choisir son pseudo
-        if (this.btnPlayGame) this.btnPlayGame.classList.add('locked');
+        if (this.btnPlayGame) {
+          this.btnPlayGame.classList.add('locked');
+          this.btnPlayGame.classList.remove('guest-mode');
+        }
         if (this.btnPlayIcon) this.btnPlayIcon.textContent = '✍️';
         if (this.btnPlayText) this.btnPlayText.textContent = 'CHOISIR MON PSEUDO';
         if (this.btnPlaySub) this.btnPlaySub.textContent = '[ PSEUDO REQUIS POUR LE CLASSEMENT ]';
@@ -603,14 +616,17 @@ export class UIManager {
       // Mettre à jour le résumé des scores personnels
       this.updatePersonalBestDisplay();
     } else {
-      // Non connecté
+      // Non connecté avec Google (Mode Invité Solo disponible immédiatement)
       if (this.authUnlogged) this.authUnlogged.classList.remove('hidden');
       if (this.authLogged) this.authLogged.classList.add('hidden');
 
-      if (this.btnPlayGame) this.btnPlayGame.classList.add('locked');
-      if (this.btnPlayIcon) this.btnPlayIcon.textContent = '🔒';
-      if (this.btnPlayText) this.btnPlayText.textContent = 'CONNEXION GOOGLE REQUISE';
-      if (this.btnPlaySub) this.btnPlaySub.textContent = '[ CONNECTEZ-VOUS POUR DÉCOLLER ]';
+      if (this.btnPlayGame) {
+        this.btnPlayGame.classList.remove('locked');
+        this.btnPlayGame.classList.add('guest-mode');
+      }
+      if (this.btnPlayIcon) this.btnPlayIcon.textContent = '🎮';
+      if (this.btnPlayText) this.btnPlayText.textContent = 'JOUER EN MODE INVITÉ';
+      if (this.btnPlaySub) this.btnPlaySub.textContent = '[ DÉCOLLAGE IMMÉDIAT • SOLO HORS CLASSEMENT ]';
     }
   }
 
@@ -942,7 +958,10 @@ export class UIManager {
     }
 
     // Affichage du statut du classement mondial
-    if (worldRankResult) {
+    if (this.auth && this.auth.isGuest()) {
+      if (this.gameoverWorldStatus) this.gameoverWorldStatus.textContent = 'SESSION INVITÉE (SOLO HORS CLASSEMENT)';
+      if (this.gameoverWorldRankText) this.gameoverWorldRankText.textContent = 'Score non inscrit au classement mondial. Connectez votre compte Google pour immortaliser vos records !';
+    } else if (worldRankResult) {
       this.updateGameOverWorldRank(worldRankResult);
     } else {
       if (this.gameoverWorldStatus) this.gameoverWorldStatus.textContent = 'ENREGISTREMENT AU CLASSEMENT MONDIAL...';

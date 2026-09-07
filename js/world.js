@@ -22,30 +22,30 @@ export const CYCLES_DATA = [
     subtitle: "Noir • Eau (Abysse Aquatique)",
     element: "Eau",
     colorName: "Noir",
-    troll: "TROMBES D'EAU ABYSSALES : Piliers noirs tombant du ciel en piqué",
-    sky: 0x020306,
-    fog: 0x040812,
-    ground: 0x02050b,
-    monolith: 0x080e18,
+    troll: "TROMBES D'EAU ABYSSALES : Cascades et geysers d'eau tourbillonnants en piqué",
+    sky: 0x020a16,
+    fog: 0x04162a,
+    ground: 0x031c33,
+    monolith: 0x072844,
     primary: 0x00f0ff,
-    secondary: 0x0284c7,
-    lightIntensity: 1.6,
+    secondary: 0x38bdf8,
+    lightIntensity: 1.5,
     style: "falling"
   },
   {
     id: 2,
     name: "Résilience",
-    subtitle: "Terre & Mousse • Plaques Tectoniques",
+    subtitle: "Terre & Roches • Falaises Telluriques",
     element: "Terre",
-    colorName: "Marron & Vert",
-    troll: "PISTONS TELLURIQUES : Portes de terre et roche qui s'écrasent sur le beat",
-    sky: 0x10170e,
-    fog: 0x182214,
+    colorName: "Marron & Ocre",
+    troll: "PISTONS TELLURIQUES : Mégalithes de terre et roche qui s'écrasent sur le beat",
+    sky: 0x161009,
+    fog: 0x22180e,
     ground: 0x3a2414,
-    monolith: 0x3d2a19,
-    primary: 0x55a850,
-    secondary: 0xb45309,
-    lightIntensity: 1.8,
+    monolith: 0x3b2615,
+    primary: 0xb45309,
+    secondary: 0x78350f,
+    lightIntensity: 1.5,
     style: "sliding"
   },
   {
@@ -83,17 +83,17 @@ export const CYCLES_DATA = [
   {
     id: 5,
     name: "Bonheur",
-    subtitle: "Blanc • Lumière (Rayonnement Céleste)",
+    subtitle: "Or Doux & Albâtre • Rayonnement Céleste",
     element: "Lumière",
-    colorName: "Blanc",
-    troll: "LAME DE LUMIÈRE RASANTE : Nappe de lasers blancs éclatants rasant le sol",
-    sky: 0x1e2532,
-    fog: 0x334155,
+    colorName: "Or & Albâtre",
+    troll: "HARPE DE LASERS CÉLESTES : Trame de cordes lumineuses dorées à esquiver",
+    sky: 0x0f172a,
+    fog: 0x1e293b,
     ground: 0x242e3d,
-    monolith: 0x64748b,
-    primary: 0xffffff,
-    secondary: 0x93c5fd,
-    lightIntensity: 2.4,
+    monolith: 0x3b4c68,
+    primary: 0xfef08a,
+    secondary: 0xe0e7ff,
+    lightIntensity: 1.35,
     style: "solar"
   },
   {
@@ -795,60 +795,71 @@ export class World {
     const group = new THREE.Group();
 
     switch (cycleIndex) {
-      case 0: { // Eau : Spires sous-marines monumentales avec anneaux bioluminescents & orbe aquatique
-        const geo = new THREE.CylinderGeometry(0.8, 2.2, 22, 12);
+      case 0: { // Eau : Trombe d'eau monumentale, geyser abyssal et anneaux d'écume marine
+        const geo = new THREE.CylinderGeometry(1.2, 3.4, 26, 16);
         const mat = new THREE.MeshStandardMaterial({
-          color: 0x021326,
-          roughness: 0.25,
-          metalness: 0.85,
+          color: 0x03223f,
+          roughness: 0.08,
+          metalness: 0.88,
           emissive: 0x00f0ff,
-          emissiveIntensity: 0.55
+          emissiveIntensity: 0.80,
+          transparent: true,
+          opacity: 0.88
         });
         const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 11;
+        mesh.position.y = 13;
         group.add(mesh);
 
         // Orbe d'eau lumineuse au sommet
         const orb = new THREE.Mesh(
-          new THREE.SphereGeometry(1.6, 16, 16),
-          new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.85 })
+          new THREE.SphereGeometry(2.0, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.9 })
         );
-        orb.position.y = 22.5;
+        orb.position.y = 26.5;
         group.add(orb);
 
-        // Anneau d'écume en rotation
-        const ring = new THREE.Mesh(
-          new THREE.TorusGeometry(2.4, 0.12, 8, 24),
-          new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 })
-        );
-        ring.position.y = 15;
-        ring.rotation.x = Math.PI / 2.3;
-        group.add(ring);
+        // Anneaux d'écume marine
+        for (let r = 0; r < 2; r++) {
+          const ring = new THREE.Mesh(
+            new THREE.TorusGeometry(3.0 + r * 1.4, 0.16, 8, 24),
+            new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 })
+          );
+          ring.position.y = 10 + r * 10;
+          ring.rotation.x = Math.PI / 2.2;
+          group.add(ring);
+        }
         break;
       }
-      case 1: { // Terre : Dolmen tellurique colossal & mégalithe avec roche en lévitation
-        const geo = new THREE.BoxGeometry(4.2, 18, 4.2);
+      case 1: { // Terre : Dolmen tellurique colossal en strates rocheuses et terreuses (sans vert uniforme)
+        const geo = new THREE.BoxGeometry(4.4, 18, 4.4);
         const mat = new THREE.MeshStandardMaterial({
-          color: 0x1f160e,
-          roughness: 0.90,
-          metalness: 0.08,
-          emissive: 0x22c55e,
-          emissiveIntensity: 0.28
+          color: 0x3a2414,
+          roughness: 0.92,
+          metalness: 0.06,
+          emissive: 0x78350f,
+          emissiveIntensity: 0.22,
+          flatShading: true
         });
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.y = 9;
         mesh.rotation.y = (side > 0 ? 0.35 : -0.35);
         group.add(mesh);
 
-        // Linteau supérieur (arche de dolmen)
-        const lintel = new THREE.Mesh(new THREE.BoxGeometry(6.5, 2.2, 4.8), mat);
+        // Linteau supérieur tellurique (terre cuite et ocre)
+        const lintelMat = new THREE.MeshStandardMaterial({
+          color: 0x4e331e,
+          roughness: 0.95,
+          metalness: 0.04,
+          flatShading: true
+        });
+        const lintel = new THREE.Mesh(new THREE.BoxGeometry(6.8, 2.4, 5.0), lintelMat);
         lintel.position.y = 19;
         group.add(lintel);
 
-        // Bloc de roche suspendu au centre
+        // Bloc de roche sédimentaire fracturé suspendu au centre
         const rock = new THREE.Mesh(
-          new THREE.DodecahedronGeometry(1.5, 0),
-          new THREE.MeshStandardMaterial({ color: 0x352315, roughness: 0.85 })
+          new THREE.DodecahedronGeometry(1.8, 0),
+          new THREE.MeshStandardMaterial({ color: 0x24170e, roughness: 0.88, flatShading: true })
         );
         rock.position.set(0, 12, 0);
         group.add(rock);
@@ -918,24 +929,36 @@ export class World {
         }
         break;
       }
-      case 4: { // Lumière : Obélisque de quartz céleste avec double pyramide et halo
-        const geo = new THREE.OctahedronGeometry(2.4, 0);
-        geo.scale(1.0, 4.2, 1.0);
+      case 4: { // Lumière / Bonheur : Obélisque d'albâtre céleste bordé de filigranes dorés (Anti-éblouissement)
+        const geo = new THREE.OctahedronGeometry(2.2, 0);
+        geo.scale(1.0, 4.0, 1.0);
         const mat = new THREE.MeshStandardMaterial({
-          color: 0xffffff,
-          roughness: 0.15,
-          metalness: 0.75,
-          emissive: 0x93c5fd,
-          emissiveIntensity: 0.85
+          color: 0x1e293b,
+          roughness: 0.22,
+          metalness: 0.65,
+          emissive: 0x475569,
+          emissiveIntensity: 0.3
         });
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.y = 12;
         group.add(mesh);
 
-        // Couronne de lumière rayonnante
+        // Filigranes géométriques dorés (lignes propres, aucune agression visuelle)
+        const wireMat = new THREE.MeshBasicMaterial({
+          color: 0xfde047,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.8
+        });
+        const wire = new THREE.Mesh(geo.clone(), wireMat);
+        wire.position.y = 12;
+        wire.scale.setScalar(1.035);
+        group.add(wire);
+
+        // Couronne fine en or doux
         const halo = new THREE.Mesh(
-          new THREE.TorusGeometry(3.2, 0.1, 16, 32),
-          new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })
+          new THREE.TorusGeometry(3.0, 0.08, 12, 32),
+          new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.75 })
         );
         halo.position.y = 18;
         halo.rotation.x = Math.PI / 3;
@@ -1818,26 +1841,57 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 1 (Chute) : Monolithe tombant du ciel en piqué gravitationnel (Noir / Eau abyssale)
+  // Troll 1 (Chute) : Trombe d'eau abyssale tombant du ciel en piqué (Vrai élément Eau)
   spawnFallingPillar(x) {
-    const w = 5.0, h = 28.0, d = 5.0;
-    const geo = new THREE.BoxGeometry(w, h, d);
+    const group = new THREE.Group();
+    const subBoxes = [];
+    const h = 32.0, rTop = 2.2, rBot = 4.0;
+
+    // Matériau hydrodynamique azur translucide et réflectif
     const waterMat = new THREE.MeshStandardMaterial({
-      color: 0x060c18,
-      emissive: 0x001a2c,
-      emissiveIntensity: 0.6,
-      roughness: 0.12,
-      metalness: 0.85
+      color: 0x062846,
+      emissive: 0x00f0ff,
+      emissiveIntensity: 0.85,
+      roughness: 0.08,
+      metalness: 0.9,
+      transparent: true,
+      opacity: 0.86
     });
-    const mesh = new THREE.Mesh(geo, waterMat);
-    mesh.position.set(x, 48.0, this.spawnDistance); // Tombe depuis le ciel
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
 
-    const bbox = new THREE.Box3().setFromObject(mesh);
-    const obj = { mesh, bbox, type: 'falling', targetY: h / 2, fallSpeed: 42.0, hasSplashed: false };
+    const colGeo = new THREE.CylinderGeometry(rTop, rBot, h, 16);
+    const column = new THREE.Mesh(colGeo, waterMat);
+    column.position.y = h / 2;
+    column.castShadow = true;
+    group.add(column);
+    subBoxes.push({ mesh: column, box: new THREE.Box3() });
 
-    this.scene.add(mesh);
+    // Anneaux d'écume blanche marine tourbillonnants
+    const foamMat = new THREE.MeshBasicMaterial({
+      color: 0xbae6fd,
+      transparent: true,
+      opacity: 0.75
+    });
+    for (let f = 0; f < 3; f++) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(3.2 + f * 0.4, 0.18, 8, 20), foamMat);
+      ring.position.y = 5.0 + f * 9.0;
+      ring.rotation.x = Math.PI / 2.3;
+      group.add(ring);
+    }
+
+    // Crête supérieure d'écume
+    const crown = new THREE.Mesh(
+      new THREE.ConeGeometry(rTop * 1.3, 3.5, 12),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 })
+    );
+    crown.position.y = h + 1.2;
+    group.add(crown);
+
+    group.position.set(x, 48.0, this.spawnDistance); // Tombe depuis le ciel
+
+    const bbox = new THREE.Box3().setFromObject(group);
+    const obj = { mesh: group, subBoxes, bbox, type: 'falling', targetY: 0, fallSpeed: 44.0, hasSplashed: false };
+
+    this.scene.add(group);
     this.obstacles.push(obj);
   }
 
@@ -2033,24 +2087,83 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 5 (Bonheur) : Nappe de rayons solaires blancs rasant le sol (Blanc / Lumière)
+  // Troll 5 (Bonheur) : Harpe de lasers célestes dorés (Rempli de lignes fines et pures, anti-éblouissement)
   spawnSolarBeam() {
     const group = new THREE.Group();
-    const w = 110.0, h = 1.2, d = 4.0;
-    const geo = new THREE.BoxGeometry(w, h, d);
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.92
-    });
-    const beam = new THREE.Mesh(geo, mat);
-    beam.position.set(0, 5.8, 0);
-    group.add(beam);
+    const subBoxes = [];
+    const spanW = 34.0;
+    const height = 18.0;
 
-    const subBoxes = [{ mesh: beam, box: new THREE.Box3() }];
+    // Pylônes émetteurs latéraux en albâtre et or doux
+    const pylonGeo = new THREE.CylinderGeometry(0.55, 0.95, height, 12);
+    const pylonMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.8,
+      roughness: 0.2,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.35
+    });
+
+    const leftPylon = new THREE.Mesh(pylonGeo, pylonMat);
+    leftPylon.position.set(-spanW / 2, height / 2, 0);
+    leftPylon.castShadow = true;
+    group.add(leftPylon);
+    subBoxes.push({ mesh: leftPylon, box: new THREE.Box3() });
+
+    const rightPylon = new THREE.Mesh(pylonGeo, pylonMat);
+    rightPylon.position.set(spanW / 2, height / 2, 0);
+    rightPylon.castShadow = true;
+    group.add(rightPylon);
+    subBoxes.push({ mesh: rightPylon, box: new THREE.Box3() });
+
+    // Couloir de passage sûr de 11 mètres (gauche, centre ou droite)
+    const gapSlots = [-8.5, 0.0, 8.5];
+    const safeX = gapSlots[Math.floor(Math.random() * gapSlots.length)];
+    const halfSafe = 5.5;
+
+    const laserMat = new THREE.MeshBasicMaterial({
+      color: 0xfef08a,
+      transparent: true,
+      opacity: 0.88
+    });
+
+    // 4 cordes horizontales de laser dorées réparties en hauteur
+    const levels = [3.5, 7.0, 10.5, 14.0];
+    levels.forEach((y) => {
+      // Segment gauche
+      const leftW = Math.max(0.1, (safeX - halfSafe) - (-spanW / 2));
+      if (leftW > 1.2) {
+        const segL = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, leftW, 8), laserMat);
+        segL.rotation.z = Math.PI / 2;
+        segL.position.set(-spanW / 2 + leftW / 2, y, 0);
+        group.add(segL);
+        subBoxes.push({ mesh: segL, box: new THREE.Box3() });
+      }
+
+      // Segment droit
+      const rightW = Math.max(0.1, (spanW / 2) - (safeX + halfSafe));
+      if (rightW > 1.2) {
+        const segR = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, rightW, 8), laserMat);
+        segR.rotation.z = Math.PI / 2;
+        segR.position.set(spanW / 2 - rightW / 2, y, 0);
+        group.add(segR);
+        subBoxes.push({ mesh: segR, box: new THREE.Box3() });
+      }
+    });
+
+    // Balises lumineuses douces guidant le joueur vers le couloir de vol sécurisé
+    const beaconMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 });
+    const bL = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), beaconMat);
+    bL.position.set(safeX - halfSafe, 8.5, 0);
+    group.add(bL);
+
+    const bR = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), beaconMat);
+    bR.position.set(safeX + halfSafe, 8.5, 0);
+    group.add(bR);
+
     group.position.set(0, 0, this.spawnDistance);
 
-    const obj = { mesh: group, subBoxes, type: 'solar' };
+    const obj = { mesh: group, subBoxes, type: 'solar', pulseTimer: 0 };
     this.scene.add(group);
     this.obstacles.push(obj);
   }
@@ -2121,59 +2234,114 @@ export class World {
 
   // --- NOUVEAUX OBSTACLES ÉLÉMENTAIRES DÉDIÉS ---
 
-  // Cycle 1 (Eau) : Aiguille hydrodynamique abyssale
+  // Cycle 1 (Eau) : Geyser marin en spirale jaillissant de l'abysse (Vrai élément Eau)
   spawnWaterSpire(x) {
+    const group = new THREE.Group();
+    const subBoxes = [];
     const h = 32.0;
-    const geo = new THREE.ConeGeometry(2.8, h, 6);
-    const mat = new THREE.MeshStandardMaterial({
-      color: 0x040e1c,
-      emissive: 0x00f0ff,
-      emissiveIntensity: 0.85,
-      roughness: 0.1,
-      metalness: 0.88
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, h / 2, this.spawnDistance);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
 
+    const waterMat = new THREE.MeshStandardMaterial({
+      color: 0x042442,
+      emissive: 0x00f0ff,
+      emissiveIntensity: 0.90,
+      roughness: 0.06,
+      metalness: 0.92,
+      transparent: true,
+      opacity: 0.88
+    });
+
+    const geo = new THREE.ConeGeometry(3.0, h, 12);
+    const spire = new THREE.Mesh(geo, waterMat);
+    spire.position.y = h / 2;
+    spire.castShadow = true;
+    group.add(spire);
+    subBoxes.push({ mesh: spire, box: new THREE.Box3() });
+
+    // Anneaux d'écume marine
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 });
+    const r1 = new THREE.Mesh(new THREE.TorusGeometry(3.8, 0.22, 8, 24), ringMat);
+    r1.position.y = 0.5;
+    r1.rotation.x = Math.PI / 2;
+    group.add(r1);
+
+    const r2 = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.16, 8, 20), ringMat);
+    r2.position.y = 16.0;
+    r2.rotation.x = Math.PI / 2.2;
+    group.add(r2);
+
+    // Orbe d'eau lumineuse au sommet
+    const orb = new THREE.Mesh(
+      new THREE.SphereGeometry(1.6, 12, 12),
+      new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.9 })
+    );
+    orb.position.y = h;
+    group.add(orb);
+
+    group.position.set(x, 0, this.spawnDistance);
     this.spawnWaterRipple(x, this.spawnDistance);
 
-    const bbox = new THREE.Box3().setFromObject(mesh);
-    const obj = { mesh, bbox, type: 'standard' };
-    this.scene.add(mesh);
+    const obj = { mesh: group, subBoxes, type: 'standard' };
+    this.scene.add(group);
     this.obstacles.push(obj);
   }
 
-  // Cycle 2 (Terre) : Monolithe tellurique et blocs rocheux
+  // Cycle 2 (Terre) : Spire tellurique en strates rocheuses naturelles (sans vert uniforme)
   spawnEarthMonolith(x) {
     const group = new THREE.Group();
+    const subBoxes = [];
     const h = 26.0;
-    const mat = new THREE.MeshStandardMaterial({
-      color: 0x24180d,
-      roughness: 0.95,
-      metalness: 0.08,
+
+    // Matériaux roche tellurique et glaise sédimentaire
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: 0x332014,
+      roughness: 0.92,
+      metalness: 0.06,
       flatShading: true
     });
 
-    const geo = new THREE.CylinderGeometry(2.4, 3.8, h, 6);
-    const pillar = new THREE.Mesh(geo, mat);
-    pillar.position.y = h / 2;
-    pillar.castShadow = true;
-    group.add(pillar);
+    const clayMat = new THREE.MeshStandardMaterial({
+      color: 0x54361e,
+      roughness: 0.96,
+      metalness: 0.04,
+      flatShading: true
+    });
 
-    // Bloc rocheux suspendu
-    const rockGeo = new THREE.DodecahedronGeometry(2.2, 0);
-    const rock = new THREE.Mesh(rockGeo, mat);
-    rock.position.set((Math.random() - 0.5) * 4, h + 2.5, (Math.random() - 0.5) * 2);
-    rock.rotation.set(Math.random(), Math.random(), 0);
-    group.add(rock);
+    const slateMat = new THREE.MeshStandardMaterial({
+      color: 0x24170e,
+      roughness: 0.88,
+      metalness: 0.12,
+      flatShading: true
+    });
+
+    // 3 segments étagés de strates géologiques
+    const seg1 = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 4.2, 9.0, 7), rockMat);
+    seg1.position.y = 4.5;
+    seg1.castShadow = true;
+    group.add(seg1);
+    subBoxes.push({ mesh: seg1, box: new THREE.Box3() });
+
+    const seg2 = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 3.2, 9.0, 6), clayMat);
+    seg2.position.y = 13.5;
+    seg2.rotation.y = 0.5;
+    seg2.castShadow = true;
+    group.add(seg2);
+    subBoxes.push({ mesh: seg2, box: new THREE.Box3() });
+
+    const seg3 = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 2.6, 8.0, 5), slateMat);
+    seg3.position.y = 22.0;
+    seg3.rotation.y = -0.3;
+    seg3.castShadow = true;
+    group.add(seg3);
+    subBoxes.push({ mesh: seg3, box: new THREE.Box3() });
+
+    // Bloc tellurique rocheux au sommet
+    const capRock = new THREE.Mesh(new THREE.DodecahedronGeometry(2.0, 0), clayMat);
+    capRock.position.set((Math.random() - 0.5) * 1.5, h + 1.2, (Math.random() - 0.5) * 1.5);
+    capRock.rotation.set(Math.random(), Math.random(), 0);
+    group.add(capRock);
+    subBoxes.push({ mesh: capRock, box: new THREE.Box3() });
 
     group.position.set(x, 0, this.spawnDistance);
-    const subBoxes = [
-      { mesh: pillar, box: new THREE.Box3() },
-      { mesh: rock, box: new THREE.Box3() }
-    ];
     const obj = { mesh: group, subBoxes, type: 'standard' };
     this.scene.add(group);
     this.obstacles.push(obj);
@@ -2221,25 +2389,52 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Cycle 5 (Lumière) : Obélisque cristallin céleste
+  // Cycle 5 (Lumière) : Obélisque de quartz céleste bordé de filigranes dorés (Anti-éblouissement)
   spawnPrismObelisk(x) {
+    const group = new THREE.Group();
+    const subBoxes = [];
     const h = 32.0;
-    const geo = new THREE.CylinderGeometry(1.6, 2.8, h, 4);
-    const mat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      emissive: 0x93c5fd,
-      emissiveIntensity: 1.5,
-      roughness: 0.12,
-      metalness: 0.65
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, h / 2, this.spawnDistance);
-    mesh.rotation.y = Math.PI / 4;
-    mesh.castShadow = true;
 
-    const bbox = new THREE.Box3().setFromObject(mesh);
-    const obj = { mesh, bbox, type: 'standard' };
-    this.scene.add(mesh);
+    const quartzMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.7,
+      roughness: 0.18,
+      emissive: 0x475569,
+      emissiveIntensity: 0.3
+    });
+
+    const obeliskGeo = new THREE.CylinderGeometry(1.4, 2.6, h, 4);
+    const obelisk = new THREE.Mesh(obeliskGeo, quartzMat);
+    obelisk.position.y = h / 2;
+    obelisk.rotation.y = Math.PI / 4;
+    obelisk.castShadow = true;
+    group.add(obelisk);
+    subBoxes.push({ mesh: obelisk, box: new THREE.Box3() });
+
+    // Filigranes filaires dorés
+    const wireMat = new THREE.MeshBasicMaterial({
+      color: 0xfde047,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.75
+    });
+    const wire = new THREE.Mesh(obeliskGeo.clone(), wireMat);
+    wire.position.y = h / 2;
+    wire.rotation.y = Math.PI / 4;
+    wire.scale.setScalar(1.03);
+    group.add(wire);
+
+    // Prisme pyramidal au sommet
+    const apex = new THREE.Mesh(
+      new THREE.OctahedronGeometry(1.6, 0),
+      new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.85 })
+    );
+    apex.position.y = h + 1.2;
+    group.add(apex);
+
+    group.position.set(x, 0, this.spawnDistance);
+    const obj = { mesh: group, subBoxes, type: 'standard' };
+    this.scene.add(group);
     this.obstacles.push(obj);
   }
 
