@@ -66,12 +66,12 @@ export class TargetManager {
       metalness: 0.9
     });
 
-    // 5. Paramètres du Champ Magnétique d'attraction des objets
-    this.baseMagnetRadius = 14.5;
-    this.saiyanMagnetRadius = 24.0;
+    // 5. Paramètres du Champ Magnétique d'attraction subtile des objets (équilibré)
+    this.baseMagnetRadius = 4.8;
+    this.saiyanMagnetRadius = 7.5;
     this.lastMagnetSfxTime = 0;
 
-    // Arcs de flux magnétique reliant les drops attirés au vaisseau Infi
+    // Arcs de flux magnétique (désactivés au profit d'une attraction visuelle propre sans traits raides)
     const maxFluxArcs = 8;
     const fluxGeo = new THREE.BufferGeometry();
     this.fluxPositions = new Float32Array(maxFluxArcs * 2 * 3);
@@ -79,11 +79,10 @@ export class TargetManager {
     this.fluxLinesMat = new THREE.LineBasicMaterial({
       color: 0x38bdf8,
       transparent: true,
-      opacity: 0.85,
-      blending: THREE.AdditiveBlending
+      opacity: 0,
+      visible: false
     });
     this.fluxLines = new THREE.LineSegments(fluxGeo, this.fluxLinesMat);
-    this.fluxLines.frustumCulled = false;
     this.fluxLines.visible = false;
     this.scene.add(this.fluxLines);
   }
@@ -710,45 +709,31 @@ export class TargetManager {
         const dz = playerPos.z - h.mesh.position.z;
         const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-        // Si l'objet est dans le champ d'influence magnétique (devant Infi ou à portée)
-        if (dist < magnetRadius && h.mesh.position.z <= (playerPos.z + 5.0)) {
+        // Si l'objet est dans le champ d'influence magnétique (proche d'Infi, subtil)
+        if (dist < magnetRadius && h.mesh.position.z <= (playerPos.z + 4.0)) {
           const pullRatio = Math.max(0.0, 1.0 - (dist / magnetRadius));
-          const pullRate = 8.5 + Math.pow(pullRatio, 1.3) * (isSaiyan ? 26.0 : 17.5);
+          const pullRate = 3.2 + Math.pow(pullRatio, 1.2) * (isSaiyan ? 5.8 : 3.8);
 
-          // Mouvement fluide direct vers Infi
-          h.mesh.position.x += dx * Math.min(1.0, pullRate * dt);
-          h.mesh.position.y += dy * Math.min(1.0, pullRate * dt);
-          h.mesh.position.z += dz * Math.min(1.0, (pullRate * 0.5) * dt);
+          // Guidage doux et naturel vers Infi
+          h.mesh.position.x += dx * Math.min(0.65, pullRate * dt);
+          h.mesh.position.y += dy * Math.min(0.65, pullRate * dt);
+          h.mesh.position.z += dz * Math.min(0.5, (pullRate * 0.4) * dt);
 
-          // Rotation accélérée et pulsation d'excitation magnétique
-          h.mesh.rotation.y += 7.0 * dt;
-          if (h.orbit) h.orbit.rotation.z += 8.0 * dt;
-          if (h.orbit2) h.orbit2.rotation.y += 8.0 * dt;
+          // Légère rotation fluide et pulsation douce
+          h.mesh.rotation.y += 4.5 * dt;
+          if (h.orbit) h.orbit.rotation.z += 5.0 * dt;
+          if (h.orbit2) h.orbit2.rotation.y += 5.0 * dt;
 
-          const pulse = 1.0 + Math.sin(time * 20.0) * 0.12 + pullRatio * 0.28;
+          const pulse = 1.0 + Math.sin(time * 12.0) * 0.08 + pullRatio * 0.15;
           h.mesh.scale.set(pulse, pulse, pulse);
 
-          // Effet sonore d'accroche magnétique (throttlé)
+          // Effet sonore d'accroche magnétique discret (throttlé)
           if (!h.wasMagnetized) {
             h.wasMagnetized = true;
-            if (audioManager && (nowSec - this.lastMagnetSfxTime > 0.45)) {
+            if (audioManager && (nowSec - this.lastMagnetSfxTime > 0.6)) {
               this.lastMagnetSfxTime = nowSec;
               audioManager.playMagneticPull();
             }
-          }
-
-          // Rayon de flux magnétique reliant le drop à Infi
-          if (activeFluxCount < 8) {
-            const idx = activeFluxCount * 6;
-            // Origine : position du drop
-            this.fluxPositions[idx] = h.mesh.position.x;
-            this.fluxPositions[idx + 1] = h.mesh.position.y;
-            this.fluxPositions[idx + 2] = h.mesh.position.z;
-            // Destination : Infi (avec légère vibration haute fréquence)
-            this.fluxPositions[idx + 3] = playerPos.x + (Math.random() - 0.5) * 0.35;
-            this.fluxPositions[idx + 4] = playerPos.y + (Math.random() - 0.5) * 0.35;
-            this.fluxPositions[idx + 5] = playerPos.z;
-            activeFluxCount++;
           }
         } else if (h.wasMagnetized) {
           h.mesh.scale.set(1.0, 1.0, 1.0);

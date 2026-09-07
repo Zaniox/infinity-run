@@ -152,7 +152,7 @@ class GameApp {
     }
 
     this.state = this.STATE_PLAYING;
-    this.ui.hideStartMenu();
+    if (this.ui) this.ui.hideStartMenu();
     if (!this.audio.isPlaying) this.audio.start();
     const track = this.audio.getCurrentTrack();
     this.onTrackChange(this.audio.currentTrackIndex, track);
@@ -280,6 +280,8 @@ class GameApp {
     this.ui.updateMenuCycle(cycle);
     this.ui.showCycleToast(cycle);
     this.cycle8Distance = 0;
+    this.cycleTimer = 0;
+    this.currentCycleDistance = 0;
     if (index !== 7) {
       this.ui.hideClimaxAlert();
     }
@@ -405,16 +407,19 @@ class GameApp {
     }
 
     if (this.state === this.STATE_PLAYING) {
-      // 2. Calcul de la vitesse de translation avec boost temporaire et bonus Sayanfinity
-      const saiyanBonus = this.player.isSayanfinityActive() ? 24.0 : 0.0;
-      this.baseSpeed = 68.0 + (this.distance / 1200.0) * 15.0;
+      // 2. Calcul de la vitesse de translation avec progression étagée par cycle (de 38 m/s à 82 m/s)
+      const cycleSpeeds = [38.0, 44.0, 50.0, 56.0, 62.0, 68.0, 74.0, 82.0];
+      const cycleIdx = (this.world && this.world.currentCycleIndex !== undefined) ? this.world.currentCycleIndex : 0;
+      const targetCycleSpeed = cycleSpeeds[cycleIdx] || 38.0;
+      const saiyanBonus = this.player.isSayanfinityActive() ? 16.0 : 0.0;
+      this.baseSpeed = targetCycleSpeed + Math.min(6.0, (this.currentCycleDistance || 0) / 350.0);
       this.currentSpeed = this.baseSpeed + this.player.boostExtraSpeed + saiyanBonus;
 
-      // Effet cinématique d'étirement du champ de vision lors d'un boost ou Sayanfinity
+      // Effet cinématique d'étirement du champ de vision lors d'un boost ou PURITY
       if (this.player.isSayanfinityActive()) {
-        this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV + 14, 6 * dt);
-      } else if (this.player.boostTimer > 0) {
         this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV + 12, 6 * dt);
+      } else if (this.player.boostTimer > 0) {
+        this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV + 10, 6 * dt);
       } else {
         this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV, 4 * dt);
       }
@@ -542,10 +547,20 @@ class GameApp {
         }
       }
 
-      // 7. Mise à jour des statistiques
+      // 7. Mise à jour des statistiques & Progression fluide à travers les 8 Cycles
       this.distance += this.currentSpeed * dt;
+      this.currentCycleDistance = (this.currentCycleDistance || 0) + this.currentSpeed * dt;
+      this.cycleTimer = (this.cycleTimer || 0) + dt;
+
       if (this.currentSpeed > this.maxSpeed) {
         this.maxSpeed = this.currentSpeed;
+      }
+
+      // Progression continue et équilibrée vers le cycle suivant (~48 secondes de vol ou ~2100m)
+      if (cycleIdx < 7 && (this.cycleTimer >= 48.0 || this.currentCycleDistance >= 2100.0) && !this.world.isTransitioning) {
+        this.cycleTimer = 0;
+        this.currentCycleDistance = 0;
+        if (this.audio) this.audio.nextTrack();
       }
 
       // 8. Suivi caméra 3e personne cinématographique (Infi au premier plan, Nity en ligne de mire à z = -58)

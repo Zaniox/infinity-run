@@ -220,25 +220,30 @@ export class Player {
         this.fbxModel = fbx;
         this.modelContainer.add(fbx);
 
-        // Aura PURITY épousant rigoureusement la silhouette du corps FBX (Silhouette Cloaking)
-        this.purityBodyGroup = new THREE.Group();
-        this.purityBodyGroup.visible = false;
+        // Aura PURITY épousant rigoureusement la silhouette du corps FBX (Silhouette Cloaking membre par membre)
+        if (!this.purityAuraMeshes) this.purityAuraMeshes = [];
+        const fbxMeshes = [];
         fbx.traverse((child) => {
-          if (child.isMesh && child.geometry) {
-            const auraMat = new THREE.MeshBasicMaterial({
-              color: 0x38bdf8,
-              transparent: true,
-              opacity: 0.40,
-              side: THREE.BackSide,
-              blending: THREE.AdditiveBlending,
-              depthWrite: false
-            });
-            const auraMesh = new THREE.Mesh(child.geometry, auraMat);
-            auraMesh.scale.setScalar(1.07); // Épouse fidèlement la silhouette de chaque membre
-            this.purityBodyGroup.add(auraMesh);
+          if (child.isMesh && child.geometry && !child.userData.isAura) {
+            fbxMeshes.push(child);
           }
         });
-        fbx.add(this.purityBodyGroup);
+        fbxMeshes.forEach((mesh) => {
+          const auraMat = new THREE.MeshBasicMaterial({
+            color: 0x00f0ff,
+            transparent: true,
+            opacity: 0.55,
+            side: THREE.BackSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+          });
+          const auraMesh = new THREE.Mesh(mesh.geometry, auraMat);
+          auraMesh.scale.setScalar(1.045); // Épouse fidèlement la silhouette exacte de chaque membre
+          auraMesh.visible = false;
+          auraMesh.userData.isAura = true;
+          mesh.add(auraMesh);
+          this.purityAuraMeshes.push(auraMesh);
+        });
 
         // Masquer ABSOLUMENT tous les éléments procéduraux pour ne laisser que le modèle FBX pur
         if (this.proceduralTorso) this.proceduralTorso.visible = false;
@@ -511,8 +516,8 @@ export class Player {
     this.shieldGroup.visible = false;
     this.avatar.add(this.shieldGroup);
 
-    // A. Coque cristalline icosaédrique externe (Nanomesh quantique)
-    const facetGeo = new THREE.IcosahedronGeometry(2.36, 2);
+    // A. Coque cristalline icosaédrique externe ajustée (Nanomesh quantique sleek)
+    const facetGeo = new THREE.IcosahedronGeometry(1.22, 2);
     this.shieldFacetMat = new THREE.MeshBasicMaterial({
       map: getQuantumShieldTexture(),
       color: 0x00f0ff,
@@ -526,7 +531,7 @@ export class Player {
     this.shieldGroup.add(this.shieldFacetMesh);
 
     // B. Sphère énergétique hexagonale interne (Flux plasmique)
-    const innerGeo = new THREE.SphereGeometry(2.12, 32, 32);
+    const innerGeo = new THREE.SphereGeometry(1.10, 32, 32);
     this.shieldInnerMat = new THREE.MeshBasicMaterial({
       map: getShieldHexTexture(),
       color: 0x38bdf8,
@@ -540,7 +545,7 @@ export class Player {
     this.shieldGroup.add(this.shieldInnerMesh);
 
     // C. Doubles anneaux gyroscopiques contrarotatifs avec émetteurs quantiques
-    const ringGeo1 = new THREE.TorusGeometry(2.58, 0.045, 16, 64);
+    const ringGeo1 = new THREE.TorusGeometry(1.34, 0.028, 16, 64);
     const ringMat1 = new THREE.MeshBasicMaterial({
       color: 0x00f0ff,
       transparent: true,
@@ -552,18 +557,18 @@ export class Player {
     this.shieldGroup.add(this.shieldRing1);
 
     // Satellites émetteurs sur l'anneau 1
-    const satGeo = new THREE.OctahedronGeometry(0.12);
+    const satGeo = new THREE.OctahedronGeometry(0.08);
     const satMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     this.shieldSatellites = [];
     for (let i = 0; i < 4; i++) {
       const sat = new THREE.Mesh(satGeo, satMat);
       const angle = (i / 4) * Math.PI * 2;
-      sat.position.set(Math.cos(angle) * 2.58, Math.sin(angle) * 2.58, 0);
+      sat.position.set(Math.cos(angle) * 1.34, Math.sin(angle) * 1.34, 0);
       this.shieldRing1.add(sat);
       this.shieldSatellites.push(sat);
     }
 
-    const ringGeo2 = new THREE.TorusGeometry(2.76, 0.04, 16, 64);
+    const ringGeo2 = new THREE.TorusGeometry(1.44, 0.024, 16, 64);
     const ringMat2 = new THREE.MeshBasicMaterial({
       color: 0x38bdf8,
       transparent: true,
@@ -627,50 +632,61 @@ export class Player {
     return false;
   }
 
-  // --- 2. SYSTÈME PURITY (Aura bleue subtile) ---
+  // --- 2. SYSTÈME PURITY (Aura bleue épousant strictement la silhouette du corps) ---
   createSaiyanAura() {
     this.saiyanGroup = new THREE.Group();
     this.saiyanGroup.visible = false;
     this.avatar.add(this.saiyanGroup);
 
-    // A. Inner body glow: Capsule (1.08x)
-    this.purityInnerMat = new THREE.MeshBasicMaterial({
+    if (!this.purityAuraMeshes) this.purityAuraMeshes = [];
+
+    // Silhouette Cloaking pour modèle procédural (quand FBX n'est pas encore prêt)
+    const procAuraMat = new THREE.MeshBasicMaterial({
       color: 0x00f0ff,
       transparent: true,
-      opacity: 0.25,
-      side: THREE.DoubleSide,
+      opacity: 0.55,
+      side: THREE.BackSide,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
-    this.purityInner = new THREE.Mesh(new THREE.CapsuleGeometry(0.54, 2.9, 4, 16), this.purityInnerMat);
-    this.purityInner.position.y = 0.0;
-    this.saiyanGroup.add(this.purityInner);
 
-    // B. Outer shimmer shell: Capsule (1.18x)
-    this.purityOuterMat = new THREE.MeshBasicMaterial({
-      color: 0x38bdf8,
-      transparent: true,
-      opacity: 0.15,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-    this.purityOuter = new THREE.Mesh(new THREE.CapsuleGeometry(0.59, 3.2, 4, 16), this.purityOuterMat);
-    this.purityOuter.position.y = 0.0;
-    this.saiyanGroup.add(this.purityOuter);
+    if (this.headMesh) {
+      const hAura = new THREE.Mesh(this.headMesh.geometry, procAuraMat);
+      hAura.scale.setScalar(1.05);
+      hAura.visible = false;
+      this.headMesh.add(hAura);
+      this.purityAuraMeshes.push(hAura);
+    }
 
-    // C. Subtle energy particles
-    this.kiParticleCount = 40;
+    if (this.proceduralTorso) {
+      const torsoMeshes = [];
+      this.proceduralTorso.traverse((child) => {
+        if (child.isMesh && child.geometry && !child.userData.isAura) {
+          torsoMeshes.push(child);
+        }
+      });
+      torsoMeshes.forEach((child) => {
+        const tAura = new THREE.Mesh(child.geometry, procAuraMat);
+        tAura.scale.setScalar(1.05);
+        tAura.visible = false;
+        tAura.userData.isAura = true;
+        child.add(tAura);
+        this.purityAuraMeshes.push(tAura);
+      });
+    }
+
+    // Particules de scintillement d'énergie bleue très proches de la peau du corps
+    this.kiParticleCount = 35;
     const kiGeo = new THREE.BufferGeometry();
     this.kiPos = new Float32Array(this.kiParticleCount * 3);
     this.kiSeeds = [];
     for (let i = 0; i < this.kiParticleCount; i++) {
       this.kiSeeds.push({
         angle: Math.random() * Math.PI * 2,
-        radius: 1.5 + Math.random() * 1.0,
-        y: Math.random() * 4.0 - 1.0,
-        speedY: 1.0 + Math.random() * 2.0,
-        rotSpeed: 0.5 + Math.random() * 1.0
+        radius: 0.42 + Math.random() * 0.55, // Enveloppe étroite du corps
+        y: Math.random() * 3.4 - 1.7,
+        speedY: 0.7 + Math.random() * 1.2,
+        rotSpeed: 0.5 + Math.random() * 0.8
       });
       this.kiPos[i * 3] = 0;
       this.kiPos[i * 3 + 1] = 0;
@@ -679,10 +695,10 @@ export class Player {
     kiGeo.setAttribute('position', new THREE.BufferAttribute(this.kiPos, 3));
 
     this.kiMat = new THREE.PointsMaterial({
-      size: 1.5,
+      size: 1.1,
       color: 0x93c5fd,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.55,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
@@ -692,16 +708,20 @@ export class Player {
     this.kiPoints = new THREE.Points(kiGeo, this.kiMat);
     this.saiyanGroup.add(this.kiPoints);
 
-    // D. Gentle point light
-    this.saiyanLight = new THREE.PointLight(0x38bdf8, 2.5, 10.0);
-    this.saiyanLight.position.set(0, 1.2, 0);
+    // Douce lueur ambiante bleue
+    this.saiyanLight = new THREE.PointLight(0x00f0ff, 2.2, 8.0);
+    this.saiyanLight.position.set(0, 0.4, 0);
     this.saiyanGroup.add(this.saiyanLight);
   }
 
   activateSayanfinity(duration = 20.0, audioManager) {
     this.saiyanTimer = duration;
     if (this.saiyanGroup) this.saiyanGroup.visible = true;
-    if (this.purityBodyGroup) this.purityBodyGroup.visible = true;
+    if (this.purityAuraMeshes) {
+      for (const m of this.purityAuraMeshes) {
+        m.visible = true;
+      }
+    }
     if (audioManager) audioManager.playSuperSaiyan();
   }
 
@@ -788,7 +808,7 @@ export class Player {
 
   // Recharge vitale à la collecte d'un cœur (sans accélération pour préserver la maîtrise des trajectoires)
   rechargeHeart() {
-    this.energy = Math.min(this.maxEnergy, this.energy + 25.0);
+    this.energy = Math.min(this.maxEnergy, this.energy + 32.0);
     this.boostTimer = 0.0;
     this.boostExtraSpeed = 0.0;
   }
@@ -849,8 +869,8 @@ export class Player {
       }
     }
 
-    // 3. Décroissance permanente de l'énergie vitale
-    const baseDrain = 5.5 * dt;
+    // 3. Décroissance équilibrée de l'énergie vitale (Progression fluide vers Cycle 8)
+    const baseDrain = 1.4 * dt;
     this.energy = Math.max(0, this.energy - baseDrain);
 
     // 4. Axe X (Latéral) & Inclinaison réaliste (Bank/Roll)
@@ -868,24 +888,24 @@ export class Player {
 
     if (isClimbing) {
       if (this.energy > 0) {
-        // L'ascension coûte un surcroît d'énergie et perd de la portance en haute altitude
-        const altFactor = 1.0 - (p.y / this.maxAltitude) * 0.45;
+        // L'ascension coûte un léger surcroît d'énergie et perd de la portance en haute altitude
+        const altFactor = 1.0 - (p.y / this.maxAltitude) * 0.35;
         vertVel = this.verticalSpeed * altFactor;
-        const climbDrain = (16.0 + (p.y / this.maxAltitude) * 12.0) * dt;
+        const climbDrain = (3.2 + (p.y / this.maxAltitude) * 3.8) * dt;
         this.energy = Math.max(0, this.energy - climbDrain);
       } else {
-        vertVel = -4.5; // Descente automatique si l'énergie est épuisée
+        vertVel = -3.8; // Descente douce automatique si l'énergie est épuisée
       }
     } else if (isDiving) {
       // Piquer vers le sol stabilise la trajectoire et offre un gain de vitesse
-      vertVel = -this.verticalSpeed * 1.35;
-      if (p.y <= 2.5) {
-        // Effet de sol / vol rasant : stabilise et recharge doucement
-        this.energy = Math.min(this.maxEnergy, this.energy + 12.0 * dt);
+      vertVel = -this.verticalSpeed * 1.25;
+      if (p.y <= 2.8) {
+        // Effet de sol / vol rasant : stabilise et recharge doucement l'énergie
+        this.energy = Math.min(this.maxEnergy, this.energy + 16.0 * dt);
       }
     } else {
       if (this.energy <= 0 && p.y > this.minAltitude) {
-        vertVel = -4.5;
+        vertVel = -3.8;
       }
     }
 
@@ -939,14 +959,14 @@ export class Player {
         this.shieldRing2.rotation.x += 0.6 * dt;
       }
 
-      // Arcs plasmiques crépitant à la surface du bouclier
+      // Arcs plasmiques crépitant à la surface ajustée du bouclier
       if (this.plasmaArcs && Math.random() < 0.35) {
         const arcPos = this.plasmaArcs.geometry.attributes.position.array;
         for (let i = 0; i < this.plasmaArcCount; i++) {
           const u = Math.random() * Math.PI * 2;
           const v = Math.acos(2 * Math.random() - 1);
-          const r1 = 2.18;
-          const r2 = 2.32;
+          const r1 = 1.12;
+          const r2 = 1.20;
           arcPos[i * 6] = Math.sin(v) * Math.cos(u) * r1;
           arcPos[i * 6 + 1] = Math.cos(v) * r1;
           arcPos[i * 6 + 2] = Math.sin(v) * Math.sin(u) * r1;
@@ -964,14 +984,14 @@ export class Player {
       if (this.shockwaveTimer > 0 && this.shieldShockwave) {
         this.shockwaveTimer -= dt;
         const progress = 1.0 - (this.shockwaveTimer / 0.55);
-        const sc = 1.0 + progress * 2.6;
+        const sc = 1.0 + progress * 2.2;
         this.shieldShockwave.scale.set(sc, sc, sc);
         this.shieldShockMat.opacity = Math.max(0, 1.0 - progress);
       } else if (this.shieldShockwave) {
         this.shieldShockMat.opacity = 0;
       }
 
-      const shieldPulse = 1.0 + Math.sin(time * 6.5) * 0.04 + bassEnergy * 0.14;
+      const shieldPulse = 1.0 + Math.sin(time * 6.5) * 0.03 + bassEnergy * 0.10;
       this.shieldGroup.scale.set(shieldPulse, shieldPulse, shieldPulse);
     } else if (this.shieldGroup) {
       this.shieldGroup.visible = false;
@@ -986,38 +1006,30 @@ export class Player {
       }
     }
 
-    // 11. Animation de l'Aura PURITY (Force field bleu)
+    // 11. Animation de l'Aura PURITY (Épousant strictement chaque membre du corps)
     if (this.saiyanTimer > 0 && this.saiyanGroup) {
       this.saiyanTimer -= dt;
       this.saiyanGroup.visible = true;
 
-      // Pulsation of the purity shells
-      const purityPulse = 1.0 + Math.sin(time * 3.0) * 0.05 + bassEnergy * 0.1;
-      if (this.purityInner) {
-        this.purityInner.scale.set(purityPulse, 1.0 + Math.sin(time * 2.0) * 0.02, purityPulse);
-      }
-      if (this.purityOuter) {
-        this.purityOuter.scale.set(purityPulse * 1.02, 1.0 + Math.cos(time * 2.5) * 0.03, purityPulse * 1.02);
-        this.purityOuter.rotation.y += 1.2 * dt;
-      }
-
-      // Pulsation de l'aura silhouette exacte du corps FBX
-      if (this.purityBodyGroup) {
-        this.purityBodyGroup.visible = true;
-        const bodyPulse = 1.0 + Math.sin(time * 5.0) * 0.02;
-        this.purityBodyGroup.scale.set(bodyPulse, bodyPulse, bodyPulse);
+      // Pulsation de l'aura silhouette exacte de chaque membre
+      if (this.purityAuraMeshes) {
+        const bodyPulse = 1.0 + Math.sin(time * 5.0) * 0.018;
+        for (const m of this.purityAuraMeshes) {
+          m.visible = true;
+          m.scale.set(1.045 * bodyPulse, 1.045 * bodyPulse, 1.045 * bodyPulse);
+        }
       }
 
-      // Gentle upward drift for particles
+      // Particules montantes très proches du corps
       if (this.kiPoints && this.kiSeeds) {
         const kPos = this.kiPoints.geometry.attributes.position.array;
         for (let i = 0; i < this.kiParticleCount; i++) {
           const s = this.kiSeeds[i];
           s.y += s.speedY * dt;
           s.angle += s.rotSpeed * dt;
-          if (s.y > 4.0) {
-            s.y = -1.0;
-            s.radius = 1.5 + Math.random() * 1.0;
+          if (s.y > 2.0) {
+            s.y = -1.8;
+            s.radius = 0.42 + Math.random() * 0.55;
           }
           kPos[i * 3] = Math.cos(s.angle) * s.radius;
           kPos[i * 3 + 1] = s.y;
@@ -1039,8 +1051,10 @@ export class Player {
       if (this.saiyanTimer <= 0) {
         this.saiyanTimer = 0;
         this.saiyanGroup.visible = false;
-        if (this.purityBodyGroup) {
-          this.purityBodyGroup.visible = false;
+        if (this.purityAuraMeshes) {
+          for (const m of this.purityAuraMeshes) {
+            m.visible = false;
+          }
         }
         if (this.fbxHeartMaterial) {
           this.fbxHeartMaterial.emissive.set(0xff2ea6);
@@ -1053,7 +1067,11 @@ export class Player {
       }
     } else {
       if (this.saiyanGroup) this.saiyanGroup.visible = false;
-      if (this.purityBodyGroup) this.purityBodyGroup.visible = false;
+      if (this.purityAuraMeshes) {
+        for (const m of this.purityAuraMeshes) {
+          m.visible = false;
+        }
+      }
     }
 
     // 12. Échec si énergie à zéro au sol

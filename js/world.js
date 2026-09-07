@@ -35,17 +35,17 @@ export const CYCLES_DATA = [
   {
     id: 2,
     name: "Résilience",
-    subtitle: "Vert & Marron • Terre (Plaques Tectoniques)",
+    subtitle: "Terre & Mousse • Plaques Tectoniques",
     element: "Terre",
-    colorName: "Vert & Marron",
+    colorName: "Marron & Vert",
     troll: "PISTONS TELLURIQUES : Portes de terre et roche qui s'écrasent sur le beat",
-    sky: 0x080c05,
-    fog: 0x121a0a,
-    ground: 0x1c150c,
-    monolith: 0x162812,
-    primary: 0x22c55e,
+    sky: 0x10170e,
+    fog: 0x182214,
+    ground: 0x3a2414,
+    monolith: 0x3d2a19,
+    primary: 0x55a850,
     secondary: 0xb45309,
-    lightIntensity: 1.7,
+    lightIntensity: 1.8,
     style: "sliding"
   },
   {
@@ -202,50 +202,65 @@ function createCycleGroundTextures() {
     textures.push(tex);
   }
 
-  // 2. Cycle 2 Terre / Résilience
+  // 2. Cycle 2 Terre / Résilience (Vraie terre brune, mottes de glaise et parcelles de mousse)
   {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Terre battue
-    ctx.fillStyle = '#2c1e16';
+    // Fond terre battue riche et meuble
+    ctx.fillStyle = '#3a2414';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Texture granuleuse
-    for(let i=0; i<1000; i++) {
-      ctx.fillStyle = Math.random() > 0.5 ? '#1a110c' : '#4a3322';
-      ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+    // Mottes de terre et nuances de loam naturelles
+    for (let i = 0; i < 65; i++) {
+      const cx = Math.random() * 512;
+      const cy = Math.random() * 512;
+      const r = 25 + Math.random() * 55;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, Math.random() > 0.5 ? '#4e331e' : '#2c190d');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    // Crevasses / fissures
-    ctx.strokeStyle = '#0a0705';
-    ctx.lineWidth = 3;
+    // Granulométrie de terre meuble, graviers et cailloux
+    for (let i = 0; i < 1400; i++) {
+      const rnd = Math.random();
+      ctx.fillStyle = rnd < 0.4 ? '#22130a' : (rnd < 0.7 ? '#563821' : '#6b482c');
+      ctx.fillRect(Math.random() * 512, Math.random() * 512, 1 + Math.random() * 3, 1 + Math.random() * 3);
+    }
+
+    // Fissures et craquelures telluriques nettes
+    ctx.strokeStyle = '#180c05';
+    ctx.lineWidth = 2.8;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 18; i++) {
       ctx.beginPath();
-      let startX = Math.random() * 512;
-      let startY = Math.random() * 512;
-      ctx.moveTo(startX, startY);
-      for(let j = 0; j < 5; j++) {
-        startX += (Math.random() - 0.5) * 80;
-        startY += (Math.random() - 0.2) * 80;
-        ctx.lineTo(startX, startY);
+      let sx = Math.random() * 512;
+      let sy = Math.random() * 512;
+      ctx.moveTo(sx, sy);
+      for (let j = 0; j < 6; j++) {
+        sx += (Math.random() - 0.5) * 65;
+        sy += (Math.random() - 0.3) * 65;
+        ctx.lineTo(sx, sy);
       }
       ctx.stroke();
     }
 
-    // Plaques de mousse
-    for(let i=0; i<30; i++) {
+    // Parcelles de mousse végétale et lichen le long des failles
+    for (let i = 0; i < 50; i++) {
       const cx = Math.random() * 512;
       const cy = Math.random() * 512;
-      const r = 10 + Math.random() * 40;
+      const r = 8 + Math.random() * 24;
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      g.addColorStop(0, 'rgba(34, 139, 34, 0.6)');
-      g.addColorStop(1, 'rgba(34, 139, 34, 0)');
+      g.addColorStop(0, 'rgba(46, 110, 42, 0.75)');
+      g.addColorStop(0.7, 'rgba(34, 82, 32, 0.4)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -254,7 +269,7 @@ function createCycleGroundTextures() {
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(4, 14);
+    tex.repeat.set(4, 7);
     textures.push(tex);
   }
 
@@ -1550,28 +1565,28 @@ export class World {
 
   getRoughnessForElement(element) {
     switch (element) {
-      case 'Eau': return 0.40;
-      case 'Terre': return 0.85;
-      case 'Feu': return 0.65;
-      case 'Électricité': return 0.45;
-      case 'Lumière': return 0.30;
-      case 'Ombre': return 0.92;
-      case 'Vent': return 0.45;
-      case 'Vide ou Cosmos': return 0.35;
+      case 'Eau': return 0.12;
+      case 'Terre': return 0.95;
+      case 'Feu': return 0.55;
+      case 'Électricité': return 0.35;
+      case 'Lumière': return 0.22;
+      case 'Ombre': return 0.94;
+      case 'Vent': return 0.38;
+      case 'Vide ou Cosmos': return 0.28;
       default: return 0.50;
     }
   }
 
   getMetalnessForElement(element) {
     switch (element) {
-      case 'Eau': return 0.08;
-      case 'Terre': return 0.04;
-      case 'Feu': return 0.06;
-      case 'Électricité': return 0.15;
-      case 'Lumière': return 0.10;
+      case 'Eau': return 0.25;
+      case 'Terre': return 0.02;
+      case 'Feu': return 0.15;
+      case 'Électricité': return 0.30;
+      case 'Lumière': return 0.15;
       case 'Ombre': return 0.02;
-      case 'Vent': return 0.08;
-      case 'Vide ou Cosmos': return 0.12;
+      case 'Vent': return 0.10;
+      case 'Vide ou Cosmos': return 0.20;
       default: return 0.05;
     }
   }
@@ -1580,7 +1595,9 @@ export class World {
     this.scene.background.set(cycle.sky);
     this.scene.fog.color.set(cycle.fog);
 
-    this.sunLight.color.set(cycle.primary);
+    // Éclairage directionnel naturel (lumière du jour chaude préservant les teintes de terre/eau réelles)
+    const naturalSun = new THREE.Color(0xfffdf6).lerp(new THREE.Color(cycle.primary), 0.16);
+    this.sunLight.color.copy(naturalSun);
     this.hemiLight.color.set(cycle.secondary);
     this.hemiLight.groundColor.set(cycle.fog);
     this.sunLight.intensity = cycle.lightIntensity;
@@ -1824,36 +1841,55 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 2 (Résilience) : Porte blindée à pistons coulissants (Vert & Marron / Terre)
+  // Troll 2 (Résilience) : Porte tellurique à mégalithes coulissants (Terre & Roches)
   spawnSlidingGate(gapX) {
     const group = new THREE.Group();
     const h = 24.0, thickness = 5.0;
     const subBoxes = [];
 
     const earthMat = new THREE.MeshStandardMaterial({
-      color: 0x1c2b18,
-      roughness: 0.85,
-      metalness: 0.12
+      color: 0x3e2817,
+      roughness: 0.92,
+      metalness: 0.05
     });
 
-    const leftW = Math.max(12, gapX + 28);
+    const mossMat = new THREE.MeshStandardMaterial({
+      color: 0x2e632b,
+      roughness: 0.85,
+      metalness: 0.02
+    });
+
+    // Couloir de vol élargi à 17m pour permettre une esquive fluide et maîtrisée
+    const halfGap = 8.5;
+    const leftW = Math.max(16, gapX + 28);
     const leftGeo = new THREE.BoxGeometry(leftW, h, thickness);
     const leftMesh = new THREE.Mesh(leftGeo, earthMat);
-    leftMesh.position.set(-leftW / 2 + gapX - 4.5, h / 2, 0);
+    leftMesh.position.set(-leftW / 2 + gapX - halfGap, h / 2, 0);
     leftMesh.castShadow = true;
     group.add(leftMesh);
     subBoxes.push({ mesh: leftMesh, box: new THREE.Box3() });
 
-    const rightW = Math.max(12, 28 - gapX);
+    // Rebord de roche et mousse sur le dessus du linteau gauche
+    const leftCap = new THREE.Mesh(new THREE.BoxGeometry(leftW, 1.8, thickness * 1.15), mossMat);
+    leftCap.position.set(-leftW / 2 + gapX - halfGap, h + 0.9, 0);
+    group.add(leftCap);
+
+    const rightW = Math.max(16, 28 - gapX);
     const rightGeo = new THREE.BoxGeometry(rightW, h, thickness);
     const rightMesh = new THREE.Mesh(rightGeo, earthMat);
-    rightMesh.position.set(rightW / 2 + gapX + 4.5, h / 2, 0);
+    rightMesh.position.set(rightW / 2 + gapX + halfGap, h / 2, 0);
     rightMesh.castShadow = true;
     group.add(rightMesh);
     subBoxes.push({ mesh: rightMesh, box: new THREE.Box3() });
 
+    // Rebord de roche et mousse sur le dessus du linteau droit
+    const rightCap = new THREE.Mesh(new THREE.BoxGeometry(rightW, 1.8, thickness * 1.15), mossMat);
+    rightCap.position.set(rightW / 2 + gapX + halfGap, h + 0.9, 0);
+    group.add(rightCap);
+
     group.position.set(0, 0, this.spawnDistance);
-    const obj = { mesh: group, subBoxes, type: 'sliding', baseX: 0, phase: Math.random() * Math.PI * 2, amplitude: 7.0, dir: Math.random() < 0.5 ? 1 : -1, speed: 6.5 };
+    // Vitesse d'oscillation et amplitude modérées pour éviter les écrasements frustrants
+    const obj = { mesh: group, subBoxes, type: 'sliding', baseX: 0, phase: Math.random() * Math.PI * 2, amplitude: 3.5, dir: Math.random() < 0.5 ? 1 : -1, speed: 2.4 };
 
     this.scene.add(group);
     this.obstacles.push(obj);
@@ -2383,15 +2419,17 @@ export class World {
       this.updateSideProps(dt, speed, audioPulse);
     }
 
-    // 4. Cadencement des obstacles STRICTEMENT calé sur le rythme musical
-    // - En temps normal : au temps 1 de chaque mesure (beatInBar === 0)
-    // - En intensité accrue (basses puissantes ou vitesse élevée) : tous les 2 temps (beatInBar === 0 ou 2)
+    // 4. Cadencement progressif des obstacles calé sur le rythme musical
+    // - En Cycle 1 et 2 : espacement généreux de 1.85s pour favoriser l'apprentissage et la glisse fluide
+    // - Du Cycle 3 au Cycle 8 : resserrement progressif de l'espacement pour une montée en puissance continue
     this.timeSinceLastSpawn = (this.timeSinceLastSpawn || 0) + dt;
-    const isIntense = speed > 85.0 || bass > 0.52;
+    const cycleIdx = this.currentCycleIndex || 0;
+    const minSpawnDelay = Math.max(0.95, 1.85 - cycleIdx * 0.12);
+    const isIntense = (cycleIdx >= 3) && (speed > 66.0 || bass > 0.55);
     const isSpawnBeat = isIntense ? (isNewBeat && (beatInBar === 0 || beatInBar === 2)) : (isNewBeat && beatInBar === 0);
 
-    // Maintien d'un espacement minimal sécurisé de 1.1s pour garantir la lisibilité et l'esquive
-    if (isSpawnBeat && this.timeSinceLastSpawn >= 1.1) {
+    // Maintien d'un espacement minimal progressif selon le cycle
+    if (isSpawnBeat && this.timeSinceLastSpawn >= minSpawnDelay) {
       this.timeSinceLastSpawn = 0;
 
       const lanes = [-15, -9, 0, 9, 15];
