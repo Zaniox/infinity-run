@@ -65,6 +65,27 @@ export class TargetManager {
       roughness: 0.1,
       metalness: 0.9
     });
+
+    // 5. Paramètres du Champ Magnétique d'attraction des objets
+    this.baseMagnetRadius = 14.5;
+    this.saiyanMagnetRadius = 24.0;
+    this.lastMagnetSfxTime = 0;
+
+    // Arcs de flux magnétique reliant les drops attirés au vaisseau Infi
+    const maxFluxArcs = 8;
+    const fluxGeo = new THREE.BufferGeometry();
+    this.fluxPositions = new Float32Array(maxFluxArcs * 2 * 3);
+    fluxGeo.setAttribute('position', new THREE.BufferAttribute(this.fluxPositions, 3));
+    this.fluxLinesMat = new THREE.LineBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
+    this.fluxLines = new THREE.LineSegments(fluxGeo, this.fluxLinesMat);
+    this.fluxLines.frustumCulled = false;
+    this.fluxLines.visible = false;
+    this.scene.add(this.fluxLines);
   }
 
   // --- 1. TROU NOIR GÉANT À L'HORIZON (Singularité & Disque d'accrétion) ---
@@ -571,8 +592,8 @@ export class TargetManager {
     return drop;
   }
 
-  // Mise à jour continue : Animation d'aspiration, Trou Noir et Drops
-  update(dt, speed, playerPos, bassEnergy) {
+  // Mise à jour continue : Animation d'aspiration, Trou Noir, Drops et Attraction Magnétique
+  update(dt, speed, playerPos, bassEnergy, isSaiyan = false, audioManager = null) {
     const time = performance.now() * 0.001;
 
     // 1. Animation du Trou Noir lointain
@@ -664,10 +685,16 @@ export class TargetManager {
       }
     }
 
-    // 5. Défilement des drops vers Infi
+    // 5. Défilement des drops vers Infi + ATTRACTION MAGNÉTIQUE FLUIDE
     const deltaZ = speed * dt;
+    const magnetRadius = isSaiyan ? this.saiyanMagnetRadius : this.baseMagnetRadius;
+    let activeFluxCount = 0;
+    const nowSec = performance.now() * 0.001;
+
     for (let i = this.hearts.length - 1; i >= 0; i--) {
       const h = this.hearts[i];
+
+      // Translation longitudinale de base vers l'arrière
       h.mesh.position.z += deltaZ;
       h.mesh.rotation.y += 2.8 * dt;
       if (h.orbit) h.orbit.rotation.z += 3.6 * dt;
@@ -676,10 +703,82 @@ export class TargetManager {
         h.orbit2.rotation.z += 2.8 * dt;
       }
 
+      // Attraction Magnétique continue vers Infi
+      if (playerPos && !h.collected) {
+        const dx = playerPos.x - h.mesh.position.x;
+        const dy = playerPos.y - h.mesh.position.y;
+        const dz = playerPos.z - h.mesh.position.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        // Si l'objet est dans le champ d'influence magnétique (devant Infi ou à portée)
+        if (dist < magnetRadius && h.mesh.position.z <= (playerPos.z + 5.0)) {
+          const pullRatio = Math.max(0.0, 1.0 - (dist / magnetRadius));
+          const pullRate = 8.5 + Math.pow(pullRatio, 1.3) * (isSaiyan ? 26.0 : 17.5);
+
+          // Mouvement fluide direct vers Infi
+          h.mesh.position.x += dx * Math.min(1.0, pullRate * dt);
+          h.mesh.position.y += dy * Math.min(1.0, pullRate * dt);
+          h.mesh.position.z += dz * Math.min(1.0, (pullRate * 0.5) * dt);
+
+          // Rotation accélérée et pulsation d'excitation magnétique
+          h.mesh.rotation.y += 7.0 * dt;
+          if (h.orbit) h.orbit.rotation.z += 8.0 * dt;
+          if (h.orbit2) h.orbit2.rotation.y += 8.0 * dt;
+
+          const pulse = 1.0 + Math.sin(time * 20.0) * 0.12 + pullRatio * 0.28;
+          h.mesh.scale.set(pulse, pulse, pulse);
+
+          // Effet sonore d'accroche magnétique (throttlé)
+          if (!h.wasMagnetized) {
+            h.wasMagnetized = true;
+            if (audioManager && (nowSec - this.lastMagnetSfxTime > 0.45)) {
+              this.lastMagnetSfxTime = nowSec;
+              audioManager.playMagneticPull();
+            }
+          }
+
+          // Rayon de flux magnétique reliant le drop à Infi
+          if (activeFluxCount < 8) {
+            const idx = activeFluxCount * 6;
+            // Origine : position du drop
+            this.fluxPositions[idx] = h.mesh.position.x;
+            this.fluxPositions[idx + 1] = h.mesh.position.y;
+            this.fluxPositions[idx + 2] = h.mesh.position.z;
+            // Destination : Infi (avec légère vibration haute fréquence)
+            this.fluxPositions[idx + 3] = playerPos.x + (Math.random() - 0.5) * 0.35;
+            this.fluxPositions[idx + 4] = playerPos.y + (Math.random() - 0.5) * 0.35;
+            this.fluxPositions[idx + 5] = playerPos.z;
+            activeFluxCount++;
+          }
+        } else if (h.wasMagnetized) {
+          h.mesh.scale.set(1.0, 1.0, 1.0);
+          h.wasMagnetized = false;
+        }
+      }
+
       // Despawn si dépassé derrière Infi
       if (h.mesh.position.z > 14.0 || h.collected) {
         this.scene.remove(h.mesh);
         this.hearts.splice(i, 1);
+      }
+    }
+
+    // Mise à jour visuelle des arcs de flux magnétique
+    if (this.fluxLines) {
+      if (activeFluxCount > 0) {
+        for (let k = activeFluxCount * 6; k < this.fluxPositions.length; k++) {
+          this.fluxPositions[k] = 0;
+        }
+        this.fluxLines.geometry.attributes.position.needsUpdate = true;
+        this.fluxLines.geometry.setDrawRange(0, activeFluxCount * 2);
+        this.fluxLines.visible = true;
+        if (isSaiyan) {
+          this.fluxLinesMat.color.setHex(0xfacc15);
+        } else {
+          this.fluxLinesMat.color.setHex(0x38bdf8);
+        }
+      } else {
+        this.fluxLines.visible = false;
       }
     }
   }
@@ -744,6 +843,7 @@ export class TargetManager {
     }
     this.hearts = [];
     this.heartSpawnTimer = 0;
+    if (this.fluxLines) this.fluxLines.visible = false;
     this.nityGroup.position.set(0, this.nityBaseY, this.nityBaseZ);
     if (this.nityModelContainer) this.nityModelContainer.rotation.y = Math.PI;
     if (this.mirageGroup) this.mirageGroup.visible = false;

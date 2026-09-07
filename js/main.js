@@ -482,8 +482,15 @@ class GameApp {
         return false;
       });
 
-      // 5. Mise à jour du trou noir, de Nity et des drops
-      this.target.update(dt, this.currentSpeed, playerPos, bass);
+      // 5. Mise à jour du trou noir, de Nity, des drops et attraction magnétique
+      this.target.update(
+        dt,
+        this.currentSpeed,
+        playerPos,
+        bass,
+        this.player.isSayanfinityActive(),
+        this.audio
+      );
 
       // Détection de collecte des drops (Cœurs vitaux, Armures 1-hit, Sayanfinity 20s)
       this.target.checkDropCollisions(playerPos, this.player.radius, (type, pos) => {

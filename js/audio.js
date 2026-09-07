@@ -256,6 +256,34 @@ export class AudioManager {
     });
   }
 
+  // SFX : Attraction Magnétique d'un drop vers Infi (Swoosh / Chime haute résonance)
+  playMagneticPull() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+
+    const now = this.audioCtx.currentTime;
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    const filter = this.audioCtx.createBiquadFilter();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(760, now + 0.16);
+
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(580, now);
+    filter.Q.setValueAtTime(2.8, now);
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.audioCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.2);
+  }
+
   // SFX : Crash / Dislocation (Bruit blanc filtré & sub-impact)
   playCrash() {
     if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
