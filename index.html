@@ -55,120 +55,85 @@
     <!-- Écran Flash Cosmique (Feinte du Cycle 8) -->
     <div id="cosmic-flash" class="cosmic-flash"></div>
 
-    <!-- MENU PRINCIPAL PLAY SIMPLE, BEAU & EFFICACE -->
+    <!-- MENU PRINCIPAL MINIMALISTE, ÉPURÉ & ÉLÉGANT -->
     <div id="start-menu" class="start-menu-overlay">
-      <div class="start-menu-card">
-        <!-- Visualiseur Égaliseur Audio Supersonique -->
-        <div class="menu-equalizer">
-          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-        </div>
-
-        <div class="menu-brand-badge">// OODAÏSOUND &bull; EXPÉRIENCE OFFICIELLE</div>
-        <h1 class="menu-title">// SOUNDRISE <span class="neon-title">: INFINITY RUN</span></h1>
-        <p class="menu-subtitle">ODYSSÉE GLIDER 3D &bull; CLASSEMENT MONDIAL SYNCHRONISÉ</p>
-
-        <!-- SECTION AUTHENTIFICATION COMPTE GOOGLE & PROFIL PILOTE -->
-        <div id="menu-auth-section" class="menu-auth-box">
-          <!-- État 1 : Non connecté -->
-          <div id="auth-unlogged" class="auth-state-box">
-            <div class="auth-notice">
-              <span class="auth-notice-icon">🌐</span>
-              <div class="auth-notice-text">
-                <strong>CLASSEMENT MONDIAL & MULTIJOUEUR 1v1</strong>
-                <span>Connectez-vous avec Google pour enregistrer vos records mondiaux et défier d'autres pilotes. Sinon, jouez directement en solo ci-dessous !</span>
-              </div>
-            </div>
-
-            <div class="auth-actions">
-              <!-- Emplacement officiel Google Identity Services -->
-              <div id="google-signin-btn-container" class="google-btn-slot"></div>
-
-              <!-- Bouton direct alternatif en 1 clic -->
-              <button id="btn-open-google-login" class="btn-google-direct" type="button">
-                <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20">
+      <div class="start-menu-card minimalist">
+        <!-- Barre supérieure discrète : Marque & Statut Pilote -->
+        <header class="menu-top-bar">
+          <div class="menu-brand-tag">// SOUNDRISE</div>
+          
+          <!-- Pilule de profil / Authentification compacte -->
+          <div id="menu-auth-section" class="menu-profile-pill">
+            <!-- Non connecté (Mode Invité par défaut) -->
+            <div id="auth-unlogged" class="profile-pill-content">
+              <span class="pill-status"><span class="guest-dot"></span> Invité</span>
+              <button id="btn-open-google-login" class="btn-google-pill" type="button" title="Lier un compte Google pour le classement et le 1v1">
+                <svg class="google-icon-mini" viewBox="0 0 24 24" width="14" height="14">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                 </svg>
-                <span>Connexion Compte Google</span>
+                <span>Google</span>
               </button>
+              <div id="google-signin-btn-container" class="google-btn-slot hidden"></div>
             </div>
-          </div>
 
-          <!-- État 2 : Connecté avec Compte Google -->
-          <div id="auth-logged" class="auth-state-box hidden">
-            <div class="user-profile-banner">
-              <div class="user-avatar-wrap">
-                <img id="user-avatar-img" class="user-avatar-img" src="" alt="Avatar" />
-                <span class="user-verified-badge" title="Compte Google Vérifié">✓</span>
+            <!-- Connecté avec Google -->
+            <div id="auth-logged" class="profile-pill-content hidden">
+              <img id="user-avatar-img" class="pill-avatar" src="" alt="Avatar" />
+              <div class="pill-user-info">
+                <span id="user-pseudo-display" class="pill-pseudo">--</span>
+                <span id="user-name-display" class="hidden"></span>
+                <span id="user-best-stats" class="hidden"><span id="user-best-score"></span><span id="user-best-rank"></span></span>
               </div>
-              <div class="user-info-text">
-                <div class="user-header-line">
-                  <span class="user-badge-google">COMPTE GOOGLE CONNECTÉ</span>
-                  <span id="user-name-display" class="user-real-name">Pilote</span>
-                </div>
-                <div class="user-pseudo-row">
-                  <span class="pseudo-label">PSEUDO :</span>
-                  <strong id="user-pseudo-display" class="user-pseudo-name">--</strong>
-                  <button id="btn-edit-pseudo" class="btn-icon-edit" type="button" title="Modifier le pseudo">✏️</button>
-                </div>
-                <div id="user-best-stats" class="user-best-stats">
-                  <span>MEILLEUR SCORE : <strong id="user-best-score">0 PTS</strong></span>
-                  <span class="stat-sep">&bull;</span>
-                  <span>RANG MONDIAL : <strong id="user-best-rank">#--</strong></span>
-                </div>
-              </div>
-              <button id="btn-logout" class="btn-logout" type="button" title="Déconnexion">🚪</button>
+              <button id="btn-edit-pseudo" class="btn-pill-icon" type="button" title="Modifier le pseudo">✏️</button>
+              <button id="btn-logout" class="btn-pill-icon btn-pill-exit" type="button" title="Déconnexion">🚪</button>
             </div>
           </div>
+        </header>
+
+        <!-- Titre & univers -->
+        <div class="menu-hero">
+          <h1 class="menu-title">INFINITY <span class="neon-title">RUN</span></h1>
+          <p class="menu-subtitle">ODYSSÉE GLIDER 3D &bull; 8 CYCLES ÉLÉMENTAIRES</p>
         </div>
 
-        <!-- Sélecteur de Cycle de départ Interactif -->
-        <div class="menu-cycle-box">
-          <div class="menu-cycle-label">SÉLECTION DU CYCLE DE DÉPART (1 À 8)</div>
-          <div class="menu-cycle-control">
-            <button id="menu-btn-prev" class="btn-cycle-nav" title="Cycle précédent">◄</button>
-            <div id="menu-cycle-display" class="menu-cycle-tag">
-              <span id="menu-cycle-icon" class="menu-cycle-emoji">🌊</span>
-              <span id="menu-cycle-badge" class="cycle-pill">CYCLE 1</span>
-              <span id="menu-cycle-title">CHUTE &bull; NOIR (EAU)</span>
-            </div>
-            <button id="menu-btn-next" class="btn-cycle-nav" title="Cycle suivant">►</button>
+        <!-- Sélecteur de Cycle compact -->
+        <div class="menu-cycle-bar">
+          <button id="menu-btn-prev" class="btn-cycle-nav" title="Cycle précédent">◄</button>
+          <div id="menu-cycle-display" class="menu-cycle-tag">
+            <span id="menu-cycle-icon" class="menu-cycle-emoji">🌊</span>
+            <span id="menu-cycle-badge" class="cycle-pill">CYCLE 1</span>
+            <span id="menu-cycle-title">CHUTE (EAU)</span>
           </div>
+          <button id="menu-btn-next" class="btn-cycle-nav" title="Cycle suivant">►</button>
         </div>
 
-        <!-- Bouton Géant JOUER / PLAY Dynamique (Bloqué si non connecté ou sans pseudo) -->
-        <button id="btn-play-game" class="btn-play-giant locked">
+        <!-- Bouton Principal DÉCOLLER (Solo direct en 1 clic) -->
+        <button id="btn-play-game" class="btn-play-giant guest-mode" type="button">
           <div class="btn-shimmer"></div>
-          <span id="btn-play-icon" class="btn-play-icon">🔒</span>
-          <span id="btn-play-text" class="btn-play-text">CONNEXION GOOGLE REQUISE</span>
-          <span id="btn-play-sub" class="btn-play-sub">[ CONNECTEZ-VOUS POUR DÉCOLLER ]</span>
+          <span id="btn-play-icon" class="btn-play-icon">▶</span>
+          <span id="btn-play-text" class="btn-play-text">DÉCOLLER</span>
+          <span id="btn-play-sub" class="btn-play-sub">[ VOL SOLO IMMÉDIAT &bull; ESPACE OU CLIC ]</span>
         </button>
 
-        <!-- Bouton Accès au Classement Mondial Réel -->
-        <button id="btn-open-leaderboard" class="btn-open-leaderboard" type="button">
-          <span class="btn-lb-icon">🏆</span>
-          <span class="btn-lb-text">CLASSEMENT MONDIAL</span>
-          <span class="btn-lb-tag">EN DIRECT</span>
-        </button>
-
-        <!-- Bouton Accès au Mode Multijoueur 1v1 en direct -->
-        <button id="btn-open-multiplayer" class="btn-open-multiplayer" type="button">
-          <span class="btn-mp-icon">⚔️</span>
-          <span class="btn-mp-text">DUEL MULTIJOUEUR (1 VS 1)</span>
-          <span class="btn-mp-tag">SALONS & CODES</span>
-        </button>
-
-        <!-- Guide des Commandes Minimaliste & Combat Star Fox -->
-        <div class="menu-controls-grid">
-          <div class="ctrl-item"><kbd>Q</kbd> <kbd>D</kbd> ou <kbd>◄</kbd> <kbd>►</kbd> <span>Virage</span></div>
-          <div class="ctrl-item"><kbd>Z</kbd> <kbd>S</kbd> ou <kbd>▲</kbd> <kbd>▼</kbd> <span>Cabrer / Piquer</span></div>
-          <div class="ctrl-item"><kbd>ESPACE</kbd> / <kbd>CLIC</kbd> <span>Tir Laser Star Fox</span></div>
-          <div class="ctrl-item"><span class="neon-heart">♥</span> <span>Cœurs (+25 énergie)</span></div>
-          <div class="ctrl-item"><span class="neon-shield">🛡️</span> <span>Armure (1-Hit Protect)</span></div>
-          <div class="ctrl-item"><span class="neon-saiyan">⚡</span> <span>Purity (Invulnérabilité 20s)</span></div>
+        <!-- Barre des Actions Secondaires (Classement & Multijoueur 1v1) -->
+        <div class="menu-secondary-row">
+          <button id="btn-open-leaderboard" class="btn-secondary-pill" type="button">
+            <span class="pill-btn-icon">🏆</span>
+            <span id="btn-lb-text">Classement Mondial</span>
+          </button>
+          <button id="btn-open-multiplayer" class="btn-secondary-pill" type="button">
+            <span class="pill-btn-icon">⚔️</span>
+            <span id="btn-mp-text">Duel 1 vs 1</span>
+          </button>
         </div>
+
+        <!-- Ligne d'aide au pilotage discrète -->
+        <footer class="menu-footer-hint">
+          <span><strong>Q / D</strong> Virage &bull; <strong>Z / S</strong> Piquer/Cabrer &bull; <strong>ESPACE</strong> Blaster &bull; <strong>♥</strong> Cœurs</span>
+        </footer>
       </div>
     </div>
 

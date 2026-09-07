@@ -56,8 +56,12 @@ export class MultiplayerManager {
     this.onRivalTelemetry = null;
     this.onRivalLaserFire = null;
 
-    // Horloge pour interpolation
+    // Horloges et intervalles
     this.telemetryInterval = null;
+    this.joinRetryInterval = null;
+
+    // Écouteur de synchronisation cross-onglets via StorageEvent
+    window.addEventListener('storage', (e) => this.handleStorageEvent(e));
   }
 
   // --- CRÉATION DE L'AVATAR 3D DE L'ADVERSAIRE (RIVAL) ---
@@ -205,13 +209,26 @@ export class MultiplayerManager {
       if (data) {
         const rooms = JSON.parse(data);
         const now = Date.now();
-        // Filtrer les salons expirés (> 60 secondes sans heartbeat)
-        return rooms.filter(r => (now - (r.updatedAt || 0)) < 60000);
+        // Filtrer les salons expirés (> 90 secondes sans heartbeat)
+        return rooms.filter(r => (now - (r.updatedAt || 0)) < 90000);
       }
     } catch (e) {
       console.warn(e);
     }
     return [];
+  }
+
+  getRoomById(roomId) {
+    if (!roomId) return null;
+    const cleanId = roomId.trim().toUpperCase();
+    try {
+      const single = localStorage.getItem(`soundrise_room_${cleanId}`);
+      if (single) return JSON.parse(single);
+      const publicRooms = this.getPublicRooms();
+      return publicRooms.find(r => r.roomId === cleanId) || null;
+    } catch (e) {
+      return null;
+    }
   }
 
   savePublicRooms(rooms) {
@@ -220,6 +237,26 @@ export class MultiplayerManager {
       this.roomsChannel.postMessage({ type: 'rooms_updated', rooms });
     } catch (e) {
       console.warn(e);
+    }
+  }
+
+  handleStorageEvent(e) {
+    if (!this.currentRoom) return;
+    if (e.key === `soundrise_room_${this.currentRoom.roomId}` && e.newValue) {
+      try {
+        const updated = JSON.parse(e.newValue);
+        if (updated && updated.roomId === this.currentRoom.roomId) {
+          this.currentRoom = updated;
+          if (this.isHost) {
+            if (updated.guest) this.opponentUser = updated.guest;
+            this.opponentReady = !!updated.guestReady;
+          } else {
+            if (updated.host) this.opponentUser = updated.host;
+            this.opponentReady = !!updated.hostReady;
+          }
+          if (this.onRoomUpdate) this.onRoomUpdate(this.currentRoom);
+        }
+      } catch (err) {}
     }
   }
 
@@ -252,7 +289,8 @@ export class MultiplayerManager {
     this.isReady = false;
     this.opponentReady = false;
 
-    // Enregistrement public si non privé
+    // Enregistrement direct et liste publique
+    localStorage.setItem(`soundrise_room_${roomId}`, JSON.stringify(newRoom));
     if (!isPrivate) {
       const rooms = this.getPublicRooms().filter(r => r.roomId !== roomId);
       rooms.unshift(newRoom);
@@ -260,29 +298,146 @@ export class MultiplayerManager {
     }
 
     this.connectDuelChannel(roomId);
+    this.startRoomSync();
     if (this.onRoomUpdate) this.onRoomUpdate(this.currentRoom);
     return newRoom;
+  }
+
+  startRoomSync() {
+    this.stopRoomSync();
+    this.roomSyncInterval = setInterval(() => {
+      if (!this.isInRoom || !this.currentRoom) {
+        this.stopRoomSync();
+        return;
+      }
+      const fresh = this.getRoomById(this.currentRoom.roomId);
+      if (!fresh) return;
+
+      let changed = false;
+      if (this.isHost) {
+        if (fresh.guest && (!this.currentRoom.guest || this.currentRoom.guest.pseudo !== fresh.guest.pseudo)) {
+          this.currentRoom.guest = fresh.guest;
+          this.opponentUser = fresh.guest;
+          changed = true;
+        }
+        if (fresh.guestReady !== this.currentRoom.guestReady) {
+          this.currentRoom.guestReady = fresh.guestReady;
+          this.opponentReady = !!fresh.guestReady;
+          changed = true;
+        }
+      } else {
+        if (fresh.host && (!this.currentRoom.host || this.currentRoom.host.pseudo !== fresh.host.pseudo)) {
+          this.currentRoom.host = fresh.host;
+          this.opponentUser = fresh.host;
+          changed = true;
+        }
+        if (fresh.hostReady !== this.currentRoom.hostReady) {
+          this.currentRoom.hostReady = fresh.hostReady;
+          this.opponentReady = !!fresh.hostReady;
+          changed = true;
+        }
+        if (fresh.status === 'racing' && !this.isDuelActive) {
+          this.triggerRaceStart(fresh.startCycleIndex || 0);
+        }
+      }
+
+      if (changed && this.onRoomUpdate) {
+        this.onRoomUpdate(this.currentRoom);
+      }
+    }, 200);
+  }
+
+  stopRoomSync() {
+    if (this.roomSyncInterval) {
+      clearInterval(this.roomSyncInterval);
+      this.roomSyncInterval = null;
+    }
   }
 
   joinRoom(roomId) {
     const user = this.auth.getUser();
     if (!user) throw new Error('Connexion Google requise.');
+    if (!roomId) throw new Error('Code de salon invalide.');
 
-    this.connectDuelChannel(roomId);
+    const cleanCode = roomId.trim().toUpperCase();
 
-    // Annonce de tentative de connexion
-    this.duelChannel.postMessage({
-      type: 'guest_join_request',
-      guest: {
-        googleUid: user.googleUid,
-        pseudo: user.pseudo,
-        name: user.name,
-        picture: user.picture
-      }
-    });
+    // 1. Chercher la room dans le cache local
+    let room = this.getRoomById(cleanCode);
 
+    if (!room) {
+      // Si la room n'est pas encore propagée, créer un conteneur d'attente
+      room = {
+        roomId: cleanCode,
+        name: `Duel ${cleanCode}`,
+        isPrivate: false,
+        startCycleIndex: 0,
+        host: { pseudo: 'Hôte' },
+        guest: null,
+        status: 'waiting',
+        hostReady: false,
+        guestReady: false,
+        updatedAt: Date.now()
+      };
+    }
+
+    room.guest = {
+      googleUid: user.googleUid,
+      pseudo: user.pseudo,
+      name: user.name,
+      picture: user.picture
+    };
+    room.updatedAt = Date.now();
+
+    this.currentRoom = room;
+    this.opponentUser = room.host || null;
     this.isHost = false;
     this.isInRoom = true;
+    this.isReady = false;
+    this.opponentReady = !!room.hostReady;
+
+    localStorage.setItem(`soundrise_room_${cleanCode}`, JSON.stringify(room));
+    this.connectDuelChannel(cleanCode);
+    this.startRoomSync();
+
+    // Annonce immédiate à l'UI
+    if (this.onRoomUpdate) {
+      this.onRoomUpdate(this.currentRoom);
+    }
+
+    // Boucle de requête de join avec retry
+    if (this.joinRetryInterval) clearInterval(this.joinRetryInterval);
+    let attempts = 0;
+    const sendJoin = () => {
+      if (!this.isInRoom || this.isHost) {
+        if (this.joinRetryInterval) clearInterval(this.joinRetryInterval);
+        return;
+      }
+      if (this.duelChannel) {
+        this.duelChannel.postMessage({
+          type: 'guest_join_request',
+          roomId: cleanCode,
+          guest: {
+            googleUid: user.googleUid,
+            pseudo: user.pseudo,
+            name: user.name,
+            picture: user.picture
+          }
+        });
+      }
+    };
+
+    sendJoin();
+    this.joinRetryInterval = setInterval(() => {
+      attempts++;
+      if (attempts >= 15 || (this.currentRoom && this.currentRoom.host && this.currentRoom.host.googleUid)) {
+        clearInterval(this.joinRetryInterval);
+        this.joinRetryInterval = null;
+        return;
+      }
+      sendJoin();
+    }, 320);
+
+    return this.currentRoom;
   }
 
   connectDuelChannel(roomId) {
@@ -295,7 +450,18 @@ export class MultiplayerManager {
 
   toggleReady() {
     this.isReady = !this.isReady;
-    if (this.duelChannel && this.currentRoom) {
+    if (this.currentRoom && this.currentRoom.roomId) {
+      const fresh = this.getRoomById(this.currentRoom.roomId);
+      if (fresh) this.currentRoom = fresh;
+    }
+    if (this.currentRoom) {
+      if (this.isHost) this.currentRoom.hostReady = this.isReady;
+      else this.currentRoom.guestReady = this.isReady;
+      this.currentRoom.updatedAt = Date.now();
+      localStorage.setItem(`soundrise_room_${this.currentRoom.roomId}`, JSON.stringify(this.currentRoom));
+    }
+
+    if (this.duelChannel) {
       this.duelChannel.postMessage({
         type: 'ready_changed',
         isHost: this.isHost,
@@ -303,31 +469,53 @@ export class MultiplayerManager {
       });
     }
 
-    if (this.currentRoom) {
-      if (this.isHost) this.currentRoom.hostReady = this.isReady;
-      else this.currentRoom.guestReady = this.isReady;
-      if (this.onRoomUpdate) this.onRoomUpdate(this.currentRoom);
+    if (this.onRoomUpdate && this.currentRoom) {
+      this.onRoomUpdate(this.currentRoom);
     }
     return this.isReady;
   }
 
   startCountdownAndRace() {
+    if (this.currentRoom && this.currentRoom.roomId) {
+      const fresh = this.getRoomById(this.currentRoom.roomId);
+      if (fresh) this.currentRoom = fresh;
+    }
     if (!this.isHost || !this.currentRoom || !this.currentRoom.guest) return;
-    this.duelChannel.postMessage({
-      type: 'start_race_countdown',
-      startCycleIndex: this.currentRoom.startCycleIndex || 0
-    });
-    this.triggerRaceStart(this.currentRoom.startCycleIndex || 0);
+    const startCycle = this.currentRoom.startCycleIndex || 0;
+
+    this.currentRoom.status = 'racing';
+    this.currentRoom.updatedAt = Date.now();
+    localStorage.setItem(`soundrise_room_${this.currentRoom.roomId}`, JSON.stringify(this.currentRoom));
+
+    if (this.duelChannel) {
+      this.duelChannel.postMessage({
+        type: 'start_race_countdown',
+        startCycleIndex: startCycle
+      });
+    }
+
+    this.triggerRaceStart(startCycle);
   }
 
   triggerRaceStart(startCycleIndex) {
+    this.stopRoomSync();
+    if (this.joinRetryInterval) {
+      clearInterval(this.joinRetryInterval);
+      this.joinRetryInterval = null;
+    }
+
     this.isDuelActive = true;
     this.rivalGroup.visible = true;
     this.opponentData.isDead = false;
+    this.opponentData.distance = 0;
+    this.opponentData.x = 0;
+    this.opponentData.y = 3.5;
+    this.opponentData.z = -5.0;
+    this.rivalGroup.position.set(0, 3.5, -5.0);
 
-    // Démarrage de l'envoi de télémétrie à 25 Hz
+    // Envoi de télémétrie fluide à 30 Hz
     if (this.telemetryInterval) clearInterval(this.telemetryInterval);
-    this.telemetryInterval = setInterval(() => this.sendTelemetry(), 40);
+    this.telemetryInterval = setInterval(() => this.sendTelemetry(), 33);
 
     if (this.onDuelStart) {
       this.onDuelStart(startCycleIndex);
@@ -335,6 +523,12 @@ export class MultiplayerManager {
   }
 
   leaveRoom() {
+    this.stopRoomSync();
+    if (this.joinRetryInterval) {
+      clearInterval(this.joinRetryInterval);
+      this.joinRetryInterval = null;
+    }
+
     if (this.duelChannel && this.currentRoom) {
       this.duelChannel.postMessage({
         type: 'player_left',
@@ -342,9 +536,12 @@ export class MultiplayerManager {
       });
     }
 
-    if (this.currentRoom && !this.currentRoom.isPrivate) {
-      const rooms = this.getPublicRooms().filter(r => r.roomId !== this.currentRoom.roomId);
-      this.savePublicRooms(rooms);
+    if (this.currentRoom) {
+      localStorage.removeItem(`soundrise_room_${this.currentRoom.roomId}`);
+      if (!this.currentRoom.isPrivate) {
+        const rooms = this.getPublicRooms().filter(r => r.roomId !== this.currentRoom.roomId);
+        this.savePublicRooms(rooms);
+      }
     }
 
     if (this.telemetryInterval) {
@@ -420,7 +617,9 @@ export class MultiplayerManager {
           this.opponentUser = data.guest;
           this.currentRoom.updatedAt = Date.now();
 
-          // Réponse d'acceptation envoyée au guest
+          localStorage.setItem(`soundrise_room_${this.currentRoom.roomId}`, JSON.stringify(this.currentRoom));
+
+          // Réponse d'acceptation immédiate
           this.duelChannel.postMessage({
             type: 'guest_accepted',
             room: this.currentRoom
@@ -436,9 +635,15 @@ export class MultiplayerManager {
         break;
 
       case 'guest_accepted':
-        if (!this.isHost) {
+        if (!this.isHost && data.room) {
+          if (this.joinRetryInterval) {
+            clearInterval(this.joinRetryInterval);
+            this.joinRetryInterval = null;
+          }
           this.currentRoom = data.room;
           this.opponentUser = data.room.host;
+          this.opponentReady = !!data.room.hostReady;
+          localStorage.setItem(`soundrise_room_${data.room.roomId}`, JSON.stringify(data.room));
           if (this.onRoomUpdate) this.onRoomUpdate(this.currentRoom);
         }
         break;
@@ -447,7 +652,13 @@ export class MultiplayerManager {
         if (this.currentRoom) {
           if (data.isHost) this.currentRoom.hostReady = data.ready;
           else this.currentRoom.guestReady = data.ready;
-          this.opponentReady = data.ready;
+
+          if (data.isHost !== this.isHost) {
+            this.opponentReady = data.ready;
+          }
+
+          this.currentRoom.updatedAt = Date.now();
+          localStorage.setItem(`soundrise_room_${this.currentRoom.roomId}`, JSON.stringify(this.currentRoom));
           if (this.onRoomUpdate) this.onRoomUpdate(this.currentRoom);
         }
         break;
@@ -468,7 +679,7 @@ export class MultiplayerManager {
         break;
 
       case 'player_eliminated':
-        // L'adversaire s'est écrasé ou n'a plus d'énergie : VICTOIRE POUR NOUS !
+        // L'adversaire a été éliminé : VICTOIRE POUR NOUS !
         this.opponentData.isDead = true;
         if (this.onDuelEnd) {
           this.onDuelEnd({

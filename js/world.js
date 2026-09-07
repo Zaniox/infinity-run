@@ -152,483 +152,425 @@ export const CYCLES_DATA = [
 function createCycleGroundTextures() {
   const textures = [];
 
-  // 1. Cycle 1 Eau / Chute
-  {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    // Fond océan profond
-    const grad = ctx.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, '#001a33');
-    grad.addColorStop(1, '#004080');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Motif de caustiques et vagues
-    ctx.globalCompositeOperation = 'screen';
-    for (let i = 0; i < 40; i++) {
+  // Helper de dessin sans couture : réplique automatiquement sur les 4 quadrants pour supprimer tout raccord
+  function drawSeamlessCircle(ctx, cx, cy, r, fillStyle, strokeStyle = null, lineWidth = 0) {
+    const offsets = [
+      [0, 0], [512, 0], [-512, 0], [0, 512], [0, -512],
+      [512, 512], [-512, 512], [512, -512], [-512, -512]
+    ];
+    for (const [ox, oy] of offsets) {
+      const x = cx + ox;
+      const y = cy + oy;
+      if (x + r < 0 || x - r > 512 || y + r < 0 || y - r > 512) continue;
       ctx.beginPath();
-      const x = Math.random() * 512;
-      const y = Math.random() * 512;
-      const r = 20 + Math.random() * 60;
       ctx.arc(x, y, r, 0, Math.PI * 2);
-      
-      const rGrad = ctx.createRadialGradient(x, y, r * 0.5, x, y, r);
-      rGrad.addColorStop(0, 'rgba(0, 255, 255, 0.15)');
-      rGrad.addColorStop(1, 'rgba(0, 200, 255, 0)');
-      
-      ctx.fillStyle = rGrad;
-      ctx.fill();
-      
-      ctx.lineWidth = 1 + Math.random() * 2;
-      ctx.strokeStyle = 'rgba(150, 240, 255, 0.3)';
-      ctx.stroke();
-    }
-
-    // Écume et bulles
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    for(let i = 0; i < 200; i++) {
-      ctx.beginPath();
-      ctx.arc(Math.random() * 512, Math.random() * 512, Math.random() * 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(4, 14);
-    textures.push(tex);
-  }
-
-  // 2. Cycle 2 Terre / Résilience (Vraie terre brune, mottes de glaise et parcelles de mousse)
-  {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    // Fond terre battue riche et meuble
-    ctx.fillStyle = '#3a2414';
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Mottes de terre et nuances de loam naturelles
-    for (let i = 0; i < 65; i++) {
-      const cx = Math.random() * 512;
-      const cy = Math.random() * 512;
-      const r = 25 + Math.random() * 55;
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      g.addColorStop(0, Math.random() > 0.5 ? '#4e331e' : '#2c190d');
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Granulométrie de terre meuble, graviers et cailloux
-    for (let i = 0; i < 1400; i++) {
-      const rnd = Math.random();
-      ctx.fillStyle = rnd < 0.4 ? '#22130a' : (rnd < 0.7 ? '#563821' : '#6b482c');
-      ctx.fillRect(Math.random() * 512, Math.random() * 512, 1 + Math.random() * 3, 1 + Math.random() * 3);
-    }
-
-    // Fissures et craquelures telluriques nettes
-    ctx.strokeStyle = '#180c05';
-    ctx.lineWidth = 2.8;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    for (let i = 0; i < 18; i++) {
-      ctx.beginPath();
-      let sx = Math.random() * 512;
-      let sy = Math.random() * 512;
-      ctx.moveTo(sx, sy);
-      for (let j = 0; j < 6; j++) {
-        sx += (Math.random() - 0.5) * 65;
-        sy += (Math.random() - 0.3) * 65;
-        ctx.lineTo(sx, sy);
-      }
-      ctx.stroke();
-    }
-
-    // Parcelles de mousse végétale et lichen le long des failles
-    for (let i = 0; i < 50; i++) {
-      const cx = Math.random() * 512;
-      const cy = Math.random() * 512;
-      const r = 8 + Math.random() * 24;
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      g.addColorStop(0, 'rgba(46, 110, 42, 0.75)');
-      g.addColorStop(0.7, 'rgba(34, 82, 32, 0.4)');
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(4, 7);
-    textures.push(tex);
-  }
-
-  // 3. Cycle 3 Feu / Obsession
-  {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    // Croûte de basalte
-    ctx.fillStyle = '#0a0505';
-    ctx.fillRect(0, 0, 512, 512);
-    
-    for(let i=0; i<300; i++) {
-      ctx.fillStyle = '#1a0d0d';
-      ctx.beginPath();
-      ctx.arc(Math.random() * 512, Math.random() * 512, Math.random() * 5 + 2, 0, Math.PI*2);
-      ctx.fill();
-    }
-
-    // Bassins de lave magmatique
-    for (let i = 0; i < 8; i++) {
-      const cx = Math.random() * 512;
-      const cy = Math.random() * 512;
-      const r = 40 + Math.random() * 60;
-      
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      grad.addColorStop(0, '#ffff00');
-      grad.addColorStop(0.3, '#ff3300');
-      grad.addColorStop(0.8, '#8b0000');
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      // Formes organiques pour la lave
-      ctx.moveTo(cx + r, cy);
-      for(let a=0; a<Math.PI*2; a+=0.5) {
-        const d = r * (0.6 + Math.random() * 0.4);
-        ctx.lineTo(cx + Math.cos(a)*d, cy + Math.sin(a)*d);
-      }
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    // Braises ardentes
-    ctx.fillStyle = '#ffaa00';
-    for(let i=0; i<100; i++) {
-      ctx.beginPath();
-      ctx.arc(Math.random() * 512, Math.random() * 512, Math.random() * 2, 0, Math.PI*2);
-      ctx.fill();
-    }
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(4, 14);
-    textures.push(tex);
-  }
-
-  // 4. Cycle 4 Électricité / Amour
-  {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    // Fond carte mère
-    ctx.fillStyle = '#051014';
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Traces de circuits
-    ctx.strokeStyle = '#00ffcc';
-    ctx.lineWidth = 2;
-    ctx.lineJoin = 'bevel';
-    ctx.shadowColor = '#00ffcc';
-    ctx.shadowBlur = 10;
-    
-    for(let i = 0; i < 20; i++) {
-      ctx.beginPath();
-      let x = Math.random() * 512;
-      let y = Math.random() * 512;
-      ctx.moveTo(x, y);
-      
-      for(let j = 0; j < 4; j++) {
-        const dir = Math.floor(Math.random() * 4);
-        const dist = 30 + Math.random() * 80;
-        if(dir === 0) x += dist;
-        else if(dir === 1) x -= dist;
-        else if(dir === 2) y += dist;
-        else y -= dist;
-        
-        ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-      
-      // Nœud de connexion
-      ctx.fillStyle = '#ffff00';
-      ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.shadowBlur = 0; // reset
-
-    // Grille subtile
-    ctx.strokeStyle = 'rgba(0, 255, 200, 0.1)';
-    ctx.lineWidth = 1;
-    for(let i=0; i<512; i+=32) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0); ctx.lineTo(i, 512);
-      ctx.moveTo(0, i); ctx.lineTo(512, i);
-      ctx.stroke();
-    }
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(4, 14);
-    textures.push(tex);
-  }
-
-  // 5. Cycle 5 Lumière / Bonheur
-  {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    // Marbre blanc immaculé
-    ctx.fillStyle = '#fdfdfd';
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Nuages de marbre subtils
-    ctx.globalCompositeOperation = 'multiply';
-    for(let i=0; i<15; i++) {
-      const cx = Math.random() * 512;
-      const cy = Math.random() * 512;
-      const r = 50 + Math.random() * 100;
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      g.addColorStop(0, 'rgba(230, 230, 235, 0.5)');
-      g.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI*2);
-      ctx.fill();
-    }
-
-    // Veines dorées
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.shadowColor = 'rgba(218, 165, 32, 0.5)';
-    ctx.shadowBlur = 5;
-    ctx.strokeStyle = '#daa520';
-    ctx.lineWidth = 1.5;
-    
-    for(let i=0; i<8; i++) {
-      ctx.beginPath();
-      const sx = Math.random() * 512;
-      ctx.moveTo(sx, 0);
-      ctx.bezierCurveTo(
-        sx + (Math.random()-0.5)*200, 170, 
-        sx + (Math.random()-0.5)*200, 340, 
-        sx + (Math.random()-0.5)*200, 512
-      );
-      ctx.stroke();
-    }
-    
-    // Reflets prismatiques
-    ctx.globalCompositeOperation = 'screen';
-    for(let i=0; i<10; i++) {
-      const cx = Math.random() * 512;
-      const cy = Math.random() * 512;
-      const r = 30 + Math.random() * 40;
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      const hues = [0, 120, 240];
-      const hue = hues[Math.floor(Math.random()*hues.length)];
-      g.addColorStop(0, `hsla(${hue}, 100%, 80%, 0.3)`);
-      g.addColorStop(1, `hsla(${hue}, 100%, 80%, 0)`);
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI*2);
-      ctx.fill();
-    }
-    ctx.shadowBlur = 0; // reset
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(4, 14);
-    textures.push(tex);
-  }
-
-  // 6. Cycle 6 Ombre / Chaos
-  {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    // Obsidienne fracturée
-    const grad = ctx.createLinearGradient(0, 0, 512, 512);
-    grad.addColorStop(0, '#020202');
-    grad.addColorStop(1, '#0a0a0c');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Éclats de verre (polygones)
-    for(let i=0; i<20; i++) {
-      ctx.beginPath();
-      const cx = Math.random() * 512;
-      const cy = Math.random() * 512;
-      ctx.moveTo(cx, cy);
-      for(let j=0; j<4; j++) {
-        ctx.lineTo(cx + (Math.random()-0.5)*120, cy + (Math.random()-0.5)*120);
-      }
-      ctx.closePath();
-      
-      const polyGrad = ctx.createLinearGradient(cx, cy, cx+50, cy+50);
-      polyGrad.addColorStop(0, 'rgba(40, 40, 45, 0.4)');
-      polyGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      
-      ctx.fillStyle = polyGrad;
-      ctx.fill();
-      
-      ctx.strokeStyle = 'rgba(80, 80, 90, 0.5)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-
-    // Volutes fantomatiques
-    ctx.globalCompositeOperation = 'screen';
-    for(let i=0; i<15; i++) {
-      ctx.beginPath();
-      const sx = Math.random() * 512;
-      const sy = Math.random() * 512;
-      ctx.moveTo(sx, sy);
-      ctx.bezierCurveTo(
-        sx + (Math.random()-0.5)*200, sy + (Math.random()-0.5)*200,
-        sx + (Math.random()-0.5)*200, sy + (Math.random()-0.5)*200,
-        sx + (Math.random()-0.5)*200, sy + (Math.random()-0.5)*200
-      );
-      ctx.strokeStyle = 'rgba(60, 40, 100, 0.2)';
-      ctx.lineWidth = 15;
-      ctx.lineCap = 'round';
-      ctx.stroke();
-    }
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(4, 14);
-    textures.push(tex);
-  }
-
-  // 7. Cycle 7 Vent / Ambition
-  {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    // Ciel azur
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
-    bgGrad.addColorStop(0, '#4facfe');
-    bgGrad.addColorStop(1, '#00f2fe');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Tourbillons de nuages (radials)
-    ctx.globalCompositeOperation = 'screen';
-    for(let i = 0; i < 25; i++) {
-      const cx = Math.random() * 512;
-      const cy = Math.random() * 512;
-      const r = 60 + Math.random() * 80;
-      
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      grad.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
-      grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
-      grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      // Nuages déformés par le vent
-      ctx.ellipse(cx, cy, r, r * 0.4, Math.PI / 8, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Traînées de vent
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineCap = 'round';
-    for(let i = 0; i < 40; i++) {
-      ctx.beginPath();
-      const x = Math.random() * 512;
-      const y = Math.random() * 512;
-      const len = 50 + Math.random() * 100;
-      ctx.lineWidth = 1 + Math.random() * 2;
-      ctx.moveTo(x, y);
-      ctx.bezierCurveTo(x + len/3, y + 10, x + 2*len/3, y - 10, x + len, y);
-      ctx.stroke();
-    }
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(4, 14);
-    textures.push(tex);
-  }
-
-  // 8. Cycle 8 Cosmos / Folie
-  {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    // Vide cosmique
-    ctx.fillStyle = '#05000a';
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Nébuleuses
-    ctx.globalCompositeOperation = 'screen';
-    for (let i = 0; i < 15; i++) {
-      const cx = Math.random() * 512;
-      const cy = Math.random() * 512;
-      const r = 80 + Math.random() * 120;
-      
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      const colors = [
-        ['rgba(138, 43, 226, 0.4)', 'rgba(138, 43, 226, 0)'], // Violet
-        ['rgba(255, 20, 147, 0.4)', 'rgba(255, 20, 147, 0)'], // Rose
-        ['rgba(0, 191, 255, 0.4)', 'rgba(0, 191, 255, 0)']  // Cyan
-      ];
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      
-      grad.addColorStop(0, color[0]);
-      grad.addColorStop(1, color[1]);
-      
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Champ d'étoiles
-    ctx.globalCompositeOperation = 'source-over';
-    for(let i=0; i<300; i++) {
-      ctx.fillStyle = Math.random() > 0.8 ? '#ffffaa' : '#ffffff';
-      ctx.beginPath();
-      const r = Math.random() * 1.5;
-      ctx.arc(Math.random() * 512, Math.random() * 512, r, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Halo pour les grosses étoiles
-      if(r > 1.2) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.beginPath();
-        ctx.arc(Math.random() * 512, Math.random() * 512, r*3, 0, Math.PI * 2);
+      if (fillStyle) {
+        ctx.fillStyle = fillStyle;
         ctx.fill();
       }
+      if (strokeStyle && lineWidth > 0) {
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = lineWidth;
+        ctx.stroke();
+      }
+    }
+  }
+
+  function drawSeamlessCurve(ctx, pts, strokeStyle, lineWidth) {
+    const offsets = [
+      [0, 0], [512, 0], [-512, 0], [0, 512], [0, -512]
+    ];
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (const [ox, oy] of offsets) {
+      ctx.beginPath();
+      for (let i = 0; i < pts.length; i++) {
+        const x = pts[i][0] + ox;
+        const y = pts[i][1] + oy;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // 1. Cycle 1 : Eau / Chute (Noir & Bleu Océan Profond, Caustiques Vivantes & Écume Fluide)
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    // Fond océan abyssal en dégradé continu
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#000e1f');
+    grad.addColorStop(0.5, '#001c38');
+    grad.addColorStop(1, '#000e1f');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Courants d'eau sous-marins sinusoidaux
+    ctx.globalCompositeOperation = 'screen';
+    for (let w = 0; w < 6; w++) {
+      const pts = [];
+      const baseY = (w / 6) * 512;
+      for (let x = 0; x <= 512; x += 16) {
+        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + w) * 28;
+        pts.push([x, y]);
+      }
+      drawSeamlessCurve(ctx, pts, 'rgba(0, 180, 255, 0.18)', 36);
+    }
+
+    // Réseau de caustiques aquatiques fluides sans raccords
+    for (let i = 0; i < 45; i++) {
+      const cx = (i * 73) % 512;
+      const cy = (i * 127) % 512;
+      const r = 25 + ((i * 19) % 45);
+      const rGrad = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+      rGrad.addColorStop(0, 'rgba(0, 240, 255, 0.28)');
+      rGrad.addColorStop(0.65, 'rgba(0, 160, 255, 0.12)');
+      rGrad.addColorStop(1, 'rgba(0, 100, 200, 0)');
+      drawSeamlessCircle(ctx, cx, cy, r, rGrad, 'rgba(120, 230, 255, 0.25)', 1.5);
+    }
+
+    // Écume et micro-bulles bioluminescentes
+    ctx.globalCompositeOperation = 'source-over';
+    for (let i = 0; i < 180; i++) {
+      const bx = (i * 157) % 512;
+      const by = (i * 211) % 512;
+      const br = 0.8 + ((i * 13) % 2.4);
+      drawSeamlessCircle(ctx, bx, by, br, 'rgba(210, 250, 255, 0.55)');
     }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(4, 14);
+    tex.repeat.set(2.5, 6);
+    textures.push(tex);
+  }
+
+  // 2. Cycle 2 : Terre / Résilience (Sol Tellurique, Strates Rocheuses Sédimentaires & Glaise)
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    // Base terre glaise riche et sombre
+    ctx.fillStyle = '#2a160c';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Mottes et nuances de loam naturelles sans couture
+    for (let i = 0; i < 55; i++) {
+      const cx = (i * 97) % 512;
+      const cy = (i * 163) % 512;
+      const r = 35 + ((i * 23) % 60);
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, i % 2 === 0 ? '#432615' : '#1d0f07');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      drawSeamlessCircle(ctx, cx, cy, r, g);
+    }
+
+    // Strates sédimentaires horizontales telluriques continues
+    for (let s = 0; s < 8; s++) {
+      const pts = [];
+      const baseY = (s / 8) * 512;
+      for (let x = 0; x <= 512; x += 16) {
+        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + s * 1.5) * 14;
+        pts.push([x, y]);
+      }
+      drawSeamlessCurve(ctx, pts, s % 2 === 0 ? '#54331d' : '#180c05', 8);
+    }
+
+    // Failles et craquelures telluriques nettes
+    for (let f = 0; f < 12; f++) {
+      const pts = [];
+      let curX = (f * 137) % 512;
+      let curY = (f * 179) % 512;
+      pts.push([curX, curY]);
+      for (let step = 0; step < 5; step++) {
+        curX += (((step + f) * 29) % 60) - 30;
+        curY += (((step + f) * 41) % 55) - 20;
+        pts.push([curX, curY]);
+      }
+      drawSeamlessCurve(ctx, pts, '#120803', 2.8);
+    }
+
+    // Touches végétales de lichen sur les failles
+    for (let m = 0; m < 35; m++) {
+      const mx = (m * 149) % 512;
+      const my = (m * 223) % 512;
+      const mr = 6 + (m % 14);
+      const mg = ctx.createRadialGradient(mx, my, 0, mx, my, mr);
+      mg.addColorStop(0, 'rgba(65, 82, 38, 0.45)');
+      mg.addColorStop(1, 'rgba(0,0,0,0)');
+      drawSeamlessCircle(ctx, mx, my, mr, mg);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2.5, 6);
+    textures.push(tex);
+  }
+
+  // 3. Cycle 3 : Obsession / Lave & Feu (Magma Incandescent Vivant & Dalles de Basalte Noir)
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    // Basalte volcanique refroidi
+    ctx.fillStyle = '#0f0505';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Dalles de roche volcanique fracturée
+    for (let r = 0; r < 40; r++) {
+      const cx = (r * 113) % 512;
+      const cy = (r * 173) % 512;
+      const rad = 30 + ((r * 17) % 50);
+      const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+      bg.addColorStop(0, '#1c0a0a');
+      bg.addColorStop(0.8, '#120505');
+      bg.addColorStop(1, 'rgba(0,0,0,0)');
+      drawSeamlessCircle(ctx, cx, cy, rad, bg);
+    }
+
+    // Fleuves de magma en fusion sinueux continus
+    ctx.globalCompositeOperation = 'screen';
+    for (let l = 0; l < 5; l++) {
+      const pts = [];
+      const baseY = (l / 5) * 512;
+      for (let x = 0; x <= 512; x += 16) {
+        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + l * 2) * 35;
+        pts.push([x, y]);
+      }
+      // Halo magmatique large
+      drawSeamlessCurve(ctx, pts, 'rgba(255, 60, 0, 0.35)', 42);
+      // Cœur de lave rougeoyante
+      drawSeamlessCurve(ctx, pts, 'rgba(255, 120, 0, 0.65)', 20);
+      // Fissure blanche/dorée incandescente au centre
+      drawSeamlessCurve(ctx, pts, 'rgba(255, 235, 120, 0.90)', 6);
+    }
+
+    // Braises et étincelles chaudes
+    ctx.globalCompositeOperation = 'source-over';
+    for (let e = 0; e < 90; e++) {
+      const ex = (e * 181) % 512;
+      const ey = (e * 239) % 512;
+      const er = 1.5 + (e % 3.5);
+      const eg = ctx.createRadialGradient(ex, ey, 0, ex, ey, er * 2);
+      eg.addColorStop(0, '#fff275');
+      eg.addColorStop(0.5, '#ff4500');
+      eg.addColorStop(1, 'rgba(0,0,0,0)');
+      drawSeamlessCircle(ctx, ex, ey, er * 2, eg);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2.5, 6);
+    textures.push(tex);
+  }
+
+  // 4. Cycle 4 : Amour / Électricité (Circuits Cyber Haute Tension & Plasma Doré)
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#06060c';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Grille de pistes d'énergie cybernétiques
+    ctx.globalCompositeOperation = 'screen';
+    for (let p = 0; p < 8; p++) {
+      const y = (p / 8) * 512;
+      drawSeamlessCurve(ctx, [[0, y], [512, y]], 'rgba(250, 204, 21, 0.25)', 3);
+    }
+    for (let p = 0; p < 8; p++) {
+      const x = (p / 8) * 512;
+      drawSeamlessCurve(ctx, [[x, 0], [x, 512]], 'rgba(250, 204, 21, 0.25)', 3);
+    }
+
+    // Nœuds de plasma étincelants aux croisements
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        if ((i + j) % 2 === 0) {
+          const cx = (i / 8) * 512;
+          const cy = (j / 8) * 512;
+          const ng = ctx.createRadialGradient(cx, cy, 0, cx, cy, 14);
+          ng.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+          ng.addColorStop(0.4, 'rgba(250, 204, 21, 0.6)');
+          ng.addColorStop(1, 'rgba(0,0,0,0)');
+          drawSeamlessCircle(ctx, cx, cy, 14, ng);
+        }
+      }
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2.5, 6);
+    textures.push(tex);
+  }
+
+  // 5. Cycle 5 : Bonheur / Lumière (Marbre Albâtre Doux & Veines d'Or Céleste)
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    // Marbre clair sans éblouissement
+    const mGrad = ctx.createLinearGradient(0, 0, 512, 512);
+    mGrad.addColorStop(0, '#f1f5f9');
+    mGrad.addColorStop(0.5, '#e2e8f0');
+    mGrad.addColorStop(1, '#f1f5f9');
+    ctx.fillStyle = mGrad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Veinage d'or champagne délicat
+    for (let v = 0; v < 6; v++) {
+      const pts = [];
+      const baseY = (v / 6) * 512;
+      for (let x = 0; x <= 512; x += 16) {
+        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + v) * 22;
+        pts.push([x, y]);
+      }
+      drawSeamlessCurve(ctx, pts, 'rgba(234, 179, 8, 0.28)', 6);
+      drawSeamlessCurve(ctx, pts, 'rgba(254, 240, 138, 0.55)', 2);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2.5, 6);
+    textures.push(tex);
+  }
+
+  // 6. Cycle 6 : Chaos / Ombre (Obsidienne Liquide & Cendres Nébuleuses)
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#0a0a0d';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Panaches de cendre sombre et brume
+    ctx.globalCompositeOperation = 'screen';
+    for (let a = 0; a < 25; a++) {
+      const cx = (a * 109) % 512;
+      const cy = (a * 167) % 512;
+      const r = 40 + (a % 50);
+      const ag = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      ag.addColorStop(0, 'rgba(71, 85, 105, 0.35)');
+      ag.addColorStop(1, 'rgba(0,0,0,0)');
+      drawSeamlessCircle(ctx, cx, cy, r, ag);
+    }
+
+    // Fractures d'obsidienne tranchante
+    ctx.globalCompositeOperation = 'source-over';
+    for (let f = 0; f < 10; f++) {
+      const pts = [];
+      let curX = (f * 131) % 512;
+      let curY = (f * 197) % 512;
+      pts.push([curX, curY]);
+      for (let s = 0; s < 4; s++) {
+        curX += (((s + f) * 31) % 70) - 35;
+        curY += (((s + f) * 47) % 65) - 30;
+        pts.push([curX, curY]);
+      }
+      drawSeamlessCurve(ctx, pts, 'rgba(148, 163, 184, 0.45)', 2);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2.5, 6);
+    textures.push(tex);
+  }
+
+  // 7. Cycle 7 : Ambition / Vent (Océan de Nuages Vaporeux & Courants Aériens)
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    // Ciel azur stratosphérique
+    const vGrad = ctx.createLinearGradient(0, 0, 0, 512);
+    vGrad.addColorStop(0, '#0284c7');
+    vGrad.addColorStop(0.5, '#38bdf8');
+    vGrad.addColorStop(1, '#0284c7');
+    ctx.fillStyle = vGrad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Traînées aérodynamiques supersoniques
+    ctx.globalCompositeOperation = 'screen';
+    for (let w = 0; w < 10; w++) {
+      const y = (w / 10) * 512;
+      const pts = [
+        [0, y],
+        [256, y + Math.sin(w) * 16],
+        [512, y]
+      ];
+      drawSeamlessCurve(ctx, pts, 'rgba(255, 255, 255, 0.35)', 8);
+    }
+
+    // Bancs de stratus vaporeux
+    for (let c = 0; c < 20; c++) {
+      const cx = (c * 127) % 512;
+      const cy = (c * 179) % 512;
+      const r = 45 + (c % 55);
+      const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      cg.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+      cg.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      drawSeamlessCircle(ctx, cx, cy, r, cg);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2.5, 6);
+    textures.push(tex);
+  }
+
+  // 8. Cycle 8 : Folie / Cosmos (Nébuleuse Interstellaire & Poussière Cosmique)
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    // Vide cosmique profond
+    ctx.fillStyle = '#060012';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Nuages de nébuleuse pourpre et violette
+    ctx.globalCompositeOperation = 'screen';
+    for (let n = 0; n < 28; n++) {
+      const cx = (n * 101) % 512;
+      const cy = (n * 173) % 512;
+      const r = 50 + (n % 70);
+      const ng = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      ng.addColorStop(0, n % 2 === 0 ? 'rgba(168, 85, 247, 0.45)' : 'rgba(236, 72, 153, 0.35)');
+      ng.addColorStop(1, 'rgba(0,0,0,0)');
+      drawSeamlessCircle(ctx, cx, cy, r, ng);
+    }
+
+    // Poussière d'étoiles scintillantes
+    ctx.globalCompositeOperation = 'source-over';
+    for (let s = 0; s < 160; s++) {
+      const sx = (s * 137) % 512;
+      const sy = (s * 227) % 512;
+      const sr = 0.8 + (s % 2.2);
+      drawSeamlessCircle(ctx, sx, sy, sr, s % 3 === 0 ? '#fef08a' : '#ffffff');
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2.5, 6);
     textures.push(tex);
   }
 
@@ -740,6 +682,7 @@ export class World {
         }
       }
       geo.computeVertexNormals();
+      geo.userData = { basePositions: new Float32Array(pos.array) };
 
       const mesh = new THREE.Mesh(geo, this.groundMaterial);
       mesh.rotation.x = -Math.PI / 2;
@@ -757,6 +700,54 @@ export class World {
       metalness: 0.25,
       flatShading: true
     });
+  }
+
+  // Animation physique 3D des vagues et déformations du terrain selon l'élément
+  updateTerrainMesh(time) {
+    const isWater = (this.currentCycleIndex === 0);
+    const isTransitioningWater = this.isTransitioning && (this.targetCycleIndex === 0 || this.currentCycleIndex === 0);
+
+    if (isWater || isTransitioningWater) {
+      let waveWeight = 1.0;
+      if (this.isTransitioning) {
+        waveWeight = (this.targetCycleIndex === 0) ? this.transitionProgress : (1.0 - this.transitionProgress);
+      }
+
+      for (const mesh of this.terrainSections) {
+        const geo = mesh.geometry;
+        const pos = geo.attributes.position;
+        const base = geo.userData.basePositions;
+        if (!base) continue;
+
+        for (let j = 0; j < pos.count; j++) {
+          const x = base[j * 3];
+          const y = base[j * 3 + 1];
+          const bz = base[j * 3 + 2];
+          const worldZ = mesh.position.z + y;
+
+          // Vagues de houle océanique ondulantes
+          const wave1 = Math.sin(x * 0.14 + time * 3.2) * Math.cos(worldZ * 0.10 + time * 2.4) * 1.5;
+          const wave2 = Math.sin((x + worldZ) * 0.08 + time * 1.8) * 0.8;
+          pos.setZ(j, bz + (wave1 + wave2) * waveWeight);
+        }
+        pos.needsUpdate = true;
+        geo.computeVertexNormals();
+      }
+      this.wasWater = true;
+    } else if (this.wasWater) {
+      // Rétablir le terrain solide sans vagues
+      for (const mesh of this.terrainSections) {
+        const geo = mesh.geometry;
+        const pos = geo.attributes.position;
+        const base = geo.userData.basePositions;
+        if (base) {
+          pos.array.set(base);
+          pos.needsUpdate = true;
+          geo.computeVertexNormals();
+        }
+      }
+      this.wasWater = false;
+    }
   }
 
   // --- SYSTÈME DES DÉCORS LATÉRAUX (ROADSIDE PROPS) THÉMATIQUES PAR CYCLE ---
@@ -2533,7 +2524,7 @@ export class World {
     const deltaZ = speed * dt;
     const time = performance.now() * 0.001;
 
-    // 0. Transition fluide de cycle (Glide sans coupure)
+    // 0. Transition fluide et cinématographique de cycle (Glide sans rupture)
     if (this.isTransitioning) {
       this.transitionProgress += dt / this.transitionDuration;
       const t = Math.min(1.0, this.transitionProgress);
@@ -2541,6 +2532,11 @@ export class World {
 
       this.scene.background.lerpColors(this.prevSkyColor, this.nextSkyColor, smoothT);
       this.scene.fog.color.lerpColors(this.prevFogColor, this.nextFogColor, smoothT);
+
+      // Voile atmosphérique doux qui estompe subtilement l'horizon pendant le passage (pic à mi-course)
+      const fogVeil = Math.sin(t * Math.PI) * 18.0;
+      this.scene.fog.near = Math.max(34, 55 - fogVeil);
+
       this.sunLight.color.lerpColors(this.prevSunColor, this.nextSunColor, smoothT);
       this.hemiLight.color.lerpColors(this.prevHemiColor, this.nextHemiColor, smoothT);
       this.hemiLight.groundColor.lerpColors(this.prevFogColor, this.nextFogColor, smoothT);
@@ -2548,7 +2544,7 @@ export class World {
       this.groundMaterial.roughness = THREE.MathUtils.lerp(this.prevRoughness, this.targetRoughness, smoothT);
       this.groundMaterial.metalness = THREE.MathUtils.lerp(this.prevMetalness, this.targetMetalness, smoothT);
 
-      // Basculer la texture de sol à mi-course
+      // Basculer la texture de sol en douceur à mi-course
       if (t >= 0.5 && this.cycleGroundTextures && this.cycleGroundTextures[this.currentCycleIndex]) {
         if (this.groundMaterial.map !== this.cycleGroundTextures[this.currentCycleIndex]) {
           this.groundMaterial.map = this.cycleGroundTextures[this.currentCycleIndex];
@@ -2558,8 +2554,29 @@ export class World {
 
       if (t >= 1.0) {
         this.isTransitioning = false;
+        this.scene.fog.near = 55;
         this.applyCycleImmediate(this.cycle);
       }
+    }
+
+    // Animation 3D physique des vagues d'eau et du relief
+    this.updateTerrainMesh(time);
+
+    // Défilement continu et fluide des textures (UV Flow vivant)
+    if (this.groundMaterial && this.groundMaterial.map) {
+      this.groundMaterial.map.offset.y -= speed * dt * 0.0018;
+      if (this.currentCycleIndex === 0) {
+        this.groundMaterial.map.offset.x = Math.sin(time * 0.7) * 0.015;
+      }
+    }
+
+    // Effet de lave magmatique incandescente pour le Cycle 3 (Obsession)
+    if (this.currentCycleIndex === 2) {
+      const lavaPulse = 0.40 + Math.sin(time * 3.5) * 0.18 + (typeof bassEnergy === 'number' ? bassEnergy * 0.35 : 0);
+      this.groundMaterial.emissive = new THREE.Color(0xff2200);
+      this.groundMaterial.emissiveIntensity = lavaPulse;
+    } else if (this.groundMaterial.emissiveIntensity > 0) {
+      this.groundMaterial.emissiveIntensity = 0;
     }
 
     // 1. Défilement continu du sol sans couture
@@ -2614,13 +2631,12 @@ export class World {
       this.updateSideProps(dt, speed, audioPulse);
     }
 
-    // 4. Cadencement progressif des obstacles calé sur le rythme musical
-    // - En Cycle 1 et 2 : espacement généreux de 1.85s pour favoriser l'apprentissage et la glisse fluide
-    // - Du Cycle 3 au Cycle 8 : resserrement progressif de l'espacement pour une montée en puissance continue
+    // 4. Cadencement progressif des obstacles : espacement resserré au fil des cycles
+    // Cycle 1 : 2.15s (vol fluide et accessible) -> Cycle 8 : 0.82s (réflexes supersoniques intenses)
     this.timeSinceLastSpawn = (this.timeSinceLastSpawn || 0) + dt;
     const cycleIdx = this.currentCycleIndex || 0;
-    const minSpawnDelay = Math.max(0.95, 1.85 - cycleIdx * 0.12);
-    const isIntense = (cycleIdx >= 3) && (speed > 66.0 || bass > 0.55);
+    const minSpawnDelay = Math.max(0.78, 2.15 - cycleIdx * 0.19);
+    const isIntense = (cycleIdx >= 3) && (speed > 60.0 || bass > 0.50);
     const isSpawnBeat = isIntense ? (isNewBeat && (beatInBar === 0 || beatInBar === 2)) : (isNewBeat && beatInBar === 0);
 
     // Maintien d'un espacement minimal progressif selon le cycle

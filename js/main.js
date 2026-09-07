@@ -408,22 +408,27 @@ class GameApp {
     }
 
     if (this.state === this.STATE_PLAYING) {
-      // 2. Calcul de la vitesse de translation avec progression étagée par cycle (de 38 m/s à 82 m/s)
-      const cycleSpeeds = [38.0, 44.0, 50.0, 56.0, 62.0, 68.0, 74.0, 82.0];
+      // 2. Calcul de la vitesse de translation avec progression dynamique par cycle (de 44 m/s à 120 m/s)
+      const cycleSpeeds = [44.0, 53.0, 63.0, 74.0, 85.0, 96.0, 108.0, 120.0];
       const cycleIdx = (this.world && this.world.currentCycleIndex !== undefined) ? this.world.currentCycleIndex : 0;
-      const targetCycleSpeed = cycleSpeeds[cycleIdx] || 38.0;
-      const saiyanBonus = this.player.isSayanfinityActive() ? 16.0 : 0.0;
-      this.baseSpeed = targetCycleSpeed + Math.min(6.0, (this.currentCycleDistance || 0) / 350.0);
+      const targetCycleSpeed = cycleSpeeds[cycleIdx] || 44.0;
+      
+      // Bonus de transition : poussée cinématique d'accélération lors du franchissement de cycle
+      const transitionSurge = (this.world && this.world.isTransitioning) 
+        ? Math.sin(this.world.transitionProgress * Math.PI) * 10.0 
+        : 0.0;
+      
+      const saiyanBonus = this.player.isSayanfinityActive() ? 18.0 : 0.0;
+      const internalProgress = Math.min(8.0, (this.currentCycleDistance || 0) / 280.0);
+      
+      this.baseSpeed = targetCycleSpeed + internalProgress + transitionSurge;
       this.currentSpeed = this.baseSpeed + this.player.boostExtraSpeed + saiyanBonus;
 
-      // Effet cinématique d'étirement du champ de vision lors d'un boost ou PURITY
-      if (this.player.isSayanfinityActive()) {
-        this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV + 12, 6 * dt);
-      } else if (this.player.boostTimer > 0) {
-        this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV + 10, 6 * dt);
-      } else {
-        this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, this.baseFOV, 4 * dt);
-      }
+      // Effet cinématique d'étirement du champ de vision dynamique proportionnel à la vitesse
+      const speedFOV = Math.max(0, (this.currentSpeed - 44.0) * 0.16);
+      const saiyanFOV = this.player.isSayanfinityActive() ? 12.0 : (this.player.boostTimer > 0 ? 8.0 : 0.0);
+      const targetFOV = Math.min(88.0, this.baseFOV + speedFOV + saiyanFOV);
+      this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFOV, 5 * dt);
       this.camera.updateProjectionMatrix();
 
       // 3. Mise à jour de la physique de vol d'Infi

@@ -477,7 +477,8 @@ export class UIManager {
           return;
         }
         try {
-          this.multiplayer.joinRoom(code);
+          const room = this.multiplayer.joinRoom(code);
+          if (room) this.renderLobby(room);
           if (this.joinCodeError) this.joinCodeError.classList.add('hidden');
         } catch (err) {
           if (this.joinCodeError) {
@@ -599,8 +600,8 @@ export class UIManager {
           this.btnPlayGame.classList.remove('locked', 'guest-mode');
         }
         if (this.btnPlayIcon) this.btnPlayIcon.textContent = '▶';
-        if (this.btnPlayText) this.btnPlayText.textContent = 'JOUER • DÉCOLLER';
-        if (this.btnPlaySub) this.btnPlaySub.textContent = `[ CLASSEMENT MONDIAL ACTIF • @${pseudo} ]`;
+        if (this.btnPlayText) this.btnPlayText.textContent = 'DÉCOLLER';
+        if (this.btnPlaySub) this.btnPlaySub.textContent = `[ CLASSEMENT ACTIF • @${pseudo} ]`;
       } else {
         if (this.userPseudoDisplay) this.userPseudoDisplay.textContent = 'Non défini';
         // Bouton invitant à choisir son pseudo
@@ -624,9 +625,9 @@ export class UIManager {
         this.btnPlayGame.classList.remove('locked');
         this.btnPlayGame.classList.add('guest-mode');
       }
-      if (this.btnPlayIcon) this.btnPlayIcon.textContent = '🎮';
-      if (this.btnPlayText) this.btnPlayText.textContent = 'JOUER EN MODE INVITÉ';
-      if (this.btnPlaySub) this.btnPlaySub.textContent = '[ DÉCOLLAGE IMMÉDIAT • SOLO HORS CLASSEMENT ]';
+      if (this.btnPlayIcon) this.btnPlayIcon.textContent = '▶';
+      if (this.btnPlayText) this.btnPlayText.textContent = 'DÉCOLLER';
+      if (this.btnPlaySub) this.btnPlaySub.textContent = '[ VOL SOLO IMMÉDIAT • ESPACE OU CLIC ]';
     }
   }
 
@@ -1168,7 +1169,8 @@ export class UIManager {
       item.querySelector('.btn-join-room').addEventListener('click', () => {
         if (this.multiplayer) {
           try {
-            this.multiplayer.joinRoom(r.roomId);
+            const room = this.multiplayer.joinRoom(r.roomId);
+            if (room) this.renderLobby(room);
           } catch (err) {
             alert(err.message || 'Impossible de rejoindre le salon.');
           }
@@ -1180,6 +1182,23 @@ export class UIManager {
   }
 
   renderLobby(room) {
+    if (!room && this.multiplayer) {
+      room = this.multiplayer.currentRoom;
+    }
+    if (room && this.multiplayer && room.roomId) {
+      const fresh = this.multiplayer.getRoomById(room.roomId);
+      if (fresh) {
+        room = fresh;
+        this.multiplayer.currentRoom = fresh;
+        if (this.multiplayer.isHost && fresh.guest) {
+          this.multiplayer.opponentUser = fresh.guest;
+          this.multiplayer.opponentReady = !!fresh.guestReady;
+        } else if (!this.multiplayer.isHost && fresh.host) {
+          this.multiplayer.opponentUser = fresh.host;
+          this.multiplayer.opponentReady = !!fresh.hostReady;
+        }
+      }
+    }
     if (!room) return;
 
     if (this.mpTabsNav) this.mpTabsNav.classList.add('hidden');
