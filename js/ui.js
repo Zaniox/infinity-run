@@ -12,7 +12,8 @@ export class UIManager {
     onPrevCycleCallback,
     onNextCycleCallback,
     authManager = null,
-    leaderboardManager = null
+    leaderboardManager = null,
+    multiplayerManager = null
   ) {
     this.onStart = onStartCallback;
     this.onRestart = onRestartCallback;
@@ -21,6 +22,7 @@ export class UIManager {
     this.onNextCycle = onNextCycleCallback;
     this.auth = authManager;
     this.leaderboard = leaderboardManager;
+    this.multiplayer = multiplayerManager;
 
     this.cacheDOMElements();
     this.bindEvents();
@@ -140,6 +142,69 @@ export class UIManager {
     this.trollModal = document.getElementById('troll-modal');
     this.trollLoopVal = document.getElementById('troll-loop-val');
     this.btnTrollContinue = document.getElementById('btn-troll-continue');
+
+    // Éléments du Mode Multijoueur 1v1
+    this.btnOpenMultiplayer = document.getElementById('btn-open-multiplayer');
+    this.multiplayerModal = document.getElementById('multiplayer-modal');
+    this.btnCloseMultiplayer = document.getElementById('btn-close-multiplayer');
+
+    this.mpTabsNav = document.getElementById('mp-tabs-nav');
+    this.tabBtnRooms = document.getElementById('tab-btn-rooms');
+    this.tabBtnCreate = document.getElementById('tab-btn-create');
+    this.tabBtnCode = document.getElementById('tab-btn-code');
+
+    this.mpViewRooms = document.getElementById('mp-view-rooms');
+    this.mpViewCreate = document.getElementById('mp-view-create');
+    this.mpViewCode = document.getElementById('mp-view-code');
+    this.mpLobbyView = document.getElementById('mp-lobby-view');
+
+    this.mpRoomsList = document.getElementById('mp-rooms-list');
+    this.btnRefreshRooms = document.getElementById('btn-refresh-rooms');
+
+    this.formCreateRoom = document.getElementById('form-create-room');
+    this.inputRoomName = document.getElementById('input-room-name');
+    this.selectRoomCycle = document.getElementById('select-room-cycle');
+    this.checkboxRoomPrivate = document.getElementById('checkbox-room-private');
+    this.btnSubmitCreateRoom = document.getElementById('btn-submit-create-room');
+
+    this.formJoinCode = document.getElementById('form-join-code');
+    this.inputJoinCode = document.getElementById('input-join-code');
+    this.joinCodeError = document.getElementById('join-code-error');
+    this.btnSubmitJoinCode = document.getElementById('btn-submit-join-code');
+
+    // Éléments du Lobby
+    this.lobbyRoomName = document.getElementById('lobby-room-name');
+    this.lobbyRoomCode = document.getElementById('lobby-room-code');
+    this.lobbyHostAvatar = document.getElementById('lobby-host-avatar');
+    this.lobbyHostPseudo = document.getElementById('lobby-host-pseudo');
+    this.lobbyHostReady = document.getElementById('lobby-host-ready');
+    this.lobbyGuestAvatar = document.getElementById('lobby-guest-avatar');
+    this.lobbyGuestPseudo = document.getElementById('lobby-guest-pseudo');
+    this.lobbyGuestReady = document.getElementById('lobby-guest-ready');
+    this.lobbyStatusText = document.getElementById('lobby-status-text');
+    this.btnLobbyToggleReady = document.getElementById('btn-lobby-toggle-ready');
+    this.btnLobbyStartRace = document.getElementById('btn-lobby-start-race');
+    this.btnLobbyLeave = document.getElementById('btn-lobby-leave');
+
+    // Widget Télémétrie Rival en Vol
+    this.hudRivalCard = document.getElementById('hud-rival-card');
+    this.hudRivalAvatar = document.getElementById('hud-rival-avatar');
+    this.hudRivalPseudo = document.getElementById('hud-rival-pseudo');
+    this.hudRivalEnergy = document.getElementById('hud-rival-energy');
+    this.hudRivalDelta = document.getElementById('hud-rival-delta');
+
+    // Modal Résultat de Duel 1v1
+    this.duelResultModal = document.getElementById('duel-result-modal');
+    this.duelResultTitle = document.getElementById('duel-result-title');
+    this.duelResultReason = document.getElementById('duel-result-reason');
+    this.duelMyPseudo = document.getElementById('duel-my-pseudo');
+    this.duelMyDist = document.getElementById('duel-my-dist');
+    this.duelMyCycle = document.getElementById('duel-my-cycle');
+    this.duelRivalPseudo = document.getElementById('duel-rival-pseudo');
+    this.duelRivalDist = document.getElementById('duel-rival-dist');
+    this.duelRivalCycle = document.getElementById('duel-rival-cycle');
+    this.btnDuelRematch = document.getElementById('btn-duel-rematch');
+    this.btnDuelQuit = document.getElementById('btn-duel-quit');
   }
 
   bindEvents() {
@@ -347,11 +412,127 @@ export class UIManager {
       this.btnTrollContinue.addEventListener('pointerdown', handleTrollContinue);
     }
 
-    // 11. Raccourcis clavier (Espace / Entrée / Échap)
+    // 11. Multijoueur 1v1
+    if (this.btnOpenMultiplayer) {
+      this.btnOpenMultiplayer.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openMultiplayerModal();
+      });
+    }
+
+    if (this.btnCloseMultiplayer) {
+      this.btnCloseMultiplayer.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.closeMultiplayerModal();
+      });
+    }
+
+    if (this.tabBtnRooms) {
+      this.tabBtnRooms.addEventListener('click', () => this.switchMpTab('rooms'));
+    }
+    if (this.tabBtnCreate) {
+      this.tabBtnCreate.addEventListener('click', () => this.switchMpTab('create'));
+    }
+    if (this.tabBtnCode) {
+      this.tabBtnCode.addEventListener('click', () => this.switchMpTab('code'));
+    }
+
+    if (this.btnRefreshRooms) {
+      this.btnRefreshRooms.addEventListener('click', () => this.refreshPublicRooms());
+    }
+
+    if (this.formCreateRoom) {
+      this.formCreateRoom.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!this.multiplayer) return;
+        const name = this.inputRoomName?.value || '';
+        const isPriv = !!this.checkboxRoomPrivate?.checked;
+        const cycle = parseInt(this.selectRoomCycle?.value || '0', 10);
+        try {
+          const room = this.multiplayer.createRoom(name, isPriv, cycle);
+          this.renderLobby(room);
+        } catch (err) {
+          alert(err.message || 'Erreur lors de la création de la salle.');
+        }
+      });
+    }
+
+    if (this.formJoinCode) {
+      this.formJoinCode.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!this.multiplayer) return;
+        const code = (this.inputJoinCode?.value || '').trim().toUpperCase();
+        if (!code) {
+          if (this.joinCodeError) {
+            this.joinCodeError.textContent = 'Veuillez saisir un code valide.';
+            this.joinCodeError.classList.remove('hidden');
+          }
+          return;
+        }
+        try {
+          this.multiplayer.joinRoom(code);
+          if (this.joinCodeError) this.joinCodeError.classList.add('hidden');
+        } catch (err) {
+          if (this.joinCodeError) {
+            this.joinCodeError.textContent = err.message || 'Impossible de rejoindre le salon.';
+            this.joinCodeError.classList.remove('hidden');
+          }
+        }
+      });
+    }
+
+    if (this.btnLobbyToggleReady) {
+      this.btnLobbyToggleReady.addEventListener('click', () => {
+        if (this.multiplayer) {
+          const isReady = this.multiplayer.toggleReady();
+          if (this.btnLobbyToggleReady) {
+            this.btnLobbyToggleReady.innerHTML = isReady ? '<span>❌</span> <span>ANNULER PRÊT</span>' : '<span>✅</span> <span>SE DÉCLARER PRÊT</span>';
+          }
+        }
+      });
+    }
+
+    if (this.btnLobbyStartRace) {
+      this.btnLobbyStartRace.addEventListener('click', () => {
+        if (this.multiplayer && this.multiplayer.isHost) {
+          this.multiplayer.startCountdownAndRace();
+        }
+      });
+    }
+
+    if (this.btnLobbyLeave) {
+      this.btnLobbyLeave.addEventListener('click', () => {
+        if (this.multiplayer) this.multiplayer.leaveRoom();
+        this.closeLobbyView();
+      });
+    }
+
+    if (this.btnDuelQuit) {
+      this.btnDuelQuit.addEventListener('click', () => {
+        this.closeDuelResult();
+        this.showStartMenu();
+      });
+    }
+
+    if (this.btnDuelRematch) {
+      this.btnDuelRematch.addEventListener('click', () => {
+        this.closeDuelResult();
+        if (this.multiplayer && this.multiplayer.isInRoom) {
+          this.openMultiplayerModal();
+          this.renderLobby(this.multiplayer.currentRoom);
+        } else {
+          this.openMultiplayerModal();
+        }
+      });
+    }
+
+    // 12. Raccourcis clavier (Espace / Entrée / Échap)
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Escape') {
         if (this.isLeaderboardVisible()) this.closeLeaderboardModal();
         if (this.isGoogleModalVisible()) this.closeGoogleDirectModal();
+        if (this.isMultiplayerModalVisible()) this.closeMultiplayerModal();
+        if (this.isDuelResultVisible()) this.closeDuelResult();
         return;
       }
 
@@ -385,7 +566,9 @@ export class UIManager {
       this.isGoogleModalVisible() ||
       this.isLeaderboardVisible() ||
       this.isGameOverVisible() ||
-      this.isTrollModalVisible()
+      this.isTrollModalVisible() ||
+      this.isMultiplayerModalVisible() ||
+      this.isDuelResultVisible()
     );
   }
 
@@ -843,4 +1026,298 @@ export class UIManager {
   isTrollModalVisible() {
     return this.trollModal && !this.trollModal.classList.contains('hidden');
   }
+
+  // --- GESTION DE L'INTERFACE MULTIJOUEUR 1V1 ---
+  setMultiplayer(mp) {
+    this.multiplayer = mp;
+    if (this.multiplayer) {
+      this.multiplayer.onRoomUpdate = (room) => this.renderLobby(room);
+      this.multiplayer.onRoomsListChanged = (rooms) => this.renderPublicRooms(rooms);
+      this.multiplayer.onDuelStart = (startCycle) => {
+        this.closeMultiplayerModal();
+        this.hideStartMenu();
+        if (this.hudRivalCard) this.hudRivalCard.classList.remove('hidden');
+        if (window.gameApp) {
+          window.gameApp.startMultiplayerGame(startCycle);
+        }
+      };
+      this.multiplayer.onDuelEnd = (result) => {
+        this.showDuelResult(result);
+      };
+      this.multiplayer.onRivalTelemetry = (data) => {
+        const myDist = window.gameApp ? window.gameApp.distance : 0;
+        this.updateRivalTelemetry(data, data.distance - myDist);
+      };
+    }
+  }
+
+  openMultiplayerModal() {
+    if (!this.auth || !this.auth.isAuthenticated()) {
+      this.openGoogleDirectModal();
+      return;
+    }
+    if (!this.auth.hasPseudo()) {
+      this.openPseudoModal();
+      return;
+    }
+
+    if (this.multiplayerModal) {
+      this.multiplayerModal.classList.remove('hidden');
+      if (this.multiplayer && this.multiplayer.isInRoom) {
+        this.renderLobby(this.multiplayer.currentRoom);
+      } else {
+        this.switchMpTab('rooms');
+        this.refreshPublicRooms();
+      }
+    }
+  }
+
+  closeMultiplayerModal() {
+    if (this.multiplayerModal) this.multiplayerModal.classList.add('hidden');
+  }
+
+  isMultiplayerModalVisible() {
+    return this.multiplayerModal && !this.multiplayerModal.classList.contains('hidden');
+  }
+
+  switchMpTab(tabName) {
+    if (this.mpLobbyView) this.mpLobbyView.classList.add('hidden');
+    if (this.mpTabsNav) this.mpTabsNav.classList.remove('hidden');
+
+    [this.tabBtnRooms, this.tabBtnCreate, this.tabBtnCode].forEach(btn => {
+      if (btn) btn.classList.remove('active');
+    });
+
+    [this.mpViewRooms, this.mpViewCreate, this.mpViewCode].forEach(v => {
+      if (v) v.classList.add('hidden');
+    });
+
+    if (tabName === 'rooms') {
+      if (this.tabBtnRooms) this.tabBtnRooms.classList.add('active');
+      if (this.mpViewRooms) this.mpViewRooms.classList.remove('hidden');
+      this.refreshPublicRooms();
+    } else if (tabName === 'create') {
+      if (this.tabBtnCreate) this.tabBtnCreate.classList.add('active');
+      if (this.mpViewCreate) this.mpViewCreate.classList.remove('hidden');
+    } else if (tabName === 'code') {
+      if (this.tabBtnCode) this.tabBtnCode.classList.add('active');
+      if (this.mpViewCode) this.mpViewCode.classList.remove('hidden');
+    }
+  }
+
+  refreshPublicRooms() {
+    if (!this.multiplayer) return;
+    const rooms = this.multiplayer.getPublicRooms();
+    this.renderPublicRooms(rooms);
+  }
+
+  renderPublicRooms(rooms) {
+    if (!this.mpRoomsList) return;
+    this.mpRoomsList.innerHTML = '';
+
+    const available = (rooms || []).filter(r => r.status === 'waiting' && !r.isPrivate);
+
+    if (available.length === 0) {
+      this.mpRoomsList.innerHTML = `
+        <div class="mp-empty-state">
+          Aucun salon public disponible pour le moment.<br>
+          Créez le vôtre dans l'onglet « CRÉER UN SALON » ou partagez un code privé !
+        </div>
+      `;
+      return;
+    }
+
+    available.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'mp-room-item';
+      const avatarSrc = r.host.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(r.host.pseudo)}&backgroundColor=020617`;
+      const cycleName = (CYCLES_NAMES && CYCLES_NAMES[r.startCycleIndex]) ? CYCLES_NAMES[r.startCycleIndex] : `Cycle ${(r.startCycleIndex || 0) + 1}`;
+
+      item.innerHTML = `
+        <div class="room-host-info">
+          <img class="room-host-avatar" src="${avatarSrc}" alt="${r.host.pseudo}" />
+          <div class="room-texts">
+            <span class="room-name">${r.name}</span>
+            <span class="room-meta">Hôte: <strong>@${r.host.pseudo}</strong> &bull; Départ: ${cycleName}</span>
+          </div>
+        </div>
+        <button class="btn-join-room" type="button" data-room-id="${r.roomId}">
+          REJOINDRE LE DUEL
+        </button>
+      `;
+
+      item.querySelector('.btn-join-room').addEventListener('click', () => {
+        if (this.multiplayer) {
+          try {
+            this.multiplayer.joinRoom(r.roomId);
+          } catch (err) {
+            alert(err.message || 'Impossible de rejoindre le salon.');
+          }
+        }
+      });
+
+      this.mpRoomsList.appendChild(item);
+    });
+  }
+
+  renderLobby(room) {
+    if (!room) return;
+
+    if (this.mpTabsNav) this.mpTabsNav.classList.add('hidden');
+    [this.mpViewRooms, this.mpViewCreate, this.mpViewCode].forEach(v => {
+      if (v) v.classList.add('hidden');
+    });
+
+    if (this.mpLobbyView) this.mpLobbyView.classList.remove('hidden');
+
+    if (this.lobbyRoomName) this.lobbyRoomName.textContent = room.name || 'Salon 1v1';
+    if (this.lobbyRoomCode) this.lobbyRoomCode.textContent = room.roomId || 'INFI-XXXX';
+
+    // Infos Hôte
+    if (this.lobbyHostPseudo) this.lobbyHostPseudo.textContent = `@${room.host.pseudo}`;
+    if (this.lobbyHostAvatar) {
+      this.lobbyHostAvatar.src = room.host.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(room.host.pseudo)}&backgroundColor=020617`;
+    }
+    if (this.lobbyHostReady) {
+      if (room.hostReady) {
+        this.lobbyHostReady.textContent = 'PRÊT !';
+        this.lobbyHostReady.className = 'lobby-ready-tag ready';
+      } else {
+        this.lobbyHostReady.textContent = 'EN ATTENTE';
+        this.lobbyHostReady.className = 'lobby-ready-tag not-ready';
+      }
+    }
+
+    // Infos Guest
+    if (room.guest) {
+      if (this.lobbyGuestPseudo) this.lobbyGuestPseudo.textContent = `@${room.guest.pseudo}`;
+      if (this.lobbyGuestAvatar) {
+        this.lobbyGuestAvatar.src = room.guest.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(room.guest.pseudo)}&backgroundColor=020617`;
+      }
+      if (this.lobbyGuestReady) {
+        if (room.guestReady) {
+          this.lobbyGuestReady.textContent = 'PRÊT !';
+          this.lobbyGuestReady.className = 'lobby-ready-tag ready';
+        } else {
+          this.lobbyGuestReady.textContent = 'EN PRÉPARATION';
+          this.lobbyGuestReady.className = 'lobby-ready-tag not-ready';
+        }
+      }
+      if (this.lobbyStatusText) {
+        if (room.hostReady && room.guestReady) {
+          this.lobbyStatusText.textContent = 'Les 2 pilotes sont prêts ! Lancement du duel imminent !';
+          this.lobbyStatusText.style.color = '#4ade80';
+        } else {
+          this.lobbyStatusText.textContent = 'Adversaire connecté ! Cliquez sur « SE DÉCLARER PRÊT »';
+          this.lobbyStatusText.style.color = '#facc15';
+        }
+      }
+    } else {
+      if (this.lobbyGuestPseudo) this.lobbyGuestPseudo.textContent = 'En attente...';
+      if (this.lobbyGuestAvatar) this.lobbyGuestAvatar.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=waiting&backgroundColor=020617';
+      if (this.lobbyGuestReady) {
+        this.lobbyGuestReady.textContent = 'NON CONNECTÉ';
+        this.lobbyGuestReady.className = 'lobby-ready-tag not-ready';
+      }
+      if (this.lobbyStatusText) {
+        this.lobbyStatusText.textContent = `Partagez le code [ ${room.roomId} ] pour inviter un ami ou attendez un joueur public.`;
+        this.lobbyStatusText.style.color = '#94a3b8';
+      }
+    }
+
+    // Déverrouillage du bouton de lancement pour l'hôte
+    if (this.btnLobbyStartRace) {
+      const canStart = this.multiplayer && this.multiplayer.isHost && room.guest && room.hostReady && room.guestReady;
+      if (canStart) {
+        this.btnLobbyStartRace.classList.remove('locked');
+      } else {
+        this.btnLobbyStartRace.classList.add('locked');
+      }
+    }
+  }
+
+  closeLobbyView() {
+    if (this.mpLobbyView) this.mpLobbyView.classList.add('hidden');
+    if (this.mpTabsNav) this.mpTabsNav.classList.remove('hidden');
+    this.switchMpTab('rooms');
+  }
+
+  updateRivalTelemetry(data, deltaDistance) {
+    if (!data) return;
+    if (this.hudRivalCard && this.hudRivalCard.classList.contains('hidden')) {
+      this.hudRivalCard.classList.remove('hidden');
+    }
+    if (this.hudRivalPseudo && this.multiplayer && this.multiplayer.opponentUser) {
+      this.hudRivalPseudo.textContent = `@${this.multiplayer.opponentUser.pseudo}`;
+    }
+    if (this.hudRivalAvatar && this.multiplayer && this.multiplayer.opponentUser) {
+      this.hudRivalAvatar.src = this.multiplayer.opponentUser.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(this.multiplayer.opponentUser.pseudo)}&backgroundColor=020617`;
+    }
+    if (this.hudRivalEnergy) {
+      const e = Math.max(0, Math.min(100, data.energy || 0));
+      this.hudRivalEnergy.style.width = `${e}%`;
+    }
+    if (this.hudRivalDelta) {
+      const d = Math.round(deltaDistance || 0);
+      this.hudRivalDelta.textContent = d >= 0 ? `+${d} M` : `${d} M`;
+      this.hudRivalDelta.style.color = d >= 0 ? '#4ade80' : '#f87171';
+    }
+  }
+
+  hideRivalTelemetry() {
+    if (this.hudRivalCard) this.hudRivalCard.classList.add('hidden');
+  }
+
+  showDuelResult(result) {
+    if (!this.duelResultModal) return;
+    this.duelResultModal.classList.remove('hidden');
+
+    const isWinner = !!result.isWinner;
+    if (this.duelResultTitle) {
+      this.duelResultTitle.textContent = isWinner ? '🏆 VICTOIRE ÉCLATANTE !' : '💀 DÉFAITE HONORABLE !';
+      this.duelResultTitle.style.color = isWinner ? '#4ade80' : '#f87171';
+    }
+    if (this.duelResultReason) {
+      this.duelResultReason.textContent = result.reason || (isWinner ? 'Vous avez survécu le plus loin !' : 'Votre vaisseau a été neutralisé.');
+    }
+
+    const myUser = this.auth ? this.auth.getUser() : null;
+    const rivalUser = this.multiplayer ? this.multiplayer.opponentUser : null;
+
+    if (this.duelMyPseudo) this.duelMyPseudo.textContent = myUser ? `@${myUser.pseudo}` : '@VOUS';
+    if (this.duelRivalPseudo) this.duelRivalPseudo.textContent = rivalUser ? `@${rivalUser.pseudo}` : '@RIVAL';
+
+    const myDist = window.gameApp ? Math.round(window.gameApp.distance) : 0;
+    const myCycle = window.gameApp && window.gameApp.world ? window.gameApp.world.cycle.name : 'Cycle 1';
+
+    if (this.duelMyDist) this.duelMyDist.textContent = `${myDist} M`;
+    if (this.duelMyCycle) this.duelMyCycle.textContent = myCycle;
+
+    if (this.duelRivalDist) this.duelRivalDist.textContent = `${Math.round(result.rivalDistance || 0)} M`;
+    if (this.duelRivalCycle) {
+      const cIdx = typeof result.rivalCycle === 'number' ? result.rivalCycle : 0;
+      this.duelRivalCycle.textContent = (CYCLES_NAMES && CYCLES_NAMES[cIdx]) ? CYCLES_NAMES[cIdx] : `Cycle ${cIdx + 1}`;
+    }
+  }
+
+  closeDuelResult() {
+    if (this.duelResultModal) this.duelResultModal.classList.add('hidden');
+    this.hideRivalTelemetry();
+  }
+
+  isDuelResultVisible() {
+    return this.duelResultModal && !this.duelResultModal.classList.contains('hidden');
+  }
 }
+
+const CYCLES_NAMES = [
+  'Chute (Eau)',
+  'Résilience (Terre)',
+  'Obsession (Feu)',
+  'Amour (Électricité)',
+  'Bonheur (Lumière)',
+  'Chaos (Ombre)',
+  'Ambition (Vent)',
+  'Folie (Cosmos)'
+];
+

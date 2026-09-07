@@ -385,4 +385,173 @@ export function getLaserBeamTexture() {
   return texture;
 }
 
+/**
+ * Texture de bouclier quantique haute-technologie (Nanocristallin avec circuits émissifs)
+ */
+export function getQuantumShieldTexture() {
+  if (textureCache.quantumShield) return textureCache.quantumShield;
 
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  ctx.clearRect(0, 0, 512, 512);
+
+  // 1. Fond semi-transparent azuré
+  ctx.fillStyle = 'rgba(2, 28, 48, 0.25)';
+  ctx.fillRect(0, 0, 512, 512);
+
+  // 2. Grille de cellules triangulaires / hexagonales cristallines
+  const r = 36;
+  const h = r * Math.sqrt(3);
+
+  const drawNanoNode = (x, y) => {
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = '#00f0ff';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  };
+
+  const drawQuantumFacet = (x, y, radius) => {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i;
+      const nx = x + radius * Math.cos(angle);
+      const ny = y + radius * Math.sin(angle);
+      if (i === 0) ctx.moveTo(nx, ny);
+      else ctx.lineTo(nx, ny);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Diagonales internes vers le centre
+    for (let i = 0; i < 6; i += 2) {
+      const angle = (Math.PI / 3) * i;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + radius * Math.cos(angle), y + radius * Math.sin(angle));
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+    drawNanoNode(x, y);
+  };
+
+  for (let y = -h; y < 512 + h * 2; y += h) {
+    for (let x = -r * 3; x < 512 + r * 3; x += r * 3) {
+      drawQuantumFacet(x, y, r - 2);
+      drawQuantumFacet(x + 1.5 * r, y + h / 2, r - 2);
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(3, 3);
+  texture.needsUpdate = true;
+  textureCache.quantumShield = texture;
+  return texture;
+}
+
+/**
+ * Texture de glyphe d'énergie radiale sacrée (Aura au sol Super Saiyan)
+ */
+export function getGroundGlyphTexture() {
+  if (textureCache.groundGlyph) return textureCache.groundGlyph;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const cx = 256, cy = 256;
+
+  ctx.clearRect(0, 0, 512, 512);
+
+  // Cercle central avec rayons de soleil
+  const grad = ctx.createRadialGradient(cx, cy, 20, cx, cy, 250);
+  grad.addColorStop(0.0, 'rgba(255, 255, 255, 0.95)');
+  grad.addColorStop(0.18, 'rgba(254, 240, 138, 0.85)');
+  grad.addColorStop(0.55, 'rgba(234, 179, 8, 0.35)');
+  grad.addColorStop(0.85, 'rgba(217, 119, 6, 0.12)');
+  grad.addColorStop(1.0, 'rgba(180, 83, 9, 0.0)');
+
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 250, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Rayons d'énergie géométriques
+  ctx.strokeStyle = 'rgba(255, 234, 0, 0.85)';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = '#f59e0b';
+  ctx.shadowBlur = 18;
+
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2;
+    const len = (i % 2 === 0) ? 230 : 180;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * 50, cy + Math.sin(a) * 50);
+    ctx.lineTo(cx + Math.cos(a) * len, cy + Math.sin(a) * len);
+    ctx.stroke();
+  }
+
+  // Anneaux concentriques runiques
+  ctx.beginPath();
+  ctx.arc(cx, cy, 90, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 150, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 210, 0, Math.PI * 2);
+  ctx.stroke();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  textureCache.groundGlyph = texture;
+  return texture;
+}
+
+/**
+ * Texture de fissure magmatique incandescente (Cycle 3 Feu & Terre)
+ */
+export function getMagmaCrackTexture() {
+  if (textureCache.magmaCrack) return textureCache.magmaCrack;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#0a0202';
+  ctx.fillRect(0, 0, 256, 256);
+
+  // Fissures luminescentes de lave
+  ctx.shadowColor = '#f97316';
+  ctx.shadowBlur = 14;
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.moveTo(0, 128);
+  ctx.quadraticCurveTo(80, 90, 128, 140);
+  ctx.quadraticCurveTo(180, 200, 256, 120);
+  ctx.moveTo(128, 140);
+  ctx.lineTo(110, 256);
+  ctx.moveTo(80, 90);
+  ctx.lineTo(70, 0);
+  ctx.stroke();
+
+  // Cœur jaune éclatant
+  ctx.strokeStyle = '#fef08a';
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.needsUpdate = true;
+  textureCache.magmaCrack = texture;
+  return texture;
+}

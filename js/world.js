@@ -840,8 +840,24 @@ export class World {
       if (prop.mesh.position.z > 25) {
         prop.mesh.position.z -= 280;
       }
-      const s = 1.0 + audioPulse * 0.07;
+      const s = 1.0 + audioPulse * 0.08;
       prop.mesh.scale.set(s, s, s);
+
+      // Animation dynamique des anneaux orbitaux et orbes des monuments
+      if (prop.mesh.children && prop.mesh.children.length > 1) {
+        for (let c = 1; c < prop.mesh.children.length; c++) {
+          const child = prop.mesh.children[c];
+          if (child.geometry) {
+            const type = child.geometry.type || '';
+            if (type.includes('Torus')) {
+              child.rotation.z += (prop.side > 0 ? 1.5 : -1.5) * dt;
+            } else if (type.includes('Octahedron') || type.includes('Sphere')) {
+              child.rotation.y += 1.6 * dt;
+              child.position.y += Math.sin(performance.now() * 0.003 + prop.mesh.position.z * 0.05) * 0.02;
+            }
+          }
+        }
+      }
     }
   }
 

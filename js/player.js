@@ -8,6 +8,8 @@ import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import {
   getSoftGlowTexture,
   getShieldHexTexture,
+  getQuantumShieldTexture,
+  getGroundGlyphTexture,
   getSaiyanAuraTexture,
   getLaserBeamTexture,
   getSparkTexture
@@ -483,37 +485,104 @@ export class Player {
     this.disParticles.geometry.attributes.position.needsUpdate = true;
   }
 
-  // --- 1. SYSTÈME DE BOUCLIER D'ARMURE (1-HIT PROTECTION) ---
+  // --- 1. SYSTÈME DE BOUCLIER D'ARMURE HAUTE TECHNOLOGIE (1-HIT PROTECTION) ---
   createShieldMesh() {
     this.shieldGroup = new THREE.Group();
     this.shieldGroup.visible = false;
     this.avatar.add(this.shieldGroup);
 
-    // Sphère holographique d'énergie hexagonale translucide
-    const shieldGeo = new THREE.SphereGeometry(2.15, 32, 32);
-    this.shieldMat = new THREE.MeshBasicMaterial({
-      map: getShieldHexTexture(),
+    // A. Coque cristalline icosaédrique externe (Nanomesh quantique)
+    const facetGeo = new THREE.IcosahedronGeometry(2.36, 2);
+    this.shieldFacetMat = new THREE.MeshBasicMaterial({
+      map: getQuantumShieldTexture(),
       color: 0x00f0ff,
       transparent: true,
-      opacity: 0.68,
+      opacity: 0.72,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
-    this.shieldMesh = new THREE.Mesh(shieldGeo, this.shieldMat);
-    this.shieldGroup.add(this.shieldMesh);
+    this.shieldFacetMesh = new THREE.Mesh(facetGeo, this.shieldFacetMat);
+    this.shieldGroup.add(this.shieldFacetMesh);
 
-    // Anneau de déflexion énergétique orbital
-    const ringGeo = new THREE.TorusGeometry(2.4, 0.05, 16, 48);
-    const ringMat = new THREE.MeshBasicMaterial({
+    // B. Sphère énergétique hexagonale interne (Flux plasmique)
+    const innerGeo = new THREE.SphereGeometry(2.12, 32, 32);
+    this.shieldInnerMat = new THREE.MeshBasicMaterial({
+      map: getShieldHexTexture(),
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.52,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.shieldInnerMesh = new THREE.Mesh(innerGeo, this.shieldInnerMat);
+    this.shieldGroup.add(this.shieldInnerMesh);
+
+    // C. Doubles anneaux gyroscopiques contrarotatifs avec émetteurs quantiques
+    const ringGeo1 = new THREE.TorusGeometry(2.58, 0.045, 16, 64);
+    const ringMat1 = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.92,
+      blending: THREE.AdditiveBlending
+    });
+    this.shieldRing1 = new THREE.Mesh(ringGeo1, ringMat1);
+    this.shieldRing1.rotation.x = Math.PI / 3;
+    this.shieldGroup.add(this.shieldRing1);
+
+    // Satellites émetteurs sur l'anneau 1
+    const satGeo = new THREE.OctahedronGeometry(0.12);
+    const satMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    this.shieldSatellites = [];
+    for (let i = 0; i < 4; i++) {
+      const sat = new THREE.Mesh(satGeo, satMat);
+      const angle = (i / 4) * Math.PI * 2;
+      sat.position.set(Math.cos(angle) * 2.58, Math.sin(angle) * 2.58, 0);
+      this.shieldRing1.add(sat);
+      this.shieldSatellites.push(sat);
+    }
+
+    const ringGeo2 = new THREE.TorusGeometry(2.76, 0.04, 16, 64);
+    const ringMat2 = new THREE.MeshBasicMaterial({
       color: 0x38bdf8,
       transparent: true,
       opacity: 0.85,
       blending: THREE.AdditiveBlending
     });
-    this.shieldRing = new THREE.Mesh(ringGeo, ringMat);
-    this.shieldRing.rotation.x = Math.PI / 3;
-    this.shieldGroup.add(this.shieldRing);
+    this.shieldRing2 = new THREE.Mesh(ringGeo2, ringMat2);
+    this.shieldRing2.rotation.y = Math.PI / 4;
+    this.shieldRing2.rotation.z = -Math.PI / 6;
+    this.shieldGroup.add(this.shieldRing2);
+
+    // D. Arcs électriques plasmiques dans le bouclier
+    this.plasmaArcCount = 12;
+    const arcGeo = new THREE.BufferGeometry();
+    this.plasmaArcPositions = new Float32Array(this.plasmaArcCount * 6);
+    arcGeo.setAttribute('position', new THREE.BufferAttribute(this.plasmaArcPositions, 3));
+    this.plasmaArcMat = new THREE.LineBasicMaterial({
+      color: 0xe0f2fe,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
+    this.plasmaArcs = new THREE.LineSegments(arcGeo, this.plasmaArcMat);
+    this.shieldGroup.add(this.plasmaArcs);
+
+    // E. Onde de choc d'absorption
+    const shockGeo = new THREE.RingGeometry(0.4, 2.6, 32);
+    this.shieldShockMat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.0,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.shieldShockwave = new THREE.Mesh(shockGeo, this.shieldShockMat);
+    this.shieldShockwave.rotation.x = -Math.PI / 2;
+    this.shieldGroup.add(this.shieldShockwave);
+    this.shockwaveTimer = 0;
   }
 
   equipShield(audioManager) {
@@ -526,6 +595,7 @@ export class Player {
   absorbHit(audioManager) {
     if (this.hasShield) {
       this.armorCount--;
+      this.shockwaveTimer = 0.55; // Déclenche l'onde de choc visuelle
       if (this.armorCount <= 0) {
         this.hasShield = false;
         if (this.shieldGroup) this.shieldGroup.visible = false;
@@ -537,57 +607,135 @@ export class Player {
     return false;
   }
 
-  // --- 2. SYSTÈME SAYANFINITY (SUPER SAIYAN 20 SECONDES) ---
+  // --- 2. SYSTÈME SAYANFINITY LÉGENDAIRE (SUPER SAIYAN AVEC ÉCLAIRS SSJ2 & DÉBRIS EN LÉVITATION) ---
   createSaiyanAura() {
     this.saiyanGroup = new THREE.Group();
     this.saiyanGroup.visible = false;
     this.avatar.add(this.saiyanGroup);
 
-    // A. Enveloppe de flammes de Ki dorées montantes
-    const auraGeo = new THREE.ConeGeometry(2.3, 5.4, 24, 8, true);
-    this.saiyanAuraMat = new THREE.MeshBasicMaterial({
-      color: 0xfacc15,
+    // A. Cœur de flamme incandescent blanc-or
+    const coreGeo = new THREE.CylinderGeometry(0.6, 2.1, 5.4, 16, 4, true);
+    this.saiyanCoreMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.75,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
-    this.saiyanCone = new THREE.Mesh(auraGeo, this.saiyanAuraMat);
-    this.saiyanCone.position.y = 0.5;
-    this.saiyanGroup.add(this.saiyanCone);
+    this.saiyanCore = new THREE.Mesh(coreGeo, this.saiyanCoreMat);
+    this.saiyanCore.position.y = 0.6;
+    this.saiyanGroup.add(this.saiyanCore);
 
-    // B. Pics de flammes Ki autour du corps
+    // B. Manteau de flammes Ki dorées externes
+    const coronaGeo = new THREE.CylinderGeometry(0.9, 3.2, 6.2, 16, 4, true);
+    this.saiyanCoronaMat = new THREE.MeshBasicMaterial({
+      map: getSaiyanAuraTexture(),
+      color: 0xfacc15,
+      transparent: true,
+      opacity: 0.88,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.saiyanCorona = new THREE.Mesh(coronaGeo, this.saiyanCoronaMat);
+    this.saiyanCorona.position.y = 0.7;
+    this.saiyanGroup.add(this.saiyanCorona);
+
+    // C. 8 Piques de Ki d'énergie Super Saiyan
     this.kiSpikes = [];
-    const spikeGeo = new THREE.ConeGeometry(0.42, 3.2, 8);
+    const spikeGeo = new THREE.ConeGeometry(0.48, 3.8, 8);
     const spikeMat = new THREE.MeshBasicMaterial({
       color: 0xffea00,
       transparent: true,
-      opacity: 0.88,
+      opacity: 0.92,
       blending: THREE.AdditiveBlending
     });
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
       const sp = new THREE.Mesh(spikeGeo, spikeMat);
-      const angle = (i / 6) * Math.PI * 2;
-      sp.position.set(Math.cos(angle) * 1.15, 0.8, Math.sin(angle) * 1.15);
-      sp.rotation.z = Math.cos(angle) * 0.25;
-      sp.rotation.x = Math.sin(angle) * 0.25;
+      const angle = (i / 8) * Math.PI * 2;
+      sp.position.set(Math.cos(angle) * 1.35, 0.9, Math.sin(angle) * 1.35);
+      sp.rotation.z = Math.cos(angle) * 0.28;
+      sp.rotation.x = Math.sin(angle) * 0.28;
       this.saiyanGroup.add(sp);
       this.kiSpikes.push(sp);
     }
 
-    // C. Particules de Ki doré montant en tourbillon
-    this.kiParticleCount = 90;
+    // D. Éclairs électriques SSJ2 ramifiés ultra-rapides
+    this.lightningBoltsCount = 8;
+    this.lightningSegsPerBolt = 5;
+    const totalLightningVerts = this.lightningBoltsCount * this.lightningSegsPerBolt * 2;
+    const lightningGeo = new THREE.BufferGeometry();
+    this.lightningPositions = new Float32Array(totalLightningVerts * 3);
+    lightningGeo.setAttribute('position', new THREE.BufferAttribute(this.lightningPositions, 3));
+    this.lightningMat = new THREE.LineBasicMaterial({
+      color: 0x93c5fd,
+      linewidth: 2,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending
+    });
+    this.ssj2Lightning = new THREE.LineSegments(lightningGeo, this.lightningMat);
+    this.saiyanGroup.add(this.ssj2Lightning);
+    this.lightningTimer = 0;
+
+    // E. Fragments rocheux et cristaux défiant la gravité (Lévitation SSJ)
+    this.rockCount = 14;
+    this.levitationRocks = [];
+    const rockGeo = new THREE.DodecahedronGeometry(0.24);
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: 0x271e0c,
+      emissive: 0xf59e0b,
+      emissiveIntensity: 1.8,
+      roughness: 0.4,
+      metalness: 0.6
+    });
+    for (let i = 0; i < this.rockCount; i++) {
+      const rock = new THREE.Mesh(rockGeo, rockMat);
+      rock.scale.set(
+        0.5 + Math.random() * 0.8,
+        0.5 + Math.random() * 0.8,
+        0.5 + Math.random() * 0.8
+      );
+      this.saiyanGroup.add(rock);
+      this.levitationRocks.push({
+        mesh: rock,
+        angle: (i / this.rockCount) * Math.PI * 2,
+        dist: 1.4 + Math.random() * 1.2,
+        y: Math.random() * 4.5 - 1.5,
+        speedY: 2.5 + Math.random() * 3.5,
+        rotSpeed: 2.0 + Math.random() * 4.0
+      });
+    }
+
+    // F. Glyphe d'énergie radiale sacrée au sol
+    const glyphGeo = new THREE.PlaneGeometry(6.4, 6.4);
+    this.glyphMat = new THREE.MeshBasicMaterial({
+      map: getGroundGlyphTexture(),
+      color: 0xfef08a,
+      transparent: true,
+      opacity: 0.88,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.groundGlyph = new THREE.Mesh(glyphGeo, this.glyphMat);
+    this.groundGlyph.rotation.x = -Math.PI / 2;
+    this.groundGlyph.position.y = -1.2;
+    this.saiyanGroup.add(this.groundGlyph);
+
+    // G. Particules de Ki doré montant en tourbillon
+    this.kiParticleCount = 120;
     const kiGeo = new THREE.BufferGeometry();
     this.kiPos = new Float32Array(this.kiParticleCount * 3);
     this.kiSeeds = [];
     for (let i = 0; i < this.kiParticleCount; i++) {
       this.kiSeeds.push({
         angle: Math.random() * Math.PI * 2,
-        radius: 0.8 + Math.random() * 1.4,
-        y: Math.random() * 4.0 - 1.5,
-        speedY: 4.5 + Math.random() * 5.5,
-        rotSpeed: 3.0 + Math.random() * 4.0
+        radius: 0.8 + Math.random() * 1.8,
+        y: Math.random() * 5.0 - 1.8,
+        speedY: 5.5 + Math.random() * 6.5,
+        rotSpeed: 3.5 + Math.random() * 4.5
       });
       this.kiPos[i * 3] = 0;
       this.kiPos[i * 3 + 1] = 0;
@@ -596,10 +744,10 @@ export class Player {
     kiGeo.setAttribute('position', new THREE.BufferAttribute(this.kiPos, 3));
 
     this.kiMat = new THREE.PointsMaterial({
-      size: 2.8,
+      size: 3.2,
       map: getSaiyanAuraTexture(),
       transparent: true,
-      opacity: 0.95,
+      opacity: 0.98,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
@@ -607,8 +755,8 @@ export class Player {
     this.saiyanGroup.add(this.kiPoints);
 
     // Lumière divine de Super Saiyan
-    this.saiyanLight = new THREE.PointLight(0xfacc15, 3.5, 14.0);
-    this.saiyanLight.position.set(0, 1.0, 0);
+    this.saiyanLight = new THREE.PointLight(0xfacc15, 4.8, 18.0);
+    this.saiyanLight.position.set(0, 1.2, 0);
     this.saiyanGroup.add(this.saiyanLight);
   }
 
@@ -831,13 +979,60 @@ export class Player {
     // 8. Mise à jour des tirs laser Star Fox
     this.updateLasers(dt);
 
-    // 9. Mise à jour du Bouclier d'Armure (1-Hit Protection)
+    // 9. Animation du Bouclier d'Armure Haute Technologie (1-Hit Protection)
     if (this.hasShield && this.shieldGroup) {
       this.shieldGroup.visible = true;
-      this.shieldMesh.rotation.y += 1.6 * dt;
-      this.shieldMesh.rotation.z += 1.1 * dt;
-      this.shieldRing.rotation.z += 2.4 * dt;
-      const shieldPulse = 1.0 + Math.sin(time * 6.0) * 0.05 + bassEnergy * 0.12;
+
+      // Rotations contrarotatives de la coque cristalline et de la sphère intérieure
+      if (this.shieldFacetMesh) {
+        this.shieldFacetMesh.rotation.y += 1.35 * dt;
+        this.shieldFacetMesh.rotation.z += 0.75 * dt;
+      }
+      if (this.shieldInnerMesh) {
+        this.shieldInnerMesh.rotation.y -= 1.15 * dt;
+        this.shieldInnerMesh.rotation.x += 0.85 * dt;
+      }
+
+      // Anneaux gyroscopiques orbitaux
+      if (this.shieldRing1) this.shieldRing1.rotation.z += 2.2 * dt;
+      if (this.shieldRing2) {
+        this.shieldRing2.rotation.z -= 1.9 * dt;
+        this.shieldRing2.rotation.x += 0.6 * dt;
+      }
+
+      // Arcs plasmiques crépitant à la surface du bouclier
+      if (this.plasmaArcs && Math.random() < 0.35) {
+        const arcPos = this.plasmaArcs.geometry.attributes.position.array;
+        for (let i = 0; i < this.plasmaArcCount; i++) {
+          const u = Math.random() * Math.PI * 2;
+          const v = Math.acos(2 * Math.random() - 1);
+          const r1 = 2.18;
+          const r2 = 2.32;
+          arcPos[i * 6] = Math.sin(v) * Math.cos(u) * r1;
+          arcPos[i * 6 + 1] = Math.cos(v) * r1;
+          arcPos[i * 6 + 2] = Math.sin(v) * Math.sin(u) * r1;
+
+          const u2 = u + (Math.random() - 0.5) * 0.6;
+          const v2 = v + (Math.random() - 0.5) * 0.6;
+          arcPos[i * 6 + 3] = Math.sin(v2) * Math.cos(u2) * r2;
+          arcPos[i * 6 + 4] = Math.cos(v2) * r2;
+          arcPos[i * 6 + 5] = Math.sin(v2) * Math.sin(u2) * r2;
+        }
+        this.plasmaArcs.geometry.attributes.position.needsUpdate = true;
+      }
+
+      // Onde de choc après absorption d'un impact
+      if (this.shockwaveTimer > 0 && this.shieldShockwave) {
+        this.shockwaveTimer -= dt;
+        const progress = 1.0 - (this.shockwaveTimer / 0.55);
+        const sc = 1.0 + progress * 2.6;
+        this.shieldShockwave.scale.set(sc, sc, sc);
+        this.shieldShockMat.opacity = Math.max(0, 1.0 - progress);
+      } else if (this.shieldShockwave) {
+        this.shieldShockMat.opacity = 0;
+      }
+
+      const shieldPulse = 1.0 + Math.sin(time * 6.5) * 0.04 + bassEnergy * 0.14;
       this.shieldGroup.scale.set(shieldPulse, shieldPulse, shieldPulse);
     } else if (this.shieldGroup) {
       this.shieldGroup.visible = false;
@@ -852,23 +1047,85 @@ export class Player {
       }
     }
 
-    // 11. Animation de l'Aura SAYANFINITY (Super Saiyan 20 secondes)
+    // 11. Animation de l'Aura SAYANFINITY Légendaire (Super Saiyan avec Éclairs SSJ2 & Débris)
     if (this.saiyanTimer > 0 && this.saiyanGroup) {
       this.saiyanTimer -= dt;
       this.saiyanGroup.visible = true;
 
-      // Pulsation et rotation de l'aura
-      const saiyanPulse = 1.0 + Math.sin(time * 12.0) * 0.14 + bassEnergy * 0.25;
-      this.saiyanCone.scale.set(saiyanPulse, 1.0 + Math.sin(time * 8.0) * 0.1, saiyanPulse);
-      this.saiyanCone.rotation.y += 4.5 * dt;
+      // Pulsation et rotation des flammes de Ki
+      const saiyanPulse = 1.0 + Math.sin(time * 14.0) * 0.12 + bassEnergy * 0.28;
+      if (this.saiyanCore) {
+        this.saiyanCore.scale.set(saiyanPulse, 1.0 + Math.sin(time * 10.0) * 0.1, saiyanPulse);
+        this.saiyanCore.rotation.y -= 4.8 * dt;
+      }
+      if (this.saiyanCorona) {
+        this.saiyanCorona.scale.set(saiyanPulse * 1.05, 1.0 + Math.cos(time * 9.0) * 0.12, saiyanPulse * 1.05);
+        this.saiyanCorona.rotation.y += 3.6 * dt;
+      }
 
       // Animation des pics de flammes
       if (this.kiSpikes) {
         for (let i = 0; i < this.kiSpikes.length; i++) {
           const sp = this.kiSpikes[i];
-          const spPhase = time * 10.0 + i * 1.2;
-          sp.scale.set(1.0 + Math.sin(spPhase) * 0.25, 1.0 + Math.cos(spPhase) * 0.35, 1.0);
+          const spPhase = time * 12.0 + i * 0.9;
+          sp.scale.set(1.0 + Math.sin(spPhase) * 0.28, 1.0 + Math.cos(spPhase) * 0.38, 1.0);
         }
+      }
+
+      // Éclairs électriques SSJ2 ramifiés ultra-rapides
+      this.lightningTimer = (this.lightningTimer || 0) + dt;
+      if (this.ssj2Lightning && this.lightningTimer > 0.045) {
+        this.lightningTimer = 0;
+        const lPos = this.ssj2Lightning.geometry.attributes.position.array;
+        let pIdx = 0;
+
+        for (let b = 0; b < this.lightningBoltsCount; b++) {
+          let currX = (Math.random() - 0.5) * 1.2;
+          let currY = Math.random() * 2.8 - 0.5;
+          let currZ = (Math.random() - 0.5) * 1.2;
+
+          for (let s = 0; s < this.lightningSegsPerBolt; s++) {
+            lPos[pIdx++] = currX;
+            lPos[pIdx++] = currY;
+            lPos[pIdx++] = currZ;
+
+            currX += (Math.random() - 0.5) * 0.9;
+            currY += (Math.random() * 0.7) - 0.1;
+            currZ += (Math.random() - 0.5) * 0.9;
+
+            lPos[pIdx++] = currX;
+            lPos[pIdx++] = currY;
+            lPos[pIdx++] = currZ;
+          }
+        }
+        this.ssj2Lightning.geometry.attributes.position.needsUpdate = true;
+      }
+
+      // Débris rocheux et cristaux en lévitation gravitationnelle
+      if (this.levitationRocks) {
+        for (let i = 0; i < this.levitationRocks.length; i++) {
+          const r = this.levitationRocks[i];
+          r.y += r.speedY * dt;
+          r.angle += r.rotSpeed * dt;
+          if (r.y > 4.2) {
+            r.y = -1.6;
+            r.dist = 1.2 + Math.random() * 1.6;
+          }
+          r.mesh.position.set(
+            Math.cos(r.angle) * r.dist,
+            r.y,
+            Math.sin(r.angle) * r.dist
+          );
+          r.mesh.rotation.x += 3.0 * dt;
+          r.mesh.rotation.y += 2.5 * dt;
+        }
+      }
+
+      // Glyphe d'énergie radiale sacrée au sol
+      if (this.groundGlyph) {
+        this.groundGlyph.rotation.z += 1.2 * dt;
+        const gScale = 1.0 + bassEnergy * 0.35 + Math.sin(time * 8.0) * 0.08;
+        this.groundGlyph.scale.set(gScale, gScale, gScale);
       }
 
       // Tourbillon des particules de Ki doré
@@ -878,9 +1135,9 @@ export class Player {
           const s = this.kiSeeds[i];
           s.y += s.speedY * dt;
           s.angle += s.rotSpeed * dt;
-          if (s.y > 4.5) {
-            s.y = -1.5;
-            s.radius = 0.6 + Math.random() * 1.5;
+          if (s.y > 4.8) {
+            s.y = -1.6;
+            s.radius = 0.7 + Math.random() * 1.8;
           }
           kPos[i * 3] = Math.cos(s.angle) * s.radius;
           kPos[i * 3 + 1] = s.y;
@@ -889,18 +1146,27 @@ export class Player {
         this.kiPoints.geometry.attributes.position.needsUpdate = true;
       }
 
-      // Reflets dorés sur les éléments du joueur
+      // Métamorphose dorée sur les matériaux du vaisseau Infi
       if (this.fbxHeartMaterial) {
         this.fbxHeartMaterial.emissive.set(0xffea00);
+        this.fbxHeartMaterial.emissiveIntensity = 8.5;
       }
       if (this.fbxVisorMaterial) {
-        this.fbxVisorMaterial.emissive.set(0x00f0ff);
+        this.fbxVisorMaterial.emissive.set(0xfff066);
+        this.fbxVisorMaterial.emissiveIntensity = 7.5;
       }
 
       if (this.saiyanTimer <= 0) {
         this.saiyanTimer = 0;
         this.saiyanGroup.visible = false;
-        if (this.fbxHeartMaterial) this.fbxHeartMaterial.emissive.set(0xff2ea6);
+        if (this.fbxHeartMaterial) {
+          this.fbxHeartMaterial.emissive.set(0xff2ea6);
+          this.fbxHeartMaterial.emissiveIntensity = 4.5;
+        }
+        if (this.fbxVisorMaterial) {
+          this.fbxVisorMaterial.emissive.set(0x00f0ff);
+          this.fbxVisorMaterial.emissiveIntensity = 4.2;
+        }
       }
     } else if (this.saiyanGroup) {
       this.saiyanGroup.visible = false;

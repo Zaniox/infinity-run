@@ -153,6 +153,13 @@
           <span class="btn-lb-tag">EN DIRECT</span>
         </button>
 
+        <!-- Bouton Accès au Mode Multijoueur 1v1 en direct -->
+        <button id="btn-open-multiplayer" class="btn-open-multiplayer" type="button">
+          <span class="btn-mp-icon">⚔️</span>
+          <span class="btn-mp-text">DUEL MULTIJOUEUR (1 VS 1)</span>
+          <span class="btn-mp-tag">SALONS & CODES</span>
+        </button>
+
         <!-- Guide des Commandes Minimaliste & Combat Star Fox -->
         <div class="menu-controls-grid">
           <div class="ctrl-item"><kbd>Q</kbd> <kbd>D</kbd> ou <kbd>◄</kbd> <kbd>►</kbd> <span>Virage</span></div>
@@ -260,8 +267,24 @@
         <div class="telemetry-item">
           <span class="telemetry-tag">CIBLE HORIZON</span>
           <span class="telemetry-target">NITY &bull; TROU NOIR</span>
-        </div>
       </aside>
+
+      <!-- Widget Télémétrie Rival en Vol (Multijoueur 1v1) -->
+      <div id="hud-rival-card" class="hud-rival-card hidden">
+        <div class="rival-card-header">
+          <span class="rival-badge-live">⚔️ DUEL 1V1</span>
+          <span id="hud-rival-delta" class="rival-delta">+0 M</span>
+        </div>
+        <div class="rival-card-body">
+          <img id="hud-rival-avatar" class="rival-avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=rival&backgroundColor=020617" alt="Avatar Rival" />
+          <div class="rival-details">
+            <strong id="hud-rival-pseudo" class="rival-pseudo">@RIVAL</strong>
+            <div class="rival-vitality-bar">
+              <div id="hud-rival-energy" class="rival-energy-fill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <footer class="hud-footer">
         <div class="hud-controls-hint">
@@ -469,6 +492,177 @@
           <span class="btn-restart-text">RELANCER LA BOUCLE</span>
           <span class="btn-restart-sub">[ ESPACE ou CLIQUEZ ]</span>
         </button>
+      </div>
+    </div>
+
+    <!-- MODAL MULTIJOUEUR 1V1 (SALONS PUBLICS, CRÉATION & CODE PRIVÉ) -->
+    <div id="multiplayer-modal" class="modal-overlay hidden">
+      <div class="modal-card mp-card">
+        <div class="modal-top-bar"></div>
+        <button id="btn-close-multiplayer" class="modal-close-corner" type="button" title="Fermer">✖</button>
+
+        <div class="mp-header">
+          <div class="modal-badge">// SOUNDRISE ARENA &bull; DUEL 1V1 SYNCHRONISÉ</div>
+          <h2 class="modal-title">⚔️ DUEL MULTIJOUEUR EN DIRECT</h2>
+          <p class="modal-instruction">
+            Affrontez un autre pilote en temps réel sur le même circuit et à la même vitesse : celui qui survit le plus loin et franchit le plus de cycles l'emporte !
+          </p>
+        </div>
+
+        <!-- Navigation par Onglets (visible hors lobby) -->
+        <div id="mp-tabs-nav" class="mp-tabs-nav">
+          <button id="tab-btn-rooms" class="mp-tab-btn active" type="button">🌐 SALONS PUBLICS</button>
+          <button id="tab-btn-create" class="mp-tab-btn" type="button">➕ CRÉER UN SALON</button>
+          <button id="tab-btn-code" class="mp-tab-btn" type="button">🔑 REJOINDRE PAR CODE</button>
+        </div>
+
+        <!-- Onglet 1 : Salons Publics -->
+        <div id="mp-view-rooms" class="mp-tab-view">
+          <div class="mp-rooms-toolbar">
+            <span class="mp-rooms-count">SALONS DISPONIBLES EN DIRECT</span>
+            <button id="btn-refresh-rooms" class="btn-mp-mini" type="button">🔄 ACTUALISER</button>
+          </div>
+          <div id="mp-rooms-list" class="mp-rooms-list">
+            <div class="mp-empty-state">Recherche des salons en cours...</div>
+          </div>
+        </div>
+
+        <!-- Onglet 2 : Créer un Salon -->
+        <div id="mp-view-create" class="mp-tab-view hidden">
+          <form id="form-create-room" class="form-create-room" onsubmit="return false;">
+            <div class="form-field">
+              <label for="input-room-name">NOM DU SALON</label>
+              <input id="input-room-name" type="text" maxlength="24" placeholder="Ex: Duel de l'Abysse, Course SSJ..." />
+            </div>
+            <div class="form-field">
+              <label for="select-room-cycle">CYCLE DE DÉPART DU DUEL</label>
+              <select id="select-room-cycle" class="mp-select">
+                <option value="0">Cycle 1 • Chute (Eau / Noir)</option>
+                <option value="1">Cycle 2 • Résilience (Terre / Vert & Marron)</option>
+                <option value="2">Cycle 3 • Obsession (Feu / Rouge)</option>
+                <option value="3">Cycle 4 • Amour (Électricité / Jaune)</option>
+                <option value="4">Cycle 5 • Bonheur (Lumière / Blanc)</option>
+                <option value="5">Cycle 6 • Chaos (Ombre / Gris)</option>
+                <option value="6">Cycle 7 • Ambition (Vent / Bleu)</option>
+                <option value="7">Cycle 8 • Folie (Cosmos / Violet)</option>
+              </select>
+            </div>
+            <div class="form-field checkbox-field">
+              <label class="checkbox-label">
+                <input id="checkbox-room-private" type="checkbox" />
+                <span>Salon Privé (accessible uniquement avec le code secret)</span>
+              </label>
+            </div>
+            <button id="btn-submit-create-room" class="btn-play-giant btn-mp-submit" type="submit">
+              <span class="btn-play-text">CRÉER LE SALON & ATTENDRE L'ADVERSAIRE</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Onglet 3 : Rejoindre par Code Privé -->
+        <div id="mp-view-code" class="mp-tab-view hidden">
+          <form id="form-join-code" class="form-join-code" onsubmit="return false;">
+            <div class="form-field">
+              <label for="input-join-code">CODE DU SALON (EX: INFI-XXXX)</label>
+              <input id="input-join-code" type="text" maxlength="12" placeholder="INFI-...." uppercase style="text-transform:uppercase;letter-spacing:2px;" />
+            </div>
+            <div id="join-code-error" class="pseudo-error-msg hidden"></div>
+            <button id="btn-submit-join-code" class="btn-play-giant btn-mp-submit" type="submit">
+              <span class="btn-play-text">REJOINDRE LA SALLE DUEL</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Vue Lobby d'Attente (Affichée quand on est dans un salon) -->
+        <div id="mp-lobby-view" class="mp-lobby-view hidden">
+          <div class="lobby-room-info">
+            <div class="lobby-room-title-box">
+              <span class="lobby-label">SALON DUEL 1V1</span>
+              <h3 id="lobby-room-name" class="lobby-room-name">Nom du Salon</h3>
+            </div>
+            <div class="lobby-code-box">
+              <span class="lobby-code-label">CODE PRIVÉ :</span>
+              <strong id="lobby-room-code" class="lobby-code-badge">INFI-XXXX</strong>
+            </div>
+          </div>
+
+          <!-- Arène des 2 Joueurs Face à Face -->
+          <div class="lobby-arena">
+            <!-- Carte Hôte -->
+            <div id="lobby-card-host" class="lobby-player-card">
+              <div class="lobby-card-badge">HÔTE</div>
+              <img id="lobby-host-avatar" class="lobby-avatar" src="" alt="Hôte" />
+              <strong id="lobby-host-pseudo" class="lobby-pseudo">@HOTE</strong>
+              <div id="lobby-host-ready" class="lobby-ready-tag not-ready">EN ATTENTE</div>
+            </div>
+
+            <div class="lobby-vs-divider">
+              <span class="vs-glow">VS</span>
+            </div>
+
+            <!-- Carte Invité (Challenger) -->
+            <div id="lobby-card-guest" class="lobby-player-card">
+              <div class="lobby-card-badge">CHALLENGER</div>
+              <img id="lobby-guest-avatar" class="lobby-avatar" src="" alt="Challenger" />
+              <strong id="lobby-guest-pseudo" class="lobby-pseudo">En attente...</strong>
+              <div id="lobby-guest-ready" class="lobby-ready-tag not-ready">NON CONNECTÉ</div>
+            </div>
+          </div>
+
+          <div id="lobby-status-text" class="lobby-status-text">
+            En attente de connexion d'un adversaire...
+          </div>
+
+          <div class="lobby-actions">
+            <button id="btn-lobby-toggle-ready" class="btn-lb-action btn-ready-toggle" type="button">
+              <span>✅</span> <span>SE DÉCLARER PRÊT</span>
+            </button>
+            <button id="btn-lobby-start-race" class="btn-play-giant btn-start-duel locked" type="button">
+              <span class="btn-play-text">LANCER LE DUEL (DÉCOLLAGE)</span>
+            </button>
+            <button id="btn-lobby-leave" class="btn-lb-action btn-lobby-exit" type="button">
+              QUITTER LE SALON
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL FIN DE DUEL 1V1 (VICTOIRE / DÉFAITE) -->
+    <div id="duel-result-modal" class="modal-overlay hidden">
+      <div class="modal-card duel-card">
+        <div class="modal-top-bar"></div>
+        <div id="duel-result-badge" class="modal-badge">// FIN DU DUEL 1V1</div>
+        <h2 id="duel-result-title" class="modal-title duel-title">🏆 VICTOIRE ÉCLATANTE !</h2>
+        <div id="duel-result-reason" class="modal-reason">L'adversaire a percuté un obstacle !</div>
+
+        <!-- Comparaison des deux pilotes -->
+        <div class="duel-comparison-grid">
+          <div class="duel-pilot-col you">
+            <span class="pilot-header">VOUS</span>
+            <strong id="duel-my-pseudo" class="pilot-name">@PILOTE</strong>
+            <div class="duel-stat-line"><span>Distance:</span> <strong id="duel-my-dist">0 M</strong></div>
+            <div class="duel-stat-line"><span>Cycle:</span> <strong id="duel-my-cycle">Cycle 1</strong></div>
+          </div>
+
+          <div class="duel-vs-bar">VS</div>
+
+          <div class="duel-pilot-col rival">
+            <span class="pilot-header">ADVERSAIRE</span>
+            <strong id="duel-rival-pseudo" class="pilot-name">@RIVAL</strong>
+            <div class="duel-stat-line"><span>Distance:</span> <strong id="duel-rival-dist">0 M</strong></div>
+            <div class="duel-stat-line"><span>Cycle:</span> <strong id="duel-rival-cycle">Cycle 1</strong></div>
+          </div>
+        </div>
+
+        <div class="duel-modal-actions">
+          <button id="btn-duel-rematch" class="btn-play-giant btn-rematch" type="button">
+            <span class="btn-play-text">⚔️ REVANCHE IMMÉDIATE</span>
+          </button>
+          <button id="btn-duel-quit" class="btn-lb-action" type="button">
+            RETOURNER AU MENU
+          </button>
+        </div>
       </div>
     </div>
   </div>

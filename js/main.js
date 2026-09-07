@@ -11,6 +11,7 @@ import { World, CYCLES_DATA } from './world.js';
 import { UIManager } from './ui.js';
 import { AuthManager } from './auth.js';
 import { LeaderboardManager } from './leaderboard.js';
+import { MultiplayerManager } from './multiplayer.js';
 
 class GameApp {
   constructor() {
@@ -31,6 +32,7 @@ class GameApp {
     this.STATE_DYING = 'DYING';
     this.STATE_GAMEOVER = 'GAMEOVER';
     this.state = this.STATE_MENU;
+    this.isMultiplayerDuel = false;
 
     // Statistiques de vol
     this.distance = 0;
@@ -63,6 +65,8 @@ class GameApp {
       this.onTrackChange(cycleIndex, track);
     });
 
+    this.multiplayer = new MultiplayerManager(this.scene, this.auth);
+
     this.ui = new UIManager(
       () => this.startGame(),
       () => this.restartGame(),
@@ -70,8 +74,15 @@ class GameApp {
       () => this.audio.prevTrack(),
       () => this.audio.nextTrack(),
       this.auth,
-      this.leaderboard
+      this.leaderboard,
+      this.multiplayer
     );
+    this.ui.setMultiplayer(this.multiplayer);
+
+    // Lasers tirés par l'adversaire en multijoueur
+    this.multiplayer.onRivalLaserFire = (x, y, z) => {
+      this.spawnRivalLaser(x, y, z);
+    };
 
     window.gameApp = this;
 
@@ -148,6 +159,19 @@ class GameApp {
   }
 
   restartGame() {
+    this.isMultiplayerDuel = false;
+    if (this.multiplayer) {
+      this.multiplayer.leaveRoom();
+    }
+    if (this.rivalLasers) {
+      this.rivalLasers.forEach(rl => {
+        this.scene.remove(rl.mesh);
+        rl.mesh.geometry.dispose();
+        rl.mesh.material.dispose();
+      });
+      this.rivalLasers = [];
+    }
+
     this.distance = 0;
     this.heartsCount = 0;
     this.baseSpeed = 68.0;
@@ -190,6 +214,61 @@ class GameApp {
     this.state = this.STATE_PLAYING;
   }
 
+  startMultiplayerGame(startCycleIndex = 0) {
+    this.isMultiplayerDuel = true;
+    if (this.rivalLasers) {
+      this.rivalLasers.forEach(rl => {
+        this.scene.remove(rl.mesh);
+        rl.mesh.geometry.dispose();
+        rl.mesh.material.dispose();
+      });
+      this.rivalLasers = [];
+    }
+
+    this.distance = 0;
+    this.heartsCount = 0;
+    this.baseSpeed = 70.0;
+    this.currentSpeed = 70.0;
+    this.loopCount = 1;
+    this.cycle8Distance = 0;
+    this.isClimaxFeinteActive = false;
+
+    this.player.reset();
+    this.target.reset();
+    this.world.reset();
+
+    this.camera.position.set(0, 4.2, 9.5);
+    this.cameraTarget.set(0, 2.0, -16);
+    this.camera.lookAt(this.cameraTarget);
+
+    this.audio.playTrack(startCycleIndex);
+    this.onTrackChange(startCycleIndex, this.audio.getCurrentTrack());
+
+    this.ui.updateHUD(100, 0, this.currentSpeed, 0);
+    this.state = this.STATE_PLAYING;
+  }
+
+  firePlayerLaser() {
+    if (this.state !== this.STATE_PLAYING) return;
+    this.player.fireLaser(this.audio);
+    if (this.multiplayer && this.multiplayer.isDuelActive) {
+      const p = this.player.group.position;
+      this.multiplayer.sendLaserFire(p.x, p.y, p.z);
+    }
+  }
+
+  spawnRivalLaser(x, y, z) {
+    if (!this.rivalLasers) this.rivalLasers = [];
+    const geo = new THREE.CylinderGeometry(0.12, 0.12, 3.2, 8);
+    geo.rotateX(Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({ color: 0x4ade80 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, z);
+    this.scene.add(mesh);
+    this.rivalLasers.push({ mesh, timer: 0 });
+    if (this.audio) this.audio.playLaserShoot();
+  }
+
   // Callback lors d'un changement de cycle / piste
   onTrackChange(index, track) {
     const isPlaying = this.state === this.STATE_PLAYING;
@@ -215,7 +294,7 @@ class GameApp {
       if (e.code === 'Space') {
         this.keyFire = true;
         if (this.state === this.STATE_PLAYING) {
-          this.player.fireLaser(this.audio);
+          this.firePlayerLaser();
           e.preventDefault();
         }
       }
@@ -234,7 +313,7 @@ class GameApp {
     // Tir au clic gauche de souris pendant le vol Star Fox
     window.addEventListener('mousedown', (e) => {
       if (e.button === 0 && this.state === this.STATE_PLAYING) {
-        this.player.fireLaser(this.audio);
+        this.firePlayerLaser();
       }
     });
 
@@ -245,7 +324,7 @@ class GameApp {
         this.pointerStartX = e.clientX;
         this.pointerStartY = e.clientY;
         if (this.state === this.STATE_PLAYING) {
-          this.player.fireLaser(this.audio);
+          this.firePlayerLaser();
         }
       }
     });
@@ -279,7 +358,7 @@ class GameApp {
     else if (!this.keyUp && !this.keyDown && !this.isPointerDown) this.inputAxisY = 0;
 
     if (this.keyFire && this.state === this.STATE_PLAYING) {
-      this.player.fireLaser(this.audio);
+      this.firePlayerLaser();
     }
   }
 
@@ -487,14 +566,49 @@ class GameApp {
         this.player.saiyanTimer
       );
 
+      // 10. Mise à jour de l'adversaire et des lasers rivaux (Multijoueur 1v1)
+      if (this.multiplayer) {
+        this.multiplayer.update(dt, this.distance);
+      }
+      if (this.rivalLasers && this.rivalLasers.length > 0) {
+        for (let i = this.rivalLasers.length - 1; i >= 0; i--) {
+          const rl = this.rivalLasers[i];
+          rl.timer += dt;
+          rl.mesh.position.z -= 180 * dt;
+          if (rl.timer > 1.8) {
+            this.scene.remove(rl.mesh);
+            rl.mesh.geometry.dispose();
+            rl.mesh.material.dispose();
+            this.rivalLasers.splice(i, 1);
+          }
+        }
+      }
+
     } else if (this.state === this.STATE_DYING) {
       // Dislocation d'Infi en particules
       this.player.update(dt, 0, 0, currentBpm, 0);
 
+      // Notification multijoueur immédiate en cas d'élimination
+      if (this.isMultiplayerDuel && this.multiplayer && this.multiplayer.isDuelActive) {
+        const cycleIdx = this.audio ? this.audio.currentTrackIndex : 0;
+        this.multiplayer.sendDeath(this.distance, cycleIdx, 'crash');
+        this.multiplayer.isDuelActive = false;
+        if (this.ui) {
+          this.ui.showDuelResult({
+            isWinner: false,
+            reason: 'Votre vaisseau a été détruit par un obstacle !',
+            rivalDistance: this.multiplayer.opponentData.distance,
+            rivalCycle: this.multiplayer.opponentData.cycleIndex
+          });
+        }
+      }
+
       if (this.player.dyingTimer >= 1.4) {
         this.state = this.STATE_GAMEOVER;
         const reason = this.player.energy <= 0 ? 'energy' : 'collision';
-        this.ui.showGameOver(reason, this.distance, this.maxSpeed, this.heartsCount);
+        if (!this.isMultiplayerDuel) {
+          this.ui.showGameOver(reason, this.distance, this.maxSpeed, this.heartsCount);
+        }
 
         // Enregistrement automatique au Classement Mondial officiel
         if (this.auth && this.auth.isAuthenticated() && this.auth.hasPseudo() && this.leaderboard) {
