@@ -41,6 +41,8 @@ class GameApp {
     this.baseSpeed = 68.0;
     this.currentSpeed = 68.0;
     this.heartsCount = 0;
+    this.obstacleScore = 0;
+    this.obstaclesDestroyed = 0;
     this.loopCount = 1;
     this.cycle8Distance = 0.0;
     this.isClimaxFeinteActive = false;
@@ -227,6 +229,8 @@ class GameApp {
 
     this.distance = 0;
     this.heartsCount = 0;
+    this.obstacleScore = 0;
+    this.obstaclesDestroyed = 0;
     this.baseSpeed = 68.0;
     this.currentSpeed = 68.0;
     this.loopCount = 1;
@@ -263,7 +267,7 @@ class GameApp {
     }
 
     // Mise à jour de la télémétrie du HUD
-    this.ui.updateHUD(100, 0, this.currentSpeed, 0);
+    this.ui.updateHUD(100, 0, this.currentSpeed, 0, false, 0, false, 0, 0, 0, 0, false);
     this.state = this.STATE_PLAYING;
   }
 
@@ -282,6 +286,8 @@ class GameApp {
 
     this.distance = 0;
     this.heartsCount = 0;
+    this.obstacleScore = 0;
+    this.obstaclesDestroyed = 0;
     this.baseSpeed = 70.0;
     this.currentSpeed = 70.0;
     this.loopCount = 1;
@@ -597,8 +603,8 @@ class GameApp {
       this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFOV, 5 * dt);
       this.camera.updateProjectionMatrix();
 
-      // 3. Mise à jour de la physique de vol d'Infi
-      this.player.update(dt, this.inputAxisX, this.inputAxisY, currentBpm, bass);
+      // 3. Mise à jour de la physique de vol d'Infi & gestion thermique du blaster
+      this.player.update(dt, this.inputAxisX, this.inputAxisY, currentBpm, bass, this.audio);
 
       // Si Infi s'est écrasé suite à une panne d'énergie
       if (this.player.isDead) {
@@ -606,12 +612,15 @@ class GameApp {
         this.audio.playCrash();
       }
 
-      // Collision des lasers Star Fox avec les obstacles
+      // Collision des lasers Star Fox avec les obstacles (Gain de points + Combat text flottant)
       this.world.checkLaserCollisions(this.player.lasers, (obs, hitPos, isSaiyan) => {
         this.audio.playObstacleDestroyed();
         this.obstaclesDestroyed = (this.obstaclesDestroyed || 0) + 1;
+        const pts = isSaiyan ? 300 : 150;
+        this.obstacleScore = (this.obstacleScore || 0) + pts;
         this.distance += isSaiyan ? 30 : 15;
         this.ui.pulseReticleHit();
+        this.ui.showFloatingScore(pts, isSaiyan, isSaiyan ? 'PURITY' : '');
 
         // Chance de faire dropper une Armure ou un Cœur sur l'obstacle détruit
         const dropRoll = Math.random();
@@ -634,19 +643,26 @@ class GameApp {
             return false;
           }
 
-          // Cas 1 : Mode SAYANFINITY actif (Super Saiyan 20s) -> broie l'obstacle instantanément !
+          // Cas 1 : Mode PURITY actif (Invulnérabilité 20s) -> broie l'obstacle instantanément !
           if (this.player.isSayanfinityActive()) {
             this.audio.playSaiyanSmash();
             this.obstaclesDestroyed = (this.obstaclesDestroyed || 0) + 1;
+            const pts = 250;
+            this.obstacleScore = (this.obstacleScore || 0) + pts;
             this.distance += 35; // Bonus destructeur
             this.ui.pulseReticleHit();
+            this.ui.showFloatingScore(pts, true, 'SMASH PURITY !');
             return 'smash';
           }
 
           // Cas 2 : Bouclier d'Armure actif -> absorbe l'impact, protège et détruit l'obstacle !
           if (this.player.hasShield) {
             this.player.absorbHit(this.audio);
+            this.obstaclesDestroyed = (this.obstaclesDestroyed || 0) + 1;
+            const pts = 150;
+            this.obstacleScore = (this.obstacleScore || 0) + pts;
             this.ui.pulseReticleHit();
+            this.ui.showFloatingScore(pts, false, 'BOUCLIER !');
             return 'destroy';
           }
 
@@ -824,7 +840,8 @@ class GameApp {
         this.camera.updateProjectionMatrix();
       }
 
-      // 9. Télémétrie HUD avec Armure et Sayanfinity
+      // 9. Télémétrie HUD avec Armure, Purity, Score en Direct et Surchauffe Blaster
+      const currentTotalScore = Math.floor(this.distance * 10 + this.heartsCount * 250 + (this.obstacleScore || 0));
       this.ui.updateHUD(
         this.player.energy,
         this.distance,
@@ -833,7 +850,11 @@ class GameApp {
         this.player.hasShield,
         this.player.armorCount,
         this.player.isSayanfinityActive(),
-        this.player.saiyanTimer
+        this.player.saiyanTimer,
+        currentTotalScore,
+        this.obstaclesDestroyed || 0,
+        this.player.blasterHeat || 0,
+        this.player.isOverheated || false
       );
 
       // 10. Mise à jour de l'adversaire et des lasers rivaux (Multijoueur 1v1)
@@ -856,7 +877,7 @@ class GameApp {
 
     } else if (this.state === this.STATE_DYING) {
       // Dislocation d'Infi en particules
-      this.player.update(dt, 0, 0, currentBpm, 0);
+      this.player.update(dt, 0, 0, currentBpm, 0, this.audio);
 
       // Notification multijoueur immédiate en cas d'élimination
       if (this.isMultiplayerDuel && this.multiplayer && this.multiplayer.isDuelActive) {
@@ -876,14 +897,15 @@ class GameApp {
       if (this.player.dyingTimer >= 1.4) {
         this.state = this.STATE_GAMEOVER;
         const reason = this.player.energy <= 0 ? 'energy' : 'collision';
+        const totalScore = Math.floor(this.distance * 10 + this.heartsCount * 250 + (this.obstacleScore || 0));
+
         if (!this.isMultiplayerDuel) {
-          this.ui.showGameOver(reason, this.distance, this.maxSpeed, this.heartsCount);
+          this.ui.showGameOver(reason, this.distance, this.maxSpeed, this.heartsCount, this.obstaclesDestroyed || 0, totalScore);
         }
 
         // Enregistrement automatique au Classement Mondial officiel
         if (this.auth && this.auth.isAuthenticated() && this.auth.hasPseudo() && this.leaderboard) {
           const user = this.auth.getUser();
-          const totalScore = Math.floor(this.distance * 10 + this.heartsCount * 250);
           const rankInfo = this.ui.computeRank(totalScore);
 
           this.leaderboard.submitScore({
@@ -916,7 +938,7 @@ class GameApp {
     // Enregistrement au classement mondial pour l'accomplissement du cycle
     if (this.auth && this.auth.isAuthenticated() && this.auth.hasPseudo() && this.leaderboard) {
       const user = this.auth.getUser();
-      const totalScore = Math.floor(this.distance * 10 + this.heartsCount * 250);
+      const totalScore = Math.floor(this.distance * 10 + this.heartsCount * 250 + (this.obstacleScore || 0));
       const rankInfo = this.ui.computeRank(totalScore);
       this.leaderboard.submitScore({
         pseudo: user.pseudo,
@@ -930,11 +952,13 @@ class GameApp {
       }).catch((e) => console.warn(e));
     }
 
-    // 1. Flash blanc/cyan aveuglant
+    // 1. Flash blanc/cyan aveuglant & célébration cosmique
     this.ui.triggerFlash();
+    if (this.ui.triggerVictoryCelebration) this.ui.triggerVictoryCelebration();
 
-    // 2. SFX Riser spectral + Sub-Warp
+    // 2. SFX Riser spectral + Sub-Warp + Fanfare de victoire
     this.audio.playCosmicWarp();
+    if (this.audio.playVictoryFanfare) this.audio.playVictoryFanfare();
 
     // 3. Affichage du Modal Troll officiel (Feinte Cosmique Infinie)
     const nextLoop = this.loopCount + 1;

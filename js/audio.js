@@ -501,6 +501,107 @@ export class AudioManager {
     noise.stop(now + 0.24);
   }
 
+  // SFX : Surchauffe du Blaster (Vapeur d'évacuation thermique + buzz d'alarme)
+  playBlasterOverheat() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+
+    // 1. Avertisseur d'alarme thermique
+    const buzz = this.audioCtx.createOscillator();
+    const buzzGain = this.audioCtx.createGain();
+    buzz.type = 'sawtooth';
+    buzz.frequency.setValueAtTime(140, now);
+    buzz.frequency.exponentialRampToValueAtTime(70, now + 0.38);
+    buzzGain.gain.setValueAtTime(0.35, now);
+    buzzGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    buzz.connect(buzzGain);
+    buzzGain.connect(this.audioCtx.destination);
+    buzz.start(now);
+    buzz.stop(now + 0.42);
+
+    // 2. Souffle de vapeur / Décharge thermique
+    const bufSize = this.audioCtx.sampleRate * 0.45;
+    const buffer = this.audioCtx.createBuffer(1, bufSize, this.audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.35));
+    }
+    const hiss = this.audioCtx.createBufferSource();
+    hiss.buffer = buffer;
+    const filter = this.audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(2400, now);
+    filter.frequency.exponentialRampToValueAtTime(600, now + 0.4);
+    filter.Q.setValueAtTime(1.5, now);
+    const hissGain = this.audioCtx.createGain();
+    hissGain.gain.setValueAtTime(0.4, now);
+    hissGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+    hiss.connect(filter);
+    filter.connect(hissGain);
+    hissGain.connect(this.audioCtx.destination);
+    hiss.start(now);
+    hiss.stop(now + 0.46);
+  }
+
+  // SFX : Réarmement du Blaster après refroidissement (Double chirp cybernétique)
+  playBlasterReady() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+    [1046.5, 1568.0].forEach((freq, i) => {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + i * 0.08);
+      gain.gain.setValueAtTime(0.22, now + i * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.18);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(now + i * 0.08);
+      osc.stop(now + i * 0.08 + 0.2);
+    });
+  }
+
+  // SFX : Fanfare de Victoire Triomphale (Arpège majestueux lors d'une victoire)
+  playVictoryFanfare() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+    const chords = [
+      { f: 523.25, t: 0.0 },  // C5
+      { f: 659.25, t: 0.12 }, // E5
+      { f: 783.99, t: 0.24 }, // G5
+      { f: 1046.5, t: 0.38 }, // C6
+      { f: 1318.5, t: 0.52 }  // E6
+    ];
+    chords.forEach(({ f, t }) => {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(f, now + t);
+      gain.gain.setValueAtTime(0.32, now + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.55);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(now + t);
+      osc.stop(now + t + 0.6);
+    });
+  }
+
+  // SFX : Micro-tick d'odomètre de score
+  playScoreTick() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1400, now);
+    gain.gain.setValueAtTime(0.06, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.03);
+  }
+
   // SFX : Équipement Bouclier d'Armure (Harmonique montante protectrice)
   playShieldEquip() {
     if (!this.isInitialized || !this.audioCtx || this.isMuted) return;

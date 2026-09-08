@@ -147,13 +147,23 @@
         <span class="intro-sub">VOL GLIDER &bull; [ESPACE] POUR TIRER AU BLASTER &bull; CŒURS VITAUX</span>
       </div>
 
-      <!-- Réticule de Visée Dynamique Star Fox -->
+      <div id="floating-combat-container" class="floating-combat-container"></div>
+      <div id="death-vignette" class="death-vignette hidden"></div>
+      <div id="victory-confetti-layer" class="victory-confetti-layer hidden"></div>
+
+      <!-- Réticule de Visée Dynamique Star Fox & Jauge Thermique Surchauffe -->
       <div id="starfox-reticle" class="starfox-reticle">
         <div class="reticle-corner top-left"></div>
         <div class="reticle-corner top-right"></div>
         <div class="reticle-corner bottom-left"></div>
         <div class="reticle-corner bottom-right"></div>
         <div class="reticle-dot"></div>
+        <div id="blaster-heat-container" class="blaster-heat-container">
+          <div class="blaster-heat-track">
+            <div id="blaster-heat-fill" class="blaster-heat-fill"></div>
+          </div>
+          <span id="blaster-heat-label" class="blaster-heat-label">BLASTER PRÊT</span>
+        </div>
       </div>
 
       <header class="hud-header">
@@ -224,6 +234,14 @@
           <span id="hud-speed" class="telemetry-value">245 KM/H</span>
         </div>
         <div class="telemetry-item">
+          <span class="telemetry-tag">SCORE EN DIRECT</span>
+          <span id="hud-score" class="telemetry-value highlight-score">0 PTS</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-tag">OBSTACLES BROYÉS</span>
+          <span id="hud-destroyed" class="telemetry-value highlight-destroyed">💥 0</span>
+        </div>
+        <div class="telemetry-item">
           <span class="telemetry-tag">BOUCLIER ARMURE</span>
           <span id="hud-shield" class="telemetry-value highlight-shield">INACTIF</span>
         </div>
@@ -234,6 +252,7 @@
         <div class="telemetry-item">
           <span class="telemetry-tag">CIBLE HORIZON</span>
           <span class="telemetry-target">NITY &bull; TROU NOIR</span>
+        </div>
       </aside>
 
       <!-- Widget Télémétrie Rival en Vol (Multijoueur 1v1) -->
@@ -262,7 +281,7 @@
 
     <!-- Écran Game Over avec Score & Rangs Exclusifs SUBA -->
     <div id="game-over-modal" class="modal-overlay hidden">
-      <div class="modal-card">
+      <div class="modal-card game-over-card">
         <div class="modal-top-bar"></div>
         <div class="modal-badge">// SIGNAL ROMPU</div>
         <h2 class="modal-title">HORIZON DES ÉVÉNEMENTS</h2>
@@ -280,6 +299,10 @@
           <div class="stat-box">
             <span class="stat-label">CŒURS DE NITY</span>
             <span id="final-hearts" class="stat-value highlight-heart">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">OBSTACLES BROYÉS</span>
+            <span id="final-destroyed" class="stat-value highlight-destroyed">0</span>
           </div>
         </div>
 

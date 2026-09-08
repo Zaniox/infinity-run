@@ -101,9 +101,17 @@ export class UIManager {
     this.hudDistance = document.getElementById('hud-distance');
     this.hudSpeed = document.getElementById('hud-speed');
     this.hudHearts = document.getElementById('hud-hearts');
+    this.hudScore = document.getElementById('hud-score');
+    this.hudDestroyed = document.getElementById('hud-destroyed');
     this.hudCycleName = document.getElementById('hud-cycle-name');
     this.hudShield = document.getElementById('hud-shield');
     this.starfoxReticle = document.getElementById('starfox-reticle');
+    this.blasterHeatContainer = document.getElementById('blaster-heat-container');
+    this.blasterHeatFill = document.getElementById('blaster-heat-fill');
+    this.blasterHeatLabel = document.getElementById('blaster-heat-label');
+    this.floatingCombatContainer = document.getElementById('floating-combat-container');
+    this.deathVignette = document.getElementById('death-vignette');
+    this.victoryConfettiLayer = document.getElementById('victory-confetti-layer');
     this.sayanfinityBanner = document.getElementById('sayanfinity-banner');
     this.sayanTimerBar = document.getElementById('sayan-timer-bar');
     this.sayanTimerText = document.getElementById('sayan-timer-text');
@@ -126,6 +134,7 @@ export class UIManager {
     this.finalDistance = document.getElementById('final-distance');
     this.finalSpeed = document.getElementById('final-speed');
     this.finalHearts = document.getElementById('final-hearts');
+    this.finalDestroyed = document.getElementById('final-destroyed');
     this.finalScore = document.getElementById('final-score');
     this.finalRankBadge = document.getElementById('final-rank-badge');
     this.finalRankSub = document.getElementById('final-rank-sub');
@@ -844,7 +853,7 @@ export class UIManager {
     }
   }
 
-  updateHUD(energy, distance, speed, heartsCount, hasShield = false, armorCount = 0, saiyanActive = false, saiyanRemaining = 0) {
+  updateHUD(energy, distance, speed, heartsCount, hasShield = false, armorCount = 0, saiyanActive = false, saiyanRemaining = 0, currentScore = 0, destroyedCount = 0, heatRatio = 0, isOverheated = false) {
     if (this.energyBar) {
       this.energyBar.style.width = `${Math.max(0, Math.min(100, energy))}%`;
       if (energy < 25) {
@@ -857,12 +866,102 @@ export class UIManager {
     if (this.hudDistance) this.hudDistance.textContent = `${Math.round(distance)} M`;
     if (this.hudSpeed) this.hudSpeed.textContent = `${Math.round(speed * 3.6)} KM/H`;
     if (this.hudHearts) this.hudHearts.textContent = `♥ ${heartsCount}`;
+    if (this.hudScore) this.hudScore.textContent = `${Math.round(currentScore).toLocaleString('fr-FR')} PTS`;
+    if (this.hudDestroyed) this.hudDestroyed.textContent = `💥 ${destroyedCount}`;
 
     // Bouclier d'armure
     this.updateShield(hasShield, armorCount);
 
-    // Sayanfinity
+    // Sayanfinity / Mode Purity
     this.updateSayanfinity(saiyanActive, saiyanRemaining);
+
+    // Jauge de Surchauffe du Blaster
+    this.updateBlasterHeat(heatRatio, isOverheated);
+  }
+
+  updateBlasterHeat(heatRatio, isOverheated) {
+    if (!this.blasterHeatFill) return;
+    const pct = Math.max(0, Math.min(100, (heatRatio || 0) * 100));
+    this.blasterHeatFill.style.width = `${pct}%`;
+
+    if (isOverheated) {
+      this.blasterHeatFill.style.background = '#ef4444';
+      this.blasterHeatFill.style.boxShadow = '0 0 12px #ef4444';
+      if (this.blasterHeatLabel) {
+        this.blasterHeatLabel.textContent = '⚠️ SURCHAUFFE !';
+        this.blasterHeatLabel.style.color = '#ef4444';
+        this.blasterHeatLabel.classList.add('pulse-alert');
+      }
+      if (this.starfoxReticle) {
+        this.starfoxReticle.classList.add('overheated');
+      }
+    } else {
+      if (this.starfoxReticle) {
+        this.starfoxReticle.classList.remove('overheated');
+      }
+      if (pct > 75) {
+        this.blasterHeatFill.style.background = '#f59e0b';
+        this.blasterHeatFill.style.boxShadow = '0 0 8px #f59e0b';
+        if (this.blasterHeatLabel) {
+          this.blasterHeatLabel.textContent = 'TEMP ÉLEVÉE';
+          this.blasterHeatLabel.style.color = '#f59e0b';
+          this.blasterHeatLabel.classList.remove('pulse-alert');
+        }
+      } else if (pct > 35) {
+        this.blasterHeatFill.style.background = '#38bdf8';
+        this.blasterHeatFill.style.boxShadow = '0 0 6px #38bdf8';
+        if (this.blasterHeatLabel) {
+          this.blasterHeatLabel.textContent = 'CADENCE BLASTER';
+          this.blasterHeatLabel.style.color = '#38bdf8';
+          this.blasterHeatLabel.classList.remove('pulse-alert');
+        }
+      } else {
+        this.blasterHeatFill.style.background = '#00f0ff';
+        this.blasterHeatFill.style.boxShadow = '0 0 6px #00f0ff';
+        if (this.blasterHeatLabel) {
+          this.blasterHeatLabel.textContent = 'BLASTER PRÊT';
+          this.blasterHeatLabel.style.color = '#94a3b8';
+          this.blasterHeatLabel.classList.remove('pulse-alert');
+        }
+      }
+    }
+  }
+
+  showFloatingScore(pts, isCrit = false, label = '') {
+    if (!this.floatingCombatContainer) return;
+    const el = document.createElement('div');
+    el.className = `floating-score-item ${isCrit ? 'crit' : ''}`;
+    el.textContent = `+${pts} PTS ${label}`.trim();
+    const offX = (Math.random() - 0.5) * 120;
+    const offY = (Math.random() - 0.5) * 60;
+    el.style.left = `calc(50% + ${offX}px)`;
+    el.style.top = `calc(50% + ${offY}px)`;
+    this.floatingCombatContainer.appendChild(el);
+    setTimeout(() => {
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    }, 850);
+  }
+
+  triggerVictoryCelebration() {
+    if (!this.victoryConfettiLayer) return;
+    this.victoryConfettiLayer.classList.remove('hidden');
+    this.victoryConfettiLayer.innerHTML = '';
+    for (let i = 0; i < 48; i++) {
+      const p = document.createElement('div');
+      p.className = 'victory-particle';
+      p.style.left = `${Math.random() * 100}%`;
+      p.style.animationDelay = `${Math.random() * 0.8}s`;
+      p.style.animationDuration = `${1.2 + Math.random() * 1.6}s`;
+      const colors = ['#fde047', '#4ade80', '#00f0ff', '#ff2e93', '#ffd700'];
+      p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      this.victoryConfettiLayer.appendChild(p);
+    }
+    setTimeout(() => {
+      if (this.victoryConfettiLayer) {
+        this.victoryConfettiLayer.classList.add('hidden');
+        this.victoryConfettiLayer.innerHTML = '';
+      }
+    }, 3200);
   }
 
   pulseReticleHit() {
@@ -962,45 +1061,69 @@ export class UIManager {
   }
 
   computeRank(score) {
-    if (score >= 20000) {
+    if (score >= 75000) {
+      return {
+        rank: 'MUCH LOVE',
+        title: 'RANG SUPRÊME • LÉGENDE COSMIQUE',
+        desc: 'L\'amour absolu transcende l\'abysse et la folie de l\'espace-temps !',
+        color: '#ff2e93',
+        glow: 'rgba(255, 46, 147, 0.95)',
+        isSupreme: true
+      };
+    } else if (score >= 45000) {
       return {
         rank: 'SUBA Y SU',
         title: 'LÉGENDAIRE / EXCEPTIONNEL',
         desc: 'Traversée divine au-delà de l\'horizon des événements !',
         color: '#fef08a',
-        glow: 'rgba(254, 240, 138, 0.9)'
+        glow: 'rgba(254, 240, 138, 0.9)',
+        isSupreme: false
       };
-    } else if (score >= 10000) {
+    } else if (score >= 28000) {
       return {
         rank: 'SUBA Y',
-        title: 'TRÈS BON SCORE',
-        desc: 'Maîtrise transcendante de l\'ascension et du piqué !',
+        title: 'TRÈS BON SCORE • PILOTE D\'ÉLITE',
+        desc: 'Maîtrise transcendante de l\'ascension et du tir tactique !',
         color: '#00f0ff',
-        glow: 'rgba(0, 240, 255, 0.8)'
+        glow: 'rgba(0, 240, 255, 0.8)',
+        isSupreme: false
       };
-    } else if (score >= 4000) {
+    } else if (score >= 15000) {
       return {
         rank: 'SUBA',
-        title: 'BON SCORE',
+        title: 'BON SCORE • CONFIRMÉ',
         desc: 'Belle endurance dans l\'abysse gravitationnel.',
         color: '#a855f7',
-        glow: 'rgba(168, 85, 247, 0.7)'
+        glow: 'rgba(168, 85, 247, 0.7)',
+        isSupreme: false
       };
     } else {
       return {
         rank: 'SU',
-        title: 'SCORE STANDARD',
-        desc: 'Premier contact avec le sillage de Nity.',
+        title: 'SCORE STANDARD • APPRENTI',
+        desc: 'Premier contact avec le sillage de Nity. Visez 15 000 PTS pour débloquer SUBA !',
         color: '#94a3b8',
-        glow: 'rgba(148, 163, 184, 0.5)'
+        glow: 'rgba(148, 163, 184, 0.5)',
+        isSupreme: false
       };
     }
   }
 
-  // --- GAME OVER & SYNCHRONISATION DU CLASSEMENT ---
-  showGameOver(reason, distance, maxSpeed, heartsCount, worldRankResult = null) {
-    const totalScore = Math.floor(distance * 10 + heartsCount * 250);
+  // --- GAME OVER & ANIMATION CINÉMATIQUE DE MORT ---
+  showGameOver(reason, distance, maxSpeed, heartsCount, destroyedCount = 0, totalScore = null, worldRankResult = null) {
+    if (totalScore == null) {
+      totalScore = Math.floor(distance * 10 + heartsCount * 250 + destroyedCount * 150);
+    }
     const rankInfo = this.computeRank(totalScore);
+
+    // 1. Flash d'alerte & effet de distorsion rouge sombre
+    if (this.deathVignette) {
+      this.deathVignette.classList.remove('hidden');
+      this.deathVignette.classList.add('flash-death');
+      setTimeout(() => {
+        if (this.deathVignette) this.deathVignette.classList.remove('flash-death');
+      }, 1100);
+    }
 
     if (this.deathReason) {
       this.deathReason.textContent = reason === 'energy'
@@ -1008,16 +1131,26 @@ export class UIManager {
         : 'IMPACT CRITIQUE • STRUCTURE DÉSINTÉGRÉE';
     }
 
-    if (this.finalDistance) this.finalDistance.textContent = `${Math.round(distance)} M`;
-    if (this.finalSpeed) this.finalSpeed.textContent = `${Math.round(maxSpeed * 3.6)} KM/H`;
-    if (this.finalHearts) this.finalHearts.textContent = `${heartsCount}`;
-    if (this.finalScore) this.finalScore.textContent = `${totalScore.toLocaleString('fr-FR')} PTS`;
+    // 2. Défilement odomètre dynamique pour toutes les statistiques
+    this.animateStatValue(this.finalDistance, 0, Math.round(distance), 750, ' M');
+    this.animateStatValue(this.finalSpeed, 0, Math.round(maxSpeed * 3.6), 750, ' KM/H');
+    this.animateStatValue(this.finalHearts, 0, heartsCount, 600, '');
+    this.animateStatValue(this.finalDestroyed, 0, destroyedCount, 700, '');
+    this.animateStatValue(this.finalScore, 0, totalScore, 900, ' PTS', true);
 
+    // 3. Animation d'impact percutant sur le Badge de Rang ("Badge Slam")
     if (this.finalRankBadge) {
       this.finalRankBadge.textContent = rankInfo.rank;
       this.finalRankBadge.style.color = rankInfo.color;
       this.finalRankBadge.style.borderColor = rankInfo.color;
-      this.finalRankBadge.style.boxShadow = `0 0 25px ${rankInfo.glow}`;
+      this.finalRankBadge.style.boxShadow = `0 0 35px ${rankInfo.glow}`;
+
+      this.finalRankBadge.classList.remove('badge-impact', 'badge-much-love');
+      void this.finalRankBadge.offsetWidth; // Force reflow
+      this.finalRankBadge.classList.add('badge-impact');
+      if (rankInfo.isSupreme) {
+        this.finalRankBadge.classList.add('badge-much-love');
+      }
     }
 
     if (this.finalRankSub) {
@@ -1037,7 +1170,28 @@ export class UIManager {
 
     if (this.gameOverModal) {
       this.gameOverModal.classList.remove('hidden');
+      const card = this.gameOverModal.querySelector('.modal-card');
+      if (card) {
+        card.classList.remove('animate-death-enter');
+        void card.offsetWidth;
+        card.classList.add('animate-death-enter');
+      }
     }
+  }
+
+  animateStatValue(element, startVal, endVal, durationMs = 700, suffix = '', formatLocale = false) {
+    if (!element) return;
+    const start = performance.now();
+    const tick = (now) => {
+      const p = Math.min(1.0, (now - start) / durationMs);
+      const ease = 1 - Math.pow(1 - p, 3);
+      const cur = Math.round(startVal + (endVal - startVal) * ease);
+      element.textContent = (formatLocale ? cur.toLocaleString('fr-FR') : cur) + suffix;
+      if (p < 1.0) {
+        requestAnimationFrame(tick);
+      }
+    };
+    requestAnimationFrame(tick);
   }
 
   updateGameOverWorldRank(result) {
@@ -1407,6 +1561,20 @@ export class UIManager {
     this.duelResultModal.classList.remove('hidden');
 
     const isWinner = !!result.isWinner;
+    const card = this.duelResultModal.querySelector('.modal-card');
+    if (card) {
+      card.classList.remove('animate-victory-enter', 'animate-death-enter');
+      void card.offsetWidth;
+      card.classList.add(isWinner ? 'animate-victory-enter' : 'animate-death-enter');
+    }
+
+    if (isWinner) {
+      this.triggerVictoryCelebration();
+      if (window.gameApp && window.gameApp.audio && window.gameApp.audio.playVictoryFanfare) {
+        window.gameApp.audio.playVictoryFanfare();
+      }
+    }
+
     if (this.duelResultTitle) {
       this.duelResultTitle.textContent = isWinner ? '🏆 VICTOIRE ÉCLATANTE !' : '💀 DÉFAITE HONORABLE !';
       this.duelResultTitle.style.color = isWinner ? '#4ade80' : '#f87171';

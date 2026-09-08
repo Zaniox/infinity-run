@@ -738,11 +738,19 @@ export class Player {
     this.boostExtraSpeed = speed;
   }
 
-  // --- 3. SYSTÈME DE TIRS BLASTER LASER (STAR FOX DYNAMIQUE) ---
+  // --- 3. SYSTÈME DE TIRS BLASTER LASER (STAR FOX DYNAMIQUE & SURCHAUFFE) ---
   createLaserPool() {
     this.lasers = [];
     this.laserCooldown = 0.0;
     this.laserSpeed = 290.0;
+
+    // Système de gestion thermique (Anti-spam / Cadence tactique)
+    this.blasterHeat = 0.0;             // De 0.0 (froid) à 1.0 (surchauffe max)
+    this.isOverheated = false;          // Vrai quand verrouillé en surchauffe
+    this.overheatCooldownTimer = 0.0;   // Décompte de pénalité
+    this.heatPerShot = 0.16;            // +16% de chaleur par tir (~6 tirs pour 100%)
+    this.coolingRate = 0.42;            // Dissipation thermique par seconde
+    this.overheatLockoutDuration = 2.4; // 2.4s de blocage strict si surchauffe atteinte
 
     this.laserGeo = new THREE.CylinderGeometry(0.14, 0.14, 3.6, 8);
     this.laserGeo.rotateX(Math.PI / 2); // Aligné sur l'axe longitudinal (-Z vers l'avant)
@@ -763,7 +771,21 @@ export class Player {
   }
 
   fireLaser(audioManager) {
-    if (this.isDead || this.laserCooldown > 0) return false;
+    if (this.isDead || this.laserCooldown > 0 || this.isOverheated) return false;
+
+    // Accumulation de chaleur
+    this.blasterHeat = Math.min(1.0, this.blasterHeat + this.heatPerShot);
+
+    // Déclenchement de la SURCHAUFFE immédiate si seuil atteint
+    if (this.blasterHeat >= 0.999) {
+      this.blasterHeat = 1.0;
+      this.isOverheated = true;
+      this.overheatCooldownTimer = this.overheatLockoutDuration;
+      if (audioManager && audioManager.playBlasterOverheat) {
+        audioManager.playBlasterOverheat();
+      }
+    }
+
     this.laserCooldown = 0.14; // Cadence Star Fox dynamique
 
     const p = this.group.position;
@@ -793,9 +815,29 @@ export class Player {
     return true;
   }
 
-  updateLasers(dt) {
+  updateLasers(dt, audioManager = null) {
     if (this.laserCooldown > 0) {
       this.laserCooldown -= dt;
+    }
+
+    // Gestion de la dissipation thermique
+    if (this.isOverheated) {
+      this.overheatCooldownTimer -= dt;
+      this.blasterHeat = Math.max(0.0, this.overheatCooldownTimer / this.overheatLockoutDuration);
+      if (this.overheatCooldownTimer <= 0) {
+        this.isOverheated = false;
+        this.blasterHeat = 0.0;
+        this.overheatCooldownTimer = 0.0;
+        if (audioManager && audioManager.playBlasterReady) {
+          audioManager.playBlasterReady();
+        }
+      }
+    } else {
+      // Refroidissement passif quand le joueur ne tire pas (accéléré en mode Purity)
+      const coolMult = (this.saiyanTimer > 0) ? 1.6 : 1.0;
+      if (this.blasterHeat > 0) {
+        this.blasterHeat = Math.max(0.0, this.blasterHeat - this.coolingRate * coolMult * dt);
+      }
     }
 
     for (let i = this.lasers.length - 1; i >= 0; i--) {
@@ -856,7 +898,7 @@ export class Player {
   }
 
   // Mise à jour de la physique de vol, de l'énergie et des animations
-  update(dt, inputAxisX, inputAxisY, bpm, bassEnergy) {
+  update(dt, inputAxisX, inputAxisY, bpm, bassEnergy, audioManager = null) {
     const time = performance.now() * 0.001;
 
     // 1. Animation de dislocation si mort
@@ -959,7 +1001,7 @@ export class Player {
     this.boundingSphere.center.copy(p);
 
     // 8. Mise à jour des tirs laser Star Fox
-    this.updateLasers(dt);
+    this.updateLasers(dt, audioManager);
 
     // 9. Animation du Bouclier d'Armure Haute Technologie (1-Hit Protection)
     if (this.hasShield && this.shieldGroup) {
@@ -1129,7 +1171,7 @@ export class Player {
     if (this.saiyanGroup) this.saiyanGroup.visible = false;
     if (this.fbxHeartMaterial) this.fbxHeartMaterial.emissive.set(0xff2ea6);
 
-    // Reset Lasers
+    // Reset Lasers & Thermique Blaster
     if (this.lasers) {
       for (const l of this.lasers) {
         this.scene.remove(l.mesh);
@@ -1137,5 +1179,8 @@ export class Player {
       this.lasers = [];
     }
     this.laserCooldown = 0;
+    this.blasterHeat = 0.0;
+    this.isOverheated = false;
+    this.overheatCooldownTimer = 0.0;
   }
 }
