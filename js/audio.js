@@ -437,6 +437,68 @@ export class AudioManager {
     osc.stop(now + 1.5);
   }
 
+  // SFX : Accrochage & Contact avec Nity (Carillon cristallin céleste ascendant)
+  playNityCatchup() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98]; // C5, E5, G5, C6, E6, G6
+    notes.forEach((freq, idx) => {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+      gain.gain.setValueAtTime(0.22, now + idx * 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.45);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(now + idx * 0.06);
+      osc.stop(now + idx * 0.06 + 0.48);
+    });
+  }
+
+  // SFX : Fuite / Feinte de Nity (« Poof ! / Whoosh » espiègle + plongeon tonal comique)
+  playNityEscape() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+
+    // 1. Sifflet comique à inflexion rapide (pitch slide montant puis plongeant)
+    const slide = this.audioCtx.createOscillator();
+    const slideGain = this.audioCtx.createGain();
+    slide.type = 'triangle';
+    slide.frequency.setValueAtTime(580, now);
+    slide.frequency.exponentialRampToValueAtTime(1400, now + 0.12);
+    slide.frequency.exponentialRampToValueAtTime(220, now + 0.38);
+    slideGain.gain.setValueAtTime(0.35, now);
+    slideGain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+    slide.connect(slideGain);
+    slideGain.connect(this.audioCtx.destination);
+    slide.start(now);
+    slide.stop(now + 0.45);
+
+    // 2. Souffle comique « POOF ! » (bruit blanc feutré résonant)
+    const bufSize = this.audioCtx.sampleRate * 0.3;
+    const buffer = this.audioCtx.createBuffer(1, bufSize, this.audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.28));
+    }
+    const poof = this.audioCtx.createBufferSource();
+    poof.buffer = buffer;
+    const filter = this.audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1200, now + 0.05);
+    filter.frequency.exponentialRampToValueAtTime(300, now + 0.32);
+    filter.Q.setValueAtTime(2.2, now);
+    const poofGain = this.audioCtx.createGain();
+    poofGain.gain.setValueAtTime(0.5, now + 0.05);
+    poofGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    poof.connect(filter);
+    filter.connect(poofGain);
+    poofGain.connect(this.audioCtx.destination);
+    poof.start(now + 0.05);
+    poof.stop(now + 0.36);
+  }
+
   // SFX : Tir Blaster Laser Star Fox (Double impulsion laser cyber-punch)
   playLaserShoot() {
     if (!this.isInitialized || !this.audioCtx || this.isMuted) return;

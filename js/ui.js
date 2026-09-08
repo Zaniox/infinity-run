@@ -1272,8 +1272,16 @@ export class UIManager {
   // --- MODAL TROLL DU CYCLE 8 ---
   showTrollModal(loopCount, onContinue) {
     this.onTrollContinue = onContinue;
-    if (this.trollLoopVal) this.trollLoopVal.textContent = `∞ ${loopCount}`;
-    if (this.trollModal) this.trollModal.classList.remove('hidden');
+    if (this.trollLoopVal) this.trollLoopVal.textContent = `BOUCLE ∞ ${loopCount}`;
+    if (this.trollModal) {
+      this.trollModal.classList.remove('hidden');
+      const card = this.trollModal.querySelector('.troll-card');
+      if (card) {
+        card.classList.remove('animate-troll-enter');
+        void card.offsetWidth; // Force reflow
+        card.classList.add('animate-troll-enter');
+      }
+    }
   }
 
   hideTrollModal() {

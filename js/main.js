@@ -952,19 +952,33 @@ class GameApp {
       }).catch((e) => console.warn(e));
     }
 
-    // 1. Flash blanc/cyan aveuglant & célébration cosmique
-    this.ui.triggerFlash();
-    if (this.ui.triggerVictoryCelebration) this.ui.triggerVictoryCelebration();
+    // 1. Son d'accroche cristallin & alerte de contact dans le HUD
+    if (this.audio.playNityCatchup) this.audio.playNityCatchup();
+    this.ui.showClimaxAlert('// CONTACT ÉTABLI AVEC NITY ! ✨', true);
 
-    // 2. SFX Riser spectral + Sub-Warp + Fanfare de victoire
-    this.audio.playCosmicWarp();
-    if (this.audio.playVictoryFanfare) this.audio.playVictoryFanfare();
+    // 2. Animation cinématique en jeu : pirouette de Nity face caméra, onde de choc & explosion stardust
+    const onEscapeDone = () => {
+      // 3. Flash cosmique aveuglant & célébration
+      this.ui.triggerFlash();
+      if (this.ui.triggerVictoryCelebration) this.ui.triggerVictoryCelebration();
 
-    // 3. Affichage du Modal Troll officiel (Feinte Cosmique Infinie)
-    const nextLoop = this.loopCount + 1;
-    this.ui.showTrollModal(nextLoop, () => {
-      this.continueAfterTroll();
-    });
+      // 4. SFX de fuite espiègle (« Poof ! ») + Sub-Warp + Fanfare
+      if (this.audio.playNityEscape) this.audio.playNityEscape();
+      this.audio.playCosmicWarp();
+      if (this.audio.playVictoryFanfare) this.audio.playVictoryFanfare();
+
+      // 5. Affichage du Modal Troll officiel épuré (Feinte Cosmique Infinie)
+      const nextLoop = this.loopCount + 1;
+      this.ui.showTrollModal(nextLoop, () => {
+        this.continueAfterTroll();
+      });
+    };
+
+    if (this.target && this.target.triggerNityEscapeAnimation) {
+      this.target.triggerNityEscapeAnimation(onEscapeDone);
+    } else {
+      onEscapeDone();
+    }
   }
 
   continueAfterTroll() {

@@ -85,6 +85,13 @@ export class TargetManager {
     this.fluxLines = new THREE.LineSegments(fluxGeo, this.fluxLinesMat);
     this.fluxLines.visible = false;
     this.scene.add(this.fluxLines);
+
+    // 6. Animation cinématique de feinte / fuite de Nity (Fin de Cycle 8)
+    this.isEscapingAnimationActive = false;
+    this.escapeAnimTimer = 0;
+    this.onEscapeCompleteCallback = null;
+    this.climaxRatio = 0;
+    this.createNityEscapeEffects();
   }
 
   // --- 1. TROU NOIR GÉANT À L'HORIZON (Singularité & Disque d'accrétion) ---
@@ -343,6 +350,103 @@ export class TargetManager {
     });
 
     this.scene.add(this.mirageGroup);
+  }
+
+  // --- EFFETS CINÉMATIQUES DE FEINTE ET FUITE DE NITY (FIN CYCLE 8) ---
+  createNityEscapeEffects() {
+    // 1. Onde de choc céleste expansive
+    const ringGeo = new THREE.RingGeometry(0.8, 1.8, 48);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide
+    });
+    this.escapeShockwave = new THREE.Mesh(ringGeo, ringMat);
+    this.escapeShockwave.visible = false;
+    this.scene.add(this.escapeShockwave);
+
+    // 2. Nuage d'étoiles cosmiques scintillantes (Stardust Burst)
+    this.stardustCount = 150;
+    const pGeo = new THREE.BufferGeometry();
+    const positions = new Float32Array(this.stardustCount * 3);
+    const colors = new Float32Array(this.stardustCount * 3);
+    this.stardustVelocities = [];
+
+    const palette = [
+      new THREE.Color(0x00f0ff), // cyan néon
+      new THREE.Color(0xff2ea6), // rose fuchsia céleste
+      new THREE.Color(0xfacc15), // or stellaire
+      new THREE.Color(0xffffff)  // éclat blanc pur
+    ];
+
+    for (let i = 0; i < this.stardustCount; i++) {
+      const col = palette[Math.floor(Math.random() * palette.length)];
+      colors[i * 3] = col.r;
+      colors[i * 3 + 1] = col.g;
+      colors[i * 3 + 2] = col.b;
+      this.stardustVelocities.push({ vx: 0, vy: 0, vz: 0 });
+    }
+
+    pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    pGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const pMat = new THREE.PointsMaterial({
+      size: 1.8,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      map: getSoftGlowTexture(),
+      depthWrite: false
+    });
+
+    this.stardustPoints = new THREE.Points(pGeo, pMat);
+    this.stardustPoints.visible = false;
+    this.scene.add(this.stardustPoints);
+  }
+
+  // Déclenchement de l'animation de fuite lors du contact
+  triggerNityEscapeAnimation(onComplete) {
+    this.isEscapingAnimationActive = true;
+    this.escapeAnimTimer = 0;
+    this.onEscapeCompleteCallback = onComplete;
+
+    // Contact physique direct avec Infi
+    this.nityGroup.position.set(0, this.nityBaseY, -10.5);
+
+    // Initialiser l'onde de choc circulaire
+    if (this.escapeShockwave) {
+      this.escapeShockwave.position.set(0, this.nityBaseY + 1.6, -10.5);
+      this.escapeShockwave.scale.set(1, 1, 1);
+      this.escapeShockwave.material.opacity = 0.95;
+      this.escapeShockwave.material.color.setHex(0x00f0ff);
+      this.escapeShockwave.visible = true;
+    }
+
+    // Initialiser l'explosion de poussière d'étoiles
+    if (this.stardustPoints) {
+      const pos = this.stardustPoints.geometry.attributes.position.array;
+      const cy = this.nityBaseY + 1.6;
+      for (let i = 0; i < this.stardustCount; i++) {
+        pos[i * 3] = (Math.random() - 0.5) * 0.5;
+        pos[i * 3 + 1] = cy + (Math.random() - 0.5) * 0.5;
+        pos[i * 3 + 2] = -10.5 + (Math.random() - 0.5) * 0.5;
+
+        const theta = Math.random() * Math.PI * 2;
+        const phi = (Math.random() - 0.5) * Math.PI;
+        const speed = 7.0 + Math.random() * 22.0;
+        this.stardustVelocities[i] = {
+          vx: Math.cos(phi) * Math.cos(theta) * speed,
+          vy: Math.sin(phi) * speed + 2.5,
+          vz: Math.cos(phi) * Math.sin(theta) * speed - 10.0
+        };
+      }
+      this.stardustPoints.geometry.attributes.position.needsUpdate = true;
+      this.stardustPoints.material.opacity = 1.0;
+      this.stardustPoints.visible = true;
+    }
   }
 
   // --- 3. COURANT GRAVITATIONNEL D'ASPIRATION (NITY -> TROU NOIR) ---
@@ -608,34 +712,93 @@ export class TargetManager {
     // Suivi subtil du regard vers l'horizon
     this.horizonGroup.position.x = playerPos.x * 0.12;
 
-    // 2. Cinématique de Nity aspirée vers le Trou Noir (« se fait aspirer devant Infi »)
+    // 2. Cinématique de Nity aspirée vers le Trou Noir ou Animation de Fuite / Feinte
     if (this.nityGroup) {
-      // Oscillation latérale et verticale (lutte contre la pesanteur du vortex)
-      const swayX = Math.sin(time * 1.5) * 4.8 + playerPos.x * 0.35;
-      const swayY = this.nityBaseY + Math.sin(time * 2.2) * 1.6;
-      // Dérive d'aspiration longitudinale (tirée vers l'avant puis luttant)
-      const pullZ = this.nityBaseZ + Math.sin(time * 1.1) * 3.8;
+      if (this.isEscapingAnimationActive) {
+        this.escapeAnimTimer += dt;
+        const totalDuration = 1.15;
 
-      this.nityGroup.position.x += (swayX - this.nityGroup.position.x) * 4.0 * dt;
-      this.nityGroup.position.y += (swayY - this.nityGroup.position.y) * 4.0 * dt;
-      this.nityGroup.position.z += (pullZ - this.nityGroup.position.z) * 4.0 * dt;
+        // Phase 1 : Pirouette facétieuse face à Infi/caméra + saut d'esquive
+        if (this.escapeAnimTimer < 0.42) {
+          const p = this.escapeAnimTimer / 0.42;
+          this.nityModelContainer.rotation.y += dt * 20.0;
+          this.nityGroup.position.y = this.nityBaseY + Math.sin(p * Math.PI) * 1.8;
+          this.nityRing.rotation.z += 16.0 * dt;
+          this.nityAvatar.rotation.x = 0;
+          this.nityAvatar.rotation.z = 0;
+        } else {
+          // Phase 2 : Rétraction comique en "POOF !" vers la faille spatio-temporelle
+          const p2 = Math.min(1.0, (this.escapeAnimTimer - 0.42) / (totalDuration - 0.42));
+          const shrinkScale = Math.max(0, 1.0 - Math.pow(p2, 1.8));
+          this.nityAvatar.scale.set(shrinkScale, shrinkScale, shrinkScale);
+          this.nityModelContainer.rotation.y += dt * 28.0;
+          this.nityRing.rotation.z += 24.0 * dt;
+          this.nityGroup.position.z -= dt * 32.0; // aspiration accélérée vers le trou noir
+        }
 
-      // Inclinaisons dynamiques (Piqué d'aspiration et roulis dans le vent cosmique)
-      const targetPitch = 0.28 + Math.sin(time * 2.5) * 0.12; // Inclinée vers l'avant (aspirée)
-      const targetRoll = -Math.cos(time * 1.5) * 0.3; // Roulis
-      this.nityAvatar.rotation.x += (targetPitch - this.nityAvatar.rotation.x) * 5.0 * dt;
-      this.nityAvatar.rotation.z += (targetRoll - this.nityAvatar.rotation.z) * 5.0 * dt;
+        // Évolution de l'onde de choc céleste
+        if (this.escapeShockwave && this.escapeShockwave.visible) {
+          this.escapeShockwave.scale.addScalar(34.0 * dt);
+          this.escapeShockwave.material.opacity = Math.max(0, 0.95 * (1.0 - this.escapeAnimTimer / totalDuration));
+        }
 
-      // Rotation de son halo céleste et pulsation sur les basses
-      this.nityRing.rotation.z += 2.2 * dt;
-      const ringPulse = 1.0 + Math.pow(bassEnergy, 1.8) * 0.18;
-      this.nityRing.scale.set(ringPulse, ringPulse, 1.0);
-      this.nityRingMat.opacity = 0.75 + bassEnergy * 0.25;
-      this.nityHeadMat.emissiveIntensity = 0.8 + bassEnergy * 2.4;
+        // Évolution de la poussière d'étoiles (Stardust Burst)
+        if (this.stardustPoints && this.stardustPoints.visible) {
+          const pos = this.stardustPoints.geometry.attributes.position.array;
+          for (let i = 0; i < this.stardustCount; i++) {
+            const v = this.stardustVelocities[i];
+            pos[i * 3] += v.vx * dt;
+            pos[i * 3 + 1] += v.vy * dt;
+            pos[i * 3 + 2] += v.vz * dt;
+            v.vx *= 0.93;
+            v.vy *= 0.93;
+            v.vz *= 0.93;
+          }
+          this.stardustPoints.geometry.attributes.position.needsUpdate = true;
+          this.stardustPoints.material.opacity = Math.max(0, 1.0 - this.escapeAnimTimer / totalDuration);
+        }
 
-      if (this.nityHeartMesh) {
-        const hPulse = 0.45 * (1.0 + bassEnergy * 0.3);
-        this.nityHeartMesh.scale.set(hPulse, hPulse, hPulse);
+        // Fin de la séquence cinématique de fuite
+        if (this.escapeAnimTimer >= totalDuration) {
+          this.isEscapingAnimationActive = false;
+          if (this.escapeShockwave) this.escapeShockwave.visible = false;
+          if (this.stardustPoints) this.stardustPoints.visible = false;
+          if (this.onEscapeCompleteCallback) {
+            const cb = this.onEscapeCompleteCallback;
+            this.onEscapeCompleteCallback = null;
+            cb();
+          }
+        }
+      } else {
+        // Mode normal de vol
+        const swayX = Math.sin(time * 1.5) * 4.8 + playerPos.x * 0.35;
+        const swayY = this.nityBaseY + Math.sin(time * 2.2) * 1.6;
+        const targetBaseZ = (this.climaxRatio > 0)
+          ? (-58 + this.climaxRatio * 47.0)
+          : this.nityBaseZ;
+        const pullZ = targetBaseZ + Math.sin(time * 1.1) * (1.0 - (this.climaxRatio || 0)) * 3.8;
+
+        this.nityGroup.position.x += (swayX - this.nityGroup.position.x) * 4.0 * dt;
+        this.nityGroup.position.y += (swayY - this.nityGroup.position.y) * 4.0 * dt;
+        this.nityGroup.position.z += (pullZ - this.nityGroup.position.z) * 4.0 * dt;
+
+        // Inclinaisons dynamiques (Piqué d'aspiration et roulis dans le vent cosmique)
+        const targetPitch = 0.28 + Math.sin(time * 2.5) * 0.12; // Inclinée vers l'avant (aspirée)
+        const targetRoll = -Math.cos(time * 1.5) * 0.3; // Roulis
+        this.nityAvatar.rotation.x += (targetPitch - this.nityAvatar.rotation.x) * 5.0 * dt;
+        this.nityAvatar.rotation.z += (targetRoll - this.nityAvatar.rotation.z) * 5.0 * dt;
+
+        // Rotation de son halo céleste et pulsation sur les basses
+        this.nityRing.rotation.z += 2.2 * dt;
+        const ringPulse = 1.0 + Math.pow(bassEnergy, 1.8) * 0.18;
+        this.nityRing.scale.set(ringPulse, ringPulse, 1.0);
+        this.nityRingMat.opacity = 0.75 + bassEnergy * 0.25;
+        this.nityHeadMat.emissiveIntensity = 0.8 + bassEnergy * 2.4;
+
+        if (this.nityHeartMesh) {
+          const hPulse = 0.45 * (1.0 + bassEnergy * 0.3);
+          this.nityHeartMesh.scale.set(hPulse, hPulse, hPulse);
+        }
       }
     }
 
@@ -822,9 +985,12 @@ export class TargetManager {
 
   // Animation de Nity lors du rattrapage (Climax du Cycle 8)
   setClimaxDistance(distRatio) {
-    // distRatio va de 0 (normal à z=-58) à 1.0 (très proche d'Infi à z=-10)
-    const targetZ = -58 + distRatio * 46.0;
-    this.nityGroup.position.z = THREE.MathUtils.lerp(this.nityGroup.position.z, targetZ, 0.1);
+    this.climaxRatio = Math.max(0, Math.min(1.0, distRatio));
+    if (!this.isEscapingAnimationActive) {
+      // distRatio va de 0 (normal à z=-58) à 1.0 (contact direct à z=-10.5)
+      const targetZ = -58 + this.climaxRatio * 47.5;
+      this.nityGroup.position.z = THREE.MathUtils.lerp(this.nityGroup.position.z, targetZ, 0.12);
+    }
   }
 
   reset() {
@@ -834,7 +1000,17 @@ export class TargetManager {
     this.hearts = [];
     this.heartSpawnTimer = 0;
     if (this.fluxLines) this.fluxLines.visible = false;
+    this.climaxRatio = 0;
+    this.isEscapingAnimationActive = false;
+    this.escapeAnimTimer = 0;
+    this.onEscapeCompleteCallback = null;
+    if (this.escapeShockwave) this.escapeShockwave.visible = false;
+    if (this.stardustPoints) this.stardustPoints.visible = false;
     this.nityGroup.position.set(0, this.nityBaseY, this.nityBaseZ);
+    if (this.nityAvatar) {
+      this.nityAvatar.scale.set(1, 1, 1);
+      this.nityAvatar.rotation.set(0, 0, 0);
+    }
     if (this.nityModelContainer) this.nityModelContainer.rotation.y = Math.PI;
     if (this.mirageGroup) this.mirageGroup.visible = false;
   }
