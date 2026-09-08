@@ -832,6 +832,24 @@ export class Player {
     }
   }
 
+  // Configuration du profil dynamique de vol du cycle actif
+  setFlightProfile(profile, time) {
+    if (!profile) {
+      this.cyclePitchOffset = 0;
+      this.cycleRollOffset = 0;
+      return;
+    }
+    this.cyclePitchOffset = profile.pitch || 0;
+    let roll = 0;
+    if (profile.rollWobbleAmp > 0) {
+      roll += Math.sin(time * (profile.rollWobbleFreq || 2.0)) * profile.rollWobbleAmp;
+    }
+    if (profile.turbulence > 0) {
+      roll += Math.sin(time * 24.5) * profile.turbulence * 0.35;
+    }
+    this.cycleRollOffset = roll;
+  }
+
   // Mise à jour de la physique de vol, de l'énergie et des animations
   update(dt, inputAxisX, inputAxisY, bpm, bassEnergy) {
     const time = performance.now() * 0.001;
@@ -873,12 +891,12 @@ export class Player {
     const baseDrain = 1.4 * dt;
     this.energy = Math.max(0, this.energy - baseDrain);
 
-    // 4. Axe X (Latéral) & Inclinaison réaliste (Bank/Roll)
+    // 4. Axe X (Latéral) & Inclinaison réaliste (Bank/Roll) avec influence dynamique du cycle
     if (inputAxisX !== 0) {
       p.x += inputAxisX * this.lateralSpeed * dt;
       p.x = Math.max(-this.maxX, Math.min(this.maxX, p.x));
     }
-    const targetRoll = -inputAxisX * 0.48;
+    const targetRoll = -inputAxisX * 0.48 + (this.cycleRollOffset || 0);
     this.avatar.rotation.z += (targetRoll - this.avatar.rotation.z) * 10.0 * dt;
 
     // 5. Axe Y (Altitude) & Tangage (Pitch)
@@ -912,8 +930,8 @@ export class Player {
     p.y += vertVel * dt;
     p.y = Math.max(this.minAltitude, Math.min(this.maxAltitude, p.y));
 
-    // Tangage
-    const targetPitch = inputAxisY * 0.42;
+    // Tangage avec inclinaison dynamique du cycle (piqué abyssal, montée céleste/ambition)
+    const targetPitch = inputAxisY * 0.42 + (this.cyclePitchOffset || 0);
     this.avatar.rotation.x += (targetPitch - this.avatar.rotation.x) * 8.0 * dt;
 
     // 6. Pulsation du cœur synchronisée au BPM et aux basses

@@ -77,6 +77,33 @@ export class AudioManager {
     return TRACKS[this.currentTrackIndex];
   }
 
+  getCurrentTime() {
+    if (this.mode === 'mp3' && this.audioElement && !isNaN(this.audioElement.currentTime)) {
+      return this.audioElement.currentTime;
+    }
+    return this.synthTrackTimer || 0;
+  }
+
+  getDuration() {
+    if (this.mode === 'mp3' && this.audioElement && !isNaN(this.audioElement.duration) && this.audioElement.duration > 0) {
+      return this.audioElement.duration;
+    }
+    // Durée par défaut en mode synthétiseur (~90 secondes de traversée)
+    return 92.0;
+  }
+
+  getTimeRemaining() {
+    const dur = this.getDuration();
+    const cur = this.getCurrentTime();
+    return Math.max(0, dur - cur);
+  }
+
+  isNearEnd(thresholdSeconds = 8.0) {
+    if (!this.isPlaying) return false;
+    const rem = this.getTimeRemaining();
+    return rem <= thresholdSeconds && rem > 0;
+  }
+
   // Initialisation déclenchée sur geste utilisateur ("Commencer la traversée")
   async init() {
     if (this.isInitialized) return;
@@ -221,6 +248,16 @@ export class AudioManager {
         bassOsc.stop(now + 0.3);
       }
 
+      this.synthTrackTimer = (this.synthTrackTimer || 0) + (beatIntervalMs / 1000.0);
+      if (this.synthTrackTimer >= this.getDuration()) {
+        this.synthTrackTimer = 0;
+        if (this.currentTrackIndex === 7 && window.gameApp && window.gameApp.state === window.gameApp.STATE_PLAYING) {
+          window.gameApp.triggerClimaxFeinte();
+        } else {
+          this.nextTrack();
+        }
+      }
+
       step++;
     }, beatIntervalMs);
   }
@@ -230,6 +267,45 @@ export class AudioManager {
       clearInterval(this.synthInterval);
       this.synthInterval = null;
     }
+  }
+
+  // SFX : Traversée d'un Portail Dimensionnel de Transition (Warp Cosmique puissant)
+  playPortalWarp() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+
+    const now = this.audioCtx.currentTime;
+    
+    // 1. Onde de basse fréquences montante
+    const subOsc = this.audioCtx.createOscillator();
+    const subGain = this.audioCtx.createGain();
+    subOsc.type = 'sawtooth';
+    subOsc.frequency.setValueAtTime(60, now);
+    subOsc.frequency.exponentialRampToValueAtTime(320, now + 0.85);
+
+    subGain.gain.setValueAtTime(0.01, now);
+    subGain.gain.linearRampToValueAtTime(0.45, now + 0.35);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+
+    subOsc.connect(subGain);
+    subGain.connect(this.audioCtx.destination);
+    subOsc.start(now);
+    subOsc.stop(now + 1.25);
+
+    // 2. Chime cristallin de distorsion dimensionnelle
+    const chimeOsc = this.audioCtx.createOscillator();
+    const chimeGain = this.audioCtx.createGain();
+    chimeOsc.type = 'sine';
+    chimeOsc.frequency.setValueAtTime(440, now);
+    chimeOsc.frequency.exponentialRampToValueAtTime(1760, now + 0.9);
+
+    chimeGain.gain.setValueAtTime(0.0, now);
+    chimeGain.gain.linearRampToValueAtTime(0.35, now + 0.2);
+    chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+
+    chimeOsc.connect(chimeGain);
+    chimeGain.connect(this.audioCtx.destination);
+    chimeOsc.start(now);
+    chimeOsc.stop(now + 1.05);
   }
 
   // SFX : Collecte de cœur (Carillon cristallin ascendant)

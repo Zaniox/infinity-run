@@ -146,13 +146,261 @@ export const CYCLES_DATA = [
   }
 ];
 
+
+export const CYCLE_FLIGHT_PROFILES = [
+  // 0: Chute (Noir / Eau) - "au début la map ça va vers le bas" : Piqué abyssal vers les profondeurs (-8.6°)
+  {
+    pitch: -0.15, // Piqué vers le bas
+    camYOffset: 1.6,
+    targetYOffset: -4.2,
+    rollWobbleAmp: 0.02,
+    rollWobbleFreq: 1.0,
+    waveAltitudeAmp: 0.0,
+    fovMod: 0,
+    turbulence: 0.0
+  },
+  // 1: Résilience (Marron & Terre) - "résilience on reste droit" : Trajectoire droite, ancrée, horizontale
+  {
+    pitch: 0.0, // Tout droit
+    camYOffset: 0.0,
+    targetYOffset: 0.0,
+    rollWobbleAmp: 0.0,
+    rollWobbleFreq: 0.0,
+    waveAltitudeAmp: 0.0,
+    fovMod: 0,
+    turbulence: 0.0
+  },
+  // 2: Obsession (Rouge / Feu) - "obsession on est hypnotisé obsession" : Roulis oscillant hypnotique & pulsation
+  {
+    pitch: -0.02,
+    camYOffset: -0.2,
+    targetYOffset: 0.0,
+    rollWobbleAmp: 0.12, // Roulis hypnotique
+    rollWobbleFreq: 2.2,
+    waveAltitudeAmp: 0.4,
+    waveAltitudeFreq: 2.2,
+    fovMod: 2.5,
+    turbulence: 0.03
+  },
+  // 3: Amour (Jaune / Électricité) - "amour très vague" : Vol en vagues amples sinusoidales
+  {
+    pitch: 0.04,
+    camYOffset: 0.3,
+    targetYOffset: 0.6,
+    rollWobbleAmp: 0.10,
+    rollWobbleFreq: 1.5,
+    waveAltitudeAmp: 1.35, // Fortes vagues d'altitude
+    waveAltitudeFreq: 1.5,
+    fovMod: 0,
+    turbulence: 0.02
+  },
+  // 4: Bonheur (Or & Albâtre / Lumière) - "bonheur ça monte" : Ascension céleste continue vers la clarté (+8.0°)
+  {
+    pitch: 0.14, // Montée continue
+    camYOffset: -1.2,
+    targetYOffset: 4.5,
+    rollWobbleAmp: 0.02,
+    rollWobbleFreq: 1.0,
+    waveAltitudeAmp: 0.25,
+    waveAltitudeFreq: 1.0,
+    fovMod: 0,
+    turbulence: 0.0
+  },
+  // 5: Chaos (Gris / Ombre) - "chaos ça va dans tous les sens" : Turbulences erratiques intenses
+  {
+    pitch: 0.0,
+    camYOffset: 0.0,
+    targetYOffset: 0.0,
+    rollWobbleAmp: 0.18,
+    rollWobbleFreq: 4.8,
+    waveAltitudeAmp: 0.9,
+    waveAltitudeFreq: 4.0,
+    fovMod: 3.5,
+    turbulence: 0.24 // Fortes secousses multidirectionnelles
+  },
+  // 6: Ambition (Bleu / Vent) - "ambition ça monte vers le haut" : Ascension supersonique prononcée (+14.3°)
+  {
+    pitch: 0.25, // Montée abrupte vers le ciel
+    camYOffset: -2.2,
+    targetYOffset: 7.8,
+    rollWobbleAmp: 0.03,
+    rollWobbleFreq: 1.0,
+    waveAltitudeAmp: 0.3,
+    waveAltitudeFreq: 1.0,
+    fovMod: -2.0,
+    turbulence: 0.05
+  },
+  // 7: Folie (Violet / Cosmos) - "folie ça se distord on devient fou" : Distorsion de réalité & pulsation de FOV
+  {
+    pitch: -0.05,
+    camYOffset: 0.4,
+    targetYOffset: -1.0,
+    rollWobbleAmp: 0.24,
+    rollWobbleFreq: 2.8,
+    waveAltitudeAmp: 1.5,
+    waveAltitudeFreq: 2.4,
+    fovMod: 14.0, // Pulsation de champ de vision psychédélique
+    turbulence: 0.18
+  }
+];
+
+
+/**
+ * Portail Dimensionnel 3D de Transition de Cycle
+ * Apparaît à l'horizon à la fin de chaque piste musicale
+ */
+export class PortalGate {
+  constructor(targetCycleIndex, targetColorPrimary, targetColorSecondary) {
+    this.targetCycleIndex = targetCycleIndex;
+    this.group = new THREE.Group();
+    this.active = true;
+
+    // 1. Grand anneau extérieur monumental (Torus)
+    const torusGeo = new THREE.TorusGeometry(14, 1.2, 24, 48);
+    const torusMat = new THREE.MeshStandardMaterial({
+      color: 0x111827,
+      emissive: new THREE.Color(targetColorPrimary),
+      emissiveIntensity: 0.95,
+      roughness: 0.25,
+      metalness: 0.85
+    });
+    this.outerRing = new THREE.Mesh(torusGeo, torusMat);
+    this.group.add(this.outerRing);
+
+    // 2. Anneau intérieur rotatif à contre-courant
+    const innerTorusGeo = new THREE.TorusGeometry(11.5, 0.45, 16, 36);
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: targetColorSecondary,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.75
+    });
+    this.innerRing = new THREE.Mesh(innerTorusGeo, innerMat);
+    this.group.add(this.innerRing);
+
+    // 3. Horizon des événements (Disque tourbillonnant de distorsion)
+    const vortexGeo = new THREE.CircleGeometry(11.0, 36);
+    const vortexMat = new THREE.MeshBasicMaterial({
+      color: targetColorPrimary,
+      transparent: true,
+      opacity: 0.55,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.vortex = new THREE.Mesh(vortexGeo, vortexMat);
+    this.group.add(this.vortex);
+
+    // 4. Rayon balise céleste vertical montant vers les cieux
+    const beamGeo = new THREE.CylinderGeometry(1.5, 4.0, 140, 16, 1, true);
+    const beamMat = new THREE.MeshBasicMaterial({
+      color: targetColorPrimary,
+      transparent: true,
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    this.beam = new THREE.Mesh(beamGeo, beamMat);
+    this.beam.position.y = 65;
+    this.group.add(this.beam);
+
+    // 5. Particules d'aspiration dimensionnelle
+    this.pCount = 55;
+    const pGeo = new THREE.BufferGeometry();
+    this.pPos = new Float32Array(this.pCount * 3);
+    this.pSeeds = [];
+    for (let i = 0; i < this.pCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 10 + Math.random() * 12;
+      this.pSeeds.push({
+        angle,
+        radius: r,
+        baseRadius: r,
+        speed: 1.5 + Math.random() * 2.5,
+        z: (Math.random() - 0.5) * 18
+      });
+      this.pPos[i * 3] = Math.cos(angle) * r;
+      this.pPos[i * 3 + 1] = Math.sin(angle) * r;
+      this.pPos[i * 3 + 2] = this.pSeeds[i].z;
+    }
+    pGeo.setAttribute('position', new THREE.BufferAttribute(this.pPos, 3));
+    this.pMat = new THREE.PointsMaterial({
+      size: 1.4,
+      color: targetColorPrimary,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.particles = new THREE.Points(pGeo, this.pMat);
+    this.group.add(this.particles);
+
+    // 6. Source de lumière du portail
+    this.light = new THREE.PointLight(targetColorPrimary, 4.0, 60);
+    this.light.position.set(0, 0, 0);
+    this.group.add(this.light);
+
+    // Élévation initiale à l'horizon
+    this.group.position.set(0, 12, -230);
+  }
+
+  update(dt, deltaZ, time) {
+    this.group.position.z += deltaZ;
+
+    // Rotations hypnotiques des anneaux
+    this.outerRing.rotation.z += 0.6 * dt;
+    this.innerRing.rotation.z -= 1.1 * dt;
+    this.vortex.rotation.z += 1.4 * dt;
+    this.beam.rotation.y += 0.8 * dt;
+
+    // Pulsation lumineuse
+    const pulse = 1.0 + Math.sin(time * 5.0) * 0.25;
+    this.vortex.scale.set(pulse, pulse, 1.0);
+    this.light.intensity = 3.5 * pulse;
+
+    // Mouvement des particules d'aspiration vers le centre
+    for (let i = 0; i < this.pCount; i++) {
+      const s = this.pSeeds[i];
+      s.radius -= s.speed * 4.0 * dt;
+      s.angle += s.speed * dt;
+      s.z += (0 - s.z) * 2.0 * dt;
+
+      if (s.radius < 1.0) {
+        s.radius = s.baseRadius;
+        s.z = (Math.random() - 0.5) * 16;
+      }
+      this.pPos[i * 3] = Math.cos(s.angle) * s.radius;
+      this.pPos[i * 3 + 1] = Math.sin(s.angle) * s.radius;
+      this.pPos[i * 3 + 2] = s.z;
+    }
+    this.particles.geometry.attributes.position.needsUpdate = true;
+  }
+
+  dispose(scene) {
+    scene.remove(this.group);
+    this.outerRing.geometry.dispose();
+    this.outerRing.material.dispose();
+    this.innerRing.geometry.dispose();
+    this.innerRing.material.dispose();
+    this.vortex.geometry.dispose();
+    this.vortex.material.dispose();
+    this.beam.geometry.dispose();
+    this.beam.material.dispose();
+    this.particles.geometry.dispose();
+    this.particles.material.dispose();
+  }
+}
+
+
 /**
  * Générateur des textures de sol procédurales haute définition des 8 cycles
+ * Riches, fluides, sans couture et parfaitement adaptées aux éléments
  */
 function createCycleGroundTextures() {
   const textures = [];
 
-  // Helper de dessin sans couture : réplique automatiquement sur les 4 quadrants pour supprimer tout raccord
+  // Helper de dessin sans couture : réplique automatiquement sur les 9 quadrants pour supprimer tout raccord
   function drawSeamlessCircle(ctx, cx, cy, r, fillStyle, strokeStyle = null, lineWidth = 0) {
     const offsets = [
       [0, 0], [512, 0], [-512, 0], [0, 512], [0, -512],
@@ -178,7 +426,8 @@ function createCycleGroundTextures() {
 
   function drawSeamlessCurve(ctx, pts, strokeStyle, lineWidth) {
     const offsets = [
-      [0, 0], [512, 0], [-512, 0], [0, 512], [0, -512]
+      [0, 0], [512, 0], [-512, 0], [0, 512], [0, -512],
+      [512, 512], [-512, 512], [512, -512], [-512, -512]
     ];
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
@@ -197,302 +446,326 @@ function createCycleGroundTextures() {
     }
   }
 
-  // 1. Cycle 1 : Eau / Chute (Noir & Bleu Océan Profond, Caustiques Vivantes & Écume Fluide)
+  // 1. Cycle 1 : Eau / Chute (Abysse Aquatique, Caustiques Crystalline Vivantes, Ondulations & Écume)
   {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Fond océan abyssal en dégradé continu
-    const grad = ctx.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, '#000e1f');
-    grad.addColorStop(0.5, '#001c38');
-    grad.addColorStop(1, '#000e1f');
-    ctx.fillStyle = grad;
+    // Dégradé d'eau océanique profonde
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
+    bgGrad.addColorStop(0, '#010d1c');
+    bgGrad.addColorStop(0.5, '#022442');
+    bgGrad.addColorStop(1, '#010d1c');
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, 512, 512);
 
-    // Courants d'eau sous-marins sinusoidaux
+    // Courants de fond marins sinusoïdaux
     ctx.globalCompositeOperation = 'screen';
-    for (let w = 0; w < 6; w++) {
+    for (let c = 0; c < 7; c++) {
       const pts = [];
-      const baseY = (w / 6) * 512;
+      const baseY = (c / 7) * 512;
       for (let x = 0; x <= 512; x += 16) {
-        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + w) * 28;
+        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + c * 1.2) * 32;
         pts.push([x, y]);
       }
-      drawSeamlessCurve(ctx, pts, 'rgba(0, 180, 255, 0.18)', 36);
+      drawSeamlessCurve(ctx, pts, 'rgba(0, 160, 240, 0.22)', 44);
     }
 
-    // Réseau de caustiques aquatiques fluides sans raccords
-    for (let i = 0; i < 45; i++) {
-      const cx = (i * 73) % 512;
-      const cy = (i * 127) % 512;
-      const r = 25 + ((i * 19) % 45);
-      const rGrad = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
-      rGrad.addColorStop(0, 'rgba(0, 240, 255, 0.28)');
-      rGrad.addColorStop(0.65, 'rgba(0, 160, 255, 0.12)');
-      rGrad.addColorStop(1, 'rgba(0, 100, 200, 0)');
-      drawSeamlessCircle(ctx, cx, cy, r, rGrad, 'rgba(120, 230, 255, 0.25)', 1.5);
+    // Réseau vivant de caustiques cristallines sous-marines
+    for (let i = 0; i < 54; i++) {
+      const cx = (i * 79) % 512;
+      const cy = (i * 137) % 512;
+      const r = 24 + ((i * 23) % 48);
+      const rGrad = ctx.createRadialGradient(cx, cy, r * 0.15, cx, cy, r);
+      rGrad.addColorStop(0, 'rgba(0, 245, 255, 0.32)');
+      rGrad.addColorStop(0.65, 'rgba(0, 170, 255, 0.14)');
+      rGrad.addColorStop(1, 'rgba(0, 80, 180, 0)');
+      drawSeamlessCircle(ctx, cx, cy, r, rGrad, 'rgba(140, 240, 255, 0.30)', 2.0);
     }
 
-    // Écume et micro-bulles bioluminescentes
+    // Écume bioluminescente et micro-gouttelettes
     ctx.globalCompositeOperation = 'source-over';
-    for (let i = 0; i < 180; i++) {
-      const bx = (i * 157) % 512;
-      const by = (i * 211) % 512;
-      const br = 0.8 + ((i * 13) % 2.4);
-      drawSeamlessCircle(ctx, bx, by, br, 'rgba(210, 250, 255, 0.55)');
+    for (let b = 0; b < 160; b++) {
+      const bx = (b * 163) % 512;
+      const by = (b * 211) % 512;
+      const br = 1.0 + ((b * 11) % 2.5);
+      drawSeamlessCircle(ctx, bx, by, br, 'rgba(215, 250, 255, 0.65)');
     }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(2.5, 6);
+    tex.repeat.set(3.0, 7.0);
     textures.push(tex);
   }
 
-  // 2. Cycle 2 : Terre / Résilience (Sol Tellurique, Strates Rocheuses Sédimentaires & Glaise)
+  // 2. Cycle 2 : Terre / Résilience (Sol Tellurique, Plaques Tectoniques Craquelées & Strates Sédimentaires)
   {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Base terre glaise riche et sombre
-    ctx.fillStyle = '#2a160c';
+    // Base terre sédimentaire riche
+    ctx.fillStyle = '#26140b';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Mottes et nuances de loam naturelles sans couture
-    for (let i = 0; i < 55; i++) {
-      const cx = (i * 97) % 512;
-      const cy = (i * 163) % 512;
-      const r = 35 + ((i * 23) % 60);
+    // Mottes et dégradés telluriques naturels
+    for (let i = 0; i < 60; i++) {
+      const cx = (i * 89) % 512;
+      const cy = (i * 157) % 512;
+      const r = 30 + ((i * 29) % 65);
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      g.addColorStop(0, i % 2 === 0 ? '#432615' : '#1d0f07');
+      g.addColorStop(0, i % 2 === 0 ? '#462816' : '#190d06');
       g.addColorStop(1, 'rgba(0,0,0,0)');
       drawSeamlessCircle(ctx, cx, cy, r, g);
     }
 
-    // Strates sédimentaires horizontales telluriques continues
-    for (let s = 0; s < 8; s++) {
+    // Strates géologiques horizontales continues
+    for (let s = 0; s < 9; s++) {
       const pts = [];
-      const baseY = (s / 8) * 512;
+      const baseY = (s / 9) * 512;
       for (let x = 0; x <= 512; x += 16) {
-        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + s * 1.5) * 14;
+        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + s * 1.4) * 16;
         pts.push([x, y]);
       }
-      drawSeamlessCurve(ctx, pts, s % 2 === 0 ? '#54331d' : '#180c05', 8);
+      drawSeamlessCurve(ctx, pts, s % 2 === 0 ? '#5a371e' : '#140a04', 10);
     }
 
-    // Failles et craquelures telluriques nettes
-    for (let f = 0; f < 12; f++) {
+    // Réseau de failles telluriques et craquelures rocheuses
+    for (let f = 0; f < 18; f++) {
       const pts = [];
-      let curX = (f * 137) % 512;
-      let curY = (f * 179) % 512;
+      let curX = (f * 139) % 512;
+      let curY = (f * 181) % 512;
       pts.push([curX, curY]);
       for (let step = 0; step < 5; step++) {
-        curX += (((step + f) * 29) % 60) - 30;
-        curY += (((step + f) * 41) % 55) - 20;
+        curX += (((step + f) * 31) % 64) - 32;
+        curY += (((step + f) * 43) % 56) - 22;
         pts.push([curX, curY]);
       }
-      drawSeamlessCurve(ctx, pts, '#120803', 2.8);
+      drawSeamlessCurve(ctx, pts, '#0d0603', 3.5);
+      drawSeamlessCurve(ctx, pts.map(p => [p[0] + 1.2, p[1] - 1.2]), '#6a3e21', 1.2);
     }
 
-    // Touches végétales de lichen sur les failles
-    for (let m = 0; m < 35; m++) {
-      const mx = (m * 149) % 512;
-      const my = (m * 223) % 512;
-      const mr = 6 + (m % 14);
+    // Lichen et mousses de rocaille
+    for (let m = 0; m < 45; m++) {
+      const mx = (m * 151) % 512;
+      const my = (m * 229) % 512;
+      const mr = 5 + (m % 15);
       const mg = ctx.createRadialGradient(mx, my, 0, mx, my, mr);
-      mg.addColorStop(0, 'rgba(65, 82, 38, 0.45)');
+      mg.addColorStop(0, 'rgba(74, 98, 42, 0.50)');
       mg.addColorStop(1, 'rgba(0,0,0,0)');
       drawSeamlessCircle(ctx, mx, my, mr, mg);
     }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(2.5, 6);
+    tex.repeat.set(2.8, 6.5);
     textures.push(tex);
   }
 
-  // 3. Cycle 3 : Obsession / Lave & Feu (Magma Incandescent Vivant & Dalles de Basalte Noir)
+  // 3. Cycle 3 : Feu / Obsession (Magma Incandescent Vivant & Dalles de Basalte Volcanique)
   {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Basalte volcanique refroidi
-    ctx.fillStyle = '#0f0505';
+    // Basalte noir refroidi
+    ctx.fillStyle = '#0c0404';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Dalles de roche volcanique fracturée
-    for (let r = 0; r < 40; r++) {
+    // Plaques de basalte fissurées
+    for (let r = 0; r < 45; r++) {
       const cx = (r * 113) % 512;
-      const cy = (r * 173) % 512;
-      const rad = 30 + ((r * 17) % 50);
+      const cy = (r * 179) % 512;
+      const rad = 28 + ((r * 19) % 55);
       const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
-      bg.addColorStop(0, '#1c0a0a');
-      bg.addColorStop(0.8, '#120505');
+      bg.addColorStop(0, '#1c0808');
+      bg.addColorStop(0.85, '#0e0303');
       bg.addColorStop(1, 'rgba(0,0,0,0)');
       drawSeamlessCircle(ctx, cx, cy, rad, bg);
     }
 
-    // Fleuves de magma en fusion sinueux continus
+    // Fleuves de magma incandescent en fusion
     ctx.globalCompositeOperation = 'screen';
-    for (let l = 0; l < 5; l++) {
+    for (let l = 0; l < 6; l++) {
       const pts = [];
-      const baseY = (l / 5) * 512;
+      const baseY = (l / 6) * 512;
       for (let x = 0; x <= 512; x += 16) {
-        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + l * 2) * 35;
+        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + l * 2.1) * 38;
         pts.push([x, y]);
       }
-      // Halo magmatique large
-      drawSeamlessCurve(ctx, pts, 'rgba(255, 60, 0, 0.35)', 42);
-      // Cœur de lave rougeoyante
-      drawSeamlessCurve(ctx, pts, 'rgba(255, 120, 0, 0.65)', 20);
-      // Fissure blanche/dorée incandescente au centre
-      drawSeamlessCurve(ctx, pts, 'rgba(255, 235, 120, 0.90)', 6);
+      drawSeamlessCurve(ctx, pts, 'rgba(255, 55, 0, 0.40)', 50);
+      drawSeamlessCurve(ctx, pts, 'rgba(255, 125, 0, 0.78)', 24);
+      drawSeamlessCurve(ctx, pts, 'rgba(255, 245, 150, 0.95)', 7);
     }
 
-    // Braises et étincelles chaudes
+    // Braises ardentes et bulles de lave
     ctx.globalCompositeOperation = 'source-over';
-    for (let e = 0; e < 90; e++) {
-      const ex = (e * 181) % 512;
+    for (let e = 0; e < 110; e++) {
+      const ex = (e * 179) % 512;
       const ey = (e * 239) % 512;
-      const er = 1.5 + (e % 3.5);
+      const er = 1.6 + (e % 3.8);
       const eg = ctx.createRadialGradient(ex, ey, 0, ex, ey, er * 2);
-      eg.addColorStop(0, '#fff275');
-      eg.addColorStop(0.5, '#ff4500');
+      eg.addColorStop(0, '#fff485');
+      eg.addColorStop(0.55, '#ff4d00');
       eg.addColorStop(1, 'rgba(0,0,0,0)');
       drawSeamlessCircle(ctx, ex, ey, er * 2, eg);
     }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(2.5, 6);
+    tex.repeat.set(2.8, 6.5);
     textures.push(tex);
   }
 
-  // 4. Cycle 4 : Amour / Électricité (Circuits Cyber Haute Tension & Plasma Doré)
+  // 4. Cycle 4 : Électricité / Amour (Circuits Cyber PCB Dorés & Nœuds Plasma Haute Tension)
   {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#06060c';
+    // Châssis métallique sombre
+    ctx.fillStyle = '#060710';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Grille de pistes d'énergie cybernétiques
+    // Traces de circuits imprimés orthogonaux
     ctx.globalCompositeOperation = 'screen';
     for (let p = 0; p < 8; p++) {
       const y = (p / 8) * 512;
-      drawSeamlessCurve(ctx, [[0, y], [512, y]], 'rgba(250, 204, 21, 0.25)', 3);
+      drawSeamlessCurve(ctx, [[0, y], [512, y]], 'rgba(250, 204, 21, 0.32)', 4);
     }
     for (let p = 0; p < 8; p++) {
       const x = (p / 8) * 512;
-      drawSeamlessCurve(ctx, [[x, 0], [x, 512]], 'rgba(250, 204, 21, 0.25)', 3);
+      drawSeamlessCurve(ctx, [[x, 0], [x, 512]], 'rgba(250, 204, 21, 0.32)', 4);
     }
 
-    // Nœuds de plasma étincelants aux croisements
+    // Pistes diagonales high-tech
+    for (let d = 0; d < 4; d++) {
+      const offset = (d / 4) * 512;
+      drawSeamlessCurve(ctx, [[offset, 0], [offset + 256, 256]], 'rgba(234, 179, 8, 0.25)', 2.5);
+    }
+
+    // Nœuds de plasma doré aux intersections
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
         if ((i + j) % 2 === 0) {
           const cx = (i / 8) * 512;
           const cy = (j / 8) * 512;
-          const ng = ctx.createRadialGradient(cx, cy, 0, cx, cy, 14);
-          ng.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-          ng.addColorStop(0.4, 'rgba(250, 204, 21, 0.6)');
+          const ng = ctx.createRadialGradient(cx, cy, 0, cx, cy, 16);
+          ng.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+          ng.addColorStop(0.4, 'rgba(250, 204, 21, 0.65)');
           ng.addColorStop(1, 'rgba(0,0,0,0)');
-          drawSeamlessCircle(ctx, cx, cy, 14, ng);
+          drawSeamlessCircle(ctx, cx, cy, 16, ng);
         }
       }
     }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(2.5, 6);
+    tex.repeat.set(2.8, 6.5);
     textures.push(tex);
   }
 
-  // 5. Cycle 5 : Bonheur / Lumière (Marbre Albâtre Doux & Veines d'Or Céleste)
+  // 5. Cycle 5 : Lumière / Bonheur (Marbre Albâtre Doux & Veines d'Or Céleste - Zéro Éblouissement)
   {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Marbre clair sans éblouissement
+    // Marbre clair doux satiné
     const mGrad = ctx.createLinearGradient(0, 0, 512, 512);
-    mGrad.addColorStop(0, '#f1f5f9');
+    mGrad.addColorStop(0, '#f8fafc');
     mGrad.addColorStop(0.5, '#e2e8f0');
-    mGrad.addColorStop(1, '#f1f5f9');
+    mGrad.addColorStop(1, '#f8fafc');
     ctx.fillStyle = mGrad;
     ctx.fillRect(0, 0, 512, 512);
 
-    // Veinage d'or champagne délicat
-    for (let v = 0; v < 6; v++) {
+    // Veines de marbre gris bleuté douces
+    for (let v = 0; v < 5; v++) {
       const pts = [];
-      const baseY = (v / 6) * 512;
+      const baseY = (v / 5) * 512;
       for (let x = 0; x <= 512; x += 16) {
-        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + v) * 22;
+        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + v) * 26;
         pts.push([x, y]);
       }
-      drawSeamlessCurve(ctx, pts, 'rgba(234, 179, 8, 0.28)', 6);
-      drawSeamlessCurve(ctx, pts, 'rgba(254, 240, 138, 0.55)', 2);
+      drawSeamlessCurve(ctx, pts, 'rgba(148, 163, 184, 0.35)', 9);
+    }
+
+    // Veines d'or champagne céleste
+    for (let v = 0; v < 7; v++) {
+      const pts = [];
+      const baseY = (v / 7) * 512;
+      for (let x = 0; x <= 512; x += 16) {
+        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + v * 1.6) * 22;
+        pts.push([x, y]);
+      }
+      drawSeamlessCurve(ctx, pts, 'rgba(217, 160, 25, 0.55)', 4.5);
+      drawSeamlessCurve(ctx, pts, 'rgba(254, 240, 138, 0.85)', 1.5);
+    }
+
+    // Micro-cristaux iridescents délicats
+    for (let k = 0; k < 75; k++) {
+      const kx = (k * 137) % 512;
+      const ky = (k * 223) % 512;
+      drawSeamlessCircle(ctx, kx, ky, 1.2, 'rgba(254, 240, 138, 0.7)');
     }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(2.5, 6);
+    tex.repeat.set(2.8, 6.5);
     textures.push(tex);
   }
 
-  // 6. Cycle 6 : Chaos / Ombre (Obsidienne Liquide & Cendres Nébuleuses)
+  // 6. Cycle 6 : Ombre / Chaos (Obsidienne Liquide, Miroirs Fracturés & Panaches de Cendre)
   {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#0a0a0d';
+    // Base obsidienne sombre
+    ctx.fillStyle = '#09090c';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Panaches de cendre sombre et brume
+    // Panaches de cendre nébuleuse
     ctx.globalCompositeOperation = 'screen';
-    for (let a = 0; a < 25; a++) {
+    for (let a = 0; a < 30; a++) {
       const cx = (a * 109) % 512;
       const cy = (a * 167) % 512;
-      const r = 40 + (a % 50);
+      const r = 45 + (a % 55);
       const ag = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      ag.addColorStop(0, 'rgba(71, 85, 105, 0.35)');
+      ag.addColorStop(0, 'rgba(71, 85, 105, 0.38)');
       ag.addColorStop(1, 'rgba(0,0,0,0)');
       drawSeamlessCircle(ctx, cx, cy, r, ag);
     }
 
-    // Fractures d'obsidienne tranchante
+    // Fractures cristallines d'obsidienne tranchante
     ctx.globalCompositeOperation = 'source-over';
-    for (let f = 0; f < 10; f++) {
+    for (let f = 0; f < 14; f++) {
       const pts = [];
       let curX = (f * 131) % 512;
       let curY = (f * 197) % 512;
       pts.push([curX, curY]);
-      for (let s = 0; s < 4; s++) {
-        curX += (((s + f) * 31) % 70) - 35;
-        curY += (((s + f) * 47) % 65) - 30;
+      for (let s = 0; s < 5; s++) {
+        curX += (((s + f) * 31) % 76) - 38;
+        curY += (((s + f) * 47) % 68) - 34;
         pts.push([curX, curY]);
       }
-      drawSeamlessCurve(ctx, pts, 'rgba(148, 163, 184, 0.45)', 2);
+      drawSeamlessCurve(ctx, pts, 'rgba(148, 163, 184, 0.50)', 2.5);
     }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(2.5, 6);
+    tex.repeat.set(2.8, 6.5);
     textures.push(tex);
   }
 
-  // 7. Cycle 7 : Ambition / Vent (Océan de Nuages Vaporeux & Courants Aériens)
+  // 7. Cycle 7 : Vent / Ambition (Océan de Nuages Stratosphériques & Courants Aériens Supersoniques)
   {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -507,36 +780,36 @@ function createCycleGroundTextures() {
     ctx.fillStyle = vGrad;
     ctx.fillRect(0, 0, 512, 512);
 
-    // Traînées aérodynamiques supersoniques
+    // Traînées d'air supersoniques continues
     ctx.globalCompositeOperation = 'screen';
-    for (let w = 0; w < 10; w++) {
-      const y = (w / 10) * 512;
+    for (let w = 0; w < 12; w++) {
+      const y = (w / 12) * 512;
       const pts = [
         [0, y],
-        [256, y + Math.sin(w) * 16],
+        [256, y + Math.sin(w) * 18],
         [512, y]
       ];
-      drawSeamlessCurve(ctx, pts, 'rgba(255, 255, 255, 0.35)', 8);
+      drawSeamlessCurve(ctx, pts, 'rgba(255, 255, 255, 0.40)', 9);
     }
 
-    // Bancs de stratus vaporeux
-    for (let c = 0; c < 20; c++) {
+    // Bancs de cumulus doux vaporeux
+    for (let c = 0; c < 26; c++) {
       const cx = (c * 127) % 512;
       const cy = (c * 179) % 512;
-      const r = 45 + (c % 55);
+      const r = 48 + (c % 60);
       const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      cg.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+      cg.addColorStop(0, 'rgba(255, 255, 255, 0.50)');
       cg.addColorStop(1, 'rgba(255, 255, 255, 0)');
       drawSeamlessCircle(ctx, cx, cy, r, cg);
     }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(2.5, 6);
+    tex.repeat.set(2.8, 6.5);
     textures.push(tex);
   }
 
-  // 8. Cycle 8 : Folie / Cosmos (Nébuleuse Interstellaire & Poussière Cosmique)
+  // 8. Cycle 8 : Folie / Cosmos (Nébuleuse Interstellaire, Étoiles & Poussière Cosmique)
   {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -549,28 +822,29 @@ function createCycleGroundTextures() {
 
     // Nuages de nébuleuse pourpre et violette
     ctx.globalCompositeOperation = 'screen';
-    for (let n = 0; n < 28; n++) {
+    for (let n = 0; n < 34; n++) {
       const cx = (n * 101) % 512;
       const cy = (n * 173) % 512;
-      const r = 50 + (n % 70);
+      const r = 55 + (n % 75);
       const ng = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      ng.addColorStop(0, n % 2 === 0 ? 'rgba(168, 85, 247, 0.45)' : 'rgba(236, 72, 153, 0.35)');
+      ng.addColorStop(0, n % 2 === 0 ? 'rgba(168, 85, 247, 0.50)' : 'rgba(236, 72, 153, 0.40)');
       ng.addColorStop(1, 'rgba(0,0,0,0)');
       drawSeamlessCircle(ctx, cx, cy, r, ng);
     }
 
-    // Poussière d'étoiles scintillantes
+    // Poussière d'étoiles scintillantes avec aigrettes lumineuses
     ctx.globalCompositeOperation = 'source-over';
-    for (let s = 0; s < 160; s++) {
+    for (let s = 0; s < 180; s++) {
       const sx = (s * 137) % 512;
       const sy = (s * 227) % 512;
-      const sr = 0.8 + (s % 2.2);
-      drawSeamlessCircle(ctx, sx, sy, sr, s % 3 === 0 ? '#fef08a' : '#ffffff');
+      const sr = 0.8 + (s % 2.4);
+      const col = (s % 4 === 0) ? '#fef08a' : ((s % 4 === 1) ? '#67e8f9' : '#ffffff');
+      drawSeamlessCircle(ctx, sx, sy, sr, col);
     }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(2.5, 6);
+    tex.repeat.set(2.8, 6.5);
     textures.push(tex);
   }
 
@@ -619,6 +893,10 @@ export class World {
 
     // Bassin d'ondulations d'eau pour le Cycle 1 (Chute / Eau)
     this.setupWaterRipplesPool();
+
+    // Système de Portail de Transition 3D monumental
+    this.transitionPortal = null;
+    this.cyclesData = CYCLES_DATA;
   }
 
   // Configuration de l'éclairage cinématographique avec PCFSoftShadowMap
@@ -713,6 +991,12 @@ export class World {
         waveWeight = (this.targetCycleIndex === 0) ? this.transitionProgress : (1.0 - this.transitionProgress);
       }
 
+      // Fréquences spatiales harmoniques pour continuité absolue sans couture (sectionLength = 180)
+      // kz1 = 8*PI/180 -> 180 * kz1 = 8*PI (exactement 4 oscillations complètes par section)
+      // kz2 = 4*PI/180 -> 180 * kz2 = 4*PI (exactement 2 oscillations complètes par section)
+      const kz1 = (Math.PI * 8.0) / this.sectionLength;
+      const kz2 = (Math.PI * 4.0) / this.sectionLength;
+
       for (const mesh of this.terrainSections) {
         const geo = mesh.geometry;
         const pos = geo.attributes.position;
@@ -723,12 +1007,18 @@ export class World {
           const x = base[j * 3];
           const y = base[j * 3 + 1];
           const bz = base[j * 3 + 2];
-          const worldZ = mesh.position.z + y;
+          // Local y correspond à -World Z du fait de la rotation X = -PI/2
+          const worldZ = mesh.position.z - y;
 
-          // Vagues de houle océanique ondulantes
-          const wave1 = Math.sin(x * 0.14 + time * 3.2) * Math.cos(worldZ * 0.10 + time * 2.4) * 1.5;
-          const wave2 = Math.sin((x + worldZ) * 0.08 + time * 1.8) * 0.8;
-          pos.setZ(j, bz + (wave1 + wave2) * waveWeight);
+          // Vagues de houle océanique ondulantes harmoniques
+          const wave1 = Math.sin(x * 0.14 + time * 3.2) * Math.cos(worldZ * kz1 + time * 2.4) * 1.5;
+          const wave2 = Math.sin((x * 0.08) + worldZ * kz2 + time * 1.8) * 0.8;
+
+          // Amortissement latéral progressif vers les berges rocheuses pour supprimer tout déchirement
+          const absX = Math.abs(x);
+          const lateralDamp = Math.max(0.0, Math.min(1.0, 1.0 - (absX - 22.0) / 14.0));
+
+          pos.setZ(j, bz + (wave1 + wave2) * waveWeight * lateralDamp);
         }
         pos.needsUpdate = true;
         geo.computeVertexNormals();
@@ -1630,6 +1920,26 @@ export class World {
   }
 
   // Transition fluide vers un cycle donné (Glide sans coupure, obstacles préservés)
+  // Gestion du Portail Dimensionnel de Transition de Cycle
+  spawnTransitionPortal(targetCycleIndex) {
+    if (this.transitionPortal) return;
+    const targetCycle = CYCLES_DATA[targetCycleIndex] || CYCLES_DATA[0];
+    this.transitionPortal = new PortalGate(targetCycleIndex, targetCycle.primary, targetCycle.secondary);
+    this.scene.add(this.transitionPortal.group);
+  }
+
+  checkPortalCrossing(playerZ) {
+    if (!this.transitionPortal) return null;
+    // Si le portail arrive à hauteur du vaisseau (z >= playerZ - 2.5)
+    if (this.transitionPortal.group.position.z >= (playerZ - 2.5)) {
+      const nextIdx = this.transitionPortal.targetCycleIndex;
+      this.transitionPortal.dispose(this.scene);
+      this.transitionPortal = null;
+      return nextIdx;
+    }
+    return null;
+  }
+
   setCycle(index, immediate = false) {
     const prevCycle = this.cycle;
     this.currentCycleIndex = (index + CYCLES_DATA.length) % CYCLES_DATA.length;
@@ -2631,66 +2941,91 @@ export class World {
       this.updateSideProps(dt, speed, audioPulse);
     }
 
+    // Défilement et animation du Portail Dimensionnel de Transition
+    if (this.transitionPortal) {
+      this.transitionPortal.update(dt, deltaZ, time);
+      if (this.transitionPortal.group.position.z > 25.0) {
+        this.transitionPortal.dispose(this.scene);
+        this.transitionPortal = null;
+      }
+    }
+
     // 4. Cadencement progressif des obstacles : espacement resserré au fil des cycles
     // Cycle 1 : 2.15s (vol fluide et accessible) -> Cycle 8 : 0.82s (réflexes supersoniques intenses)
     this.timeSinceLastSpawn = (this.timeSinceLastSpawn || 0) + dt;
     const cycleIdx = this.currentCycleIndex || 0;
-    const minSpawnDelay = Math.max(0.78, 2.15 - cycleIdx * 0.19);
-    const isIntense = (cycleIdx >= 3) && (speed > 60.0 || bass > 0.50);
-    const isSpawnBeat = isIntense ? (isNewBeat && (beatInBar === 0 || beatInBar === 2)) : (isNewBeat && beatInBar === 0);
+    // Espacement progressif resserré au fil des cycles (Cycle 1 ~1.1s, Cycle 8 ~0.40s)
+    const minSpawnDelay = Math.max(0.38, 1.15 - cycleIdx * 0.11);
 
-    // Maintien d'un espacement minimal progressif selon le cycle
+    // Cadencement sur le rythme musical (BPM)
+    let isSpawnBeat = isNewBeat;
+    if (cycleIdx < 2) {
+      isSpawnBeat = isNewBeat && (beatInBar === 0 || beatInBar === 2);
+    } else if (cycleIdx < 5) {
+      isSpawnBeat = isNewBeat && (beatInBar === 0 || beatInBar === 2 || (bass > 0.45 && beatInBar === 1));
+    }
+
     if (isSpawnBeat && this.timeSinceLastSpawn >= minSpawnDelay) {
       this.timeSinceLastSpawn = 0;
 
-      const lanes = [-15, -9, 0, 9, 15];
-      const lx = lanes[Math.floor(Math.random() * lanes.length)];
+      const spawnSingle = (lx) => {
+        switch (this.cycle.style) {
+          case 'falling':
+            if (Math.random() < 0.5) this.spawnFallingPillar(lx);
+            else this.spawnWaterSpire(lx);
+            break;
+          case 'sliding':
+            if (Math.random() < 0.48) this.spawnSlidingGate((Math.random() - 0.5) * 12);
+            else this.spawnEarthMonolith(lx);
+            break;
+          case 'spiral':
+            if (Math.random() < 0.5) this.spawnSpiralArch((Math.random() - 0.5) * 8);
+            else this.spawnVolcanoSpire(lx);
+            break;
+          case 'tesla':
+          case 'decoy':
+            if (Math.random() < 0.55) this.spawnTeslaGate(lx);
+            else this.spawnPlasmaPrism(lx);
+            break;
+          case 'solar':
+            if (Math.random() < 0.45) this.spawnSolarBeam();
+            else this.spawnPrismObelisk(lx);
+            break;
+          case 'quake':
+            if (Math.random() < 0.55) this.spawnQuakePillars(lx);
+            else this.spawnVoidSpikes(lx);
+            break;
+          case 'needles':
+            if (Math.random() < 0.55) this.spawnCrystalNeedle(lx);
+            else this.spawnWindVortex(lx);
+            break;
+          case 'glitch':
+            if (Math.random() < 0.5) this.spawnGlitchMonolith(lx);
+            else this.spawnCosmicRift(lx);
+            break;
+          default:
+            this.spawnWaterSpire(lx);
+            break;
+        }
+      };
 
-      switch (this.cycle.style) {
-        case 'falling': // Cycle 1 : Chute (Noir / Eau)
-          if (Math.random() < 0.5) this.spawnFallingPillar(lx);
-          else this.spawnWaterSpire(lx);
-          break;
-
-        case 'sliding': // Cycle 2 : Résilience (Vert & Marron / Terre)
-          if (Math.random() < 0.48) this.spawnSlidingGate((Math.random() - 0.5) * 12);
-          else this.spawnEarthMonolith(lx);
-          break;
-
-        case 'spiral': // Cycle 3 : Obsession (Rouge / Feu)
-          if (Math.random() < 0.5) this.spawnSpiralArch((Math.random() - 0.5) * 8);
-          else this.spawnVolcanoSpire(lx);
-          break;
-
-        case 'tesla':
-        case 'decoy': // Cycle 4 : Amour (Jaune / Électricité)
-          if (Math.random() < 0.55) this.spawnTeslaGate(lx);
-          else this.spawnPlasmaPrism(lx);
-          break;
-
-        case 'solar': // Cycle 5 : Bonheur (Blanc / Lumière)
-          if (Math.random() < 0.45) this.spawnSolarBeam();
-          else this.spawnPrismObelisk(lx);
-          break;
-
-        case 'quake': // Cycle 6 : Chaos (Gris / Ombre)
-          if (Math.random() < 0.55) this.spawnQuakePillars(lx);
-          else this.spawnVoidSpikes(lx);
-          break;
-
-        case 'needles': // Cycle 7 : Ambition (Bleu / Vent)
-          if (Math.random() < 0.55) this.spawnCrystalNeedle(lx);
-          else this.spawnWindVortex(lx);
-          break;
-
-        case 'glitch': // Cycle 8 : Folie (Violet / Vide ou Cosmos)
-          if (Math.random() < 0.5) this.spawnGlitchMonolith(lx);
-          else this.spawnCosmicRift(lx);
-          break;
-
-        default:
-          this.spawnWaterSpire(lx);
-          break;
+      // Formations d'obstacles multi-voies (Portes doubles, slaloms)
+      const formationChance = 0.20 + cycleIdx * 0.05;
+      if (cycleIdx >= 1 && Math.random() < formationChance) {
+        if (Math.random() < 0.5) {
+          // Double piliers laissant le couloir central libre
+          spawnSingle(-11);
+          spawnSingle(11);
+        } else {
+          // Slalom (Une voie latérale + centre)
+          const sideLane = (Math.random() < 0.5) ? -12 : 12;
+          spawnSingle(sideLane);
+          spawnSingle(0);
+        }
+      } else {
+        const lanes = [-15, -9, 0, 9, 15];
+        const lx = lanes[Math.floor(Math.random() * lanes.length)];
+        spawnSingle(lx);
       }
     }
 
@@ -2841,6 +3176,10 @@ export class World {
   }
 
   reset() {
+    if (this.transitionPortal) {
+      this.transitionPortal.dispose(this.scene);
+      this.transitionPortal = null;
+    }
     for (const obs of this.obstacles) {
       this.scene.remove(obs.mesh);
     }

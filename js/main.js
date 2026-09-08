@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { AudioManager, TRACKS } from './audio.js';
 import { TargetManager } from './target.js';
 import { Player } from './player.js';
-import { World, CYCLES_DATA } from './world.js';
+import { World, CYCLES_DATA, CYCLE_FLIGHT_PROFILES } from './world.js';
 import { UIManager } from './ui.js';
 import { AuthManager } from './auth.js';
 import { LeaderboardManager } from './leaderboard.js';
@@ -562,25 +562,101 @@ class GameApp {
         this.maxSpeed = this.currentSpeed;
       }
 
-      // Progression continue et équilibrée vers le cycle suivant (~48 secondes de vol ou ~2100m)
-      if (cycleIdx < 7 && (this.cycleTimer >= 48.0 || this.currentCycleDistance >= 2100.0) && !this.world.isTransitioning) {
-        this.cycleTimer = 0;
-        this.currentCycleDistance = 0;
-        if (this.audio) this.audio.nextTrack();
+      // 7. Progression gouvernée par la fin du morceau musical & Portail de Transition
+      const isNearTrackEnd = this.audio && this.audio.isNearEnd(9.0);
+
+      // Apparition du Portail de Transition 3D à l'horizon à l'approche de la fin de la musique (Cycles 1 à 7)
+      if (cycleIdx < 7 && isNearTrackEnd && !this.world.transitionPortal && !this.world.isTransitioning) {
+        const nextIdx = (cycleIdx + 1) % 8;
+        this.world.spawnTransitionPortal(nextIdx);
+        const nextCycleData = CYCLES_DATA[nextIdx];
+        this.ui.showCycleToast({
+          name: "🌀 PORTAIL DE TRANSCENDANCE",
+          subtitle: "Franchissez la porte vers le Cycle " + (nextIdx + 1) + " !",
+          primary: (nextCycleData ? nextCycleData.primary : 0x00f0ff)
+        });
       }
 
-      // 8. Suivi caméra 3e personne cinématographique (Infi au premier plan, Nity en ligne de mire à z = -58)
+      // Franchissement du Portail Dimensionnel par le vaisseau
+      if (this.world.transitionPortal) {
+        const crossedCycle = this.world.checkPortalCrossing(playerPos.z);
+        if (crossedCycle !== null) {
+          if (this.audio) {
+            this.audio.playPortalWarp();
+            this.audio.nextTrack();
+          }
+          // Impulsion supersonique lors de la traversée de la porte
+          this.player.boostExtraSpeed = 28.0;
+          this.player.boostTimer = 1.4;
+        }
+      }
+
+      // 8. Dynamique de vol cinématographique & Trajectoires spécifiques aux 8 Cycles
+      const profile = (CYCLE_FLIGHT_PROFILES && CYCLE_FLIGHT_PROFILES[cycleIdx]) || {
+        pitch: 0, camYOffset: 0, targetYOffset: 0, rollWobbleAmp: 0, waveAltitudeAmp: 0, fovMod: 0, turbulence: 0
+      };
+      const curTime = performance.now() * 0.001;
+
+      let profileCamY = profile.camYOffset || 0;
+      let profileTargetY = profile.targetYOffset || 0;
+      let profileTargetX = 0;
+      let profileRoll = 0;
+      let profileFov = 0;
+
+      // Ondulation d'altitude en vagues (ex: Cycle 4 Amour)
+      if (profile.waveAltitudeAmp > 0) {
+        const wave = Math.sin(curTime * (profile.waveAltitudeFreq || 1.5)) * profile.waveAltitudeAmp;
+        profileCamY += wave * 0.7;
+        profileTargetY += wave * 1.2;
+      }
+      // Roulis oscillant (ex: Cycle 3 Obsession hypnotique)
+      if (profile.rollWobbleAmp > 0) {
+        profileRoll += Math.sin(curTime * (profile.rollWobbleFreq || 2.0)) * profile.rollWobbleAmp;
+      }
+      // Turbulences erratiques (ex: Cycle 6 Chaos)
+      if (profile.turbulence > 0) {
+        profileTargetX += (Math.sin(curTime * 17.3) + Math.cos(curTime * 29.1)) * profile.turbulence * 3.0;
+        profileCamY += (Math.sin(curTime * 21.4) + Math.cos(curTime * 33.7)) * profile.turbulence * 1.5;
+        profileRoll += Math.sin(curTime * 24.5) * profile.turbulence * 0.45;
+      }
+      // Distorsion psychédélique du champ de vision (ex: Cycle 8 Folie)
+      if (profile.fovMod !== 0) {
+        profileFov = Math.sin(curTime * 2.4) * profile.fovMod;
+      }
+
+      // Transmission du profil dynamique au vaisseau joueur
+      if (this.player.setFlightProfile) {
+        this.player.setFlightProfile(profile, curTime);
+      }
+
+      // Suivi caméra 3e personne cinématographique
       const tCamX = playerPos.x * 0.36;
-      const tCamY = Math.max(3.6, playerPos.y + 2.7);
+      const tCamY = Math.max(2.2, playerPos.y + 2.7 + profileCamY);
       const tCamZ = playerPos.z + 8.8;
 
       this.camera.position.x += (tCamX - this.camera.position.x) * 6.0 * dt;
       this.camera.position.y += (tCamY - this.camera.position.y) * 5.0 * dt;
       this.camera.position.z += (tCamZ - this.camera.position.z) * 5.0 * dt;
 
-      // La caméra vise en avant vers Nity (z = -58) et le Trou Noir
-      this.cameraTarget.set(playerPos.x * 0.22, Math.max(2.4, playerPos.y * 0.45 + 1.8), -52);
+      // La caméra vise en avant avec l'inclinaison propre à l'élément (piqué, droit, montée)
+      this.cameraTarget.set(
+        playerPos.x * 0.22 + profileTargetX,
+        Math.max(1.0, playerPos.y * 0.45 + 1.8 + profileTargetY),
+        -52
+      );
       this.camera.lookAt(this.cameraTarget);
+
+      // Inclinaison en roulis de la caméra
+      this.camera.rotation.z += profileRoll;
+
+      // Champ de vision (FOV) dynamique
+      const baseFov = 75;
+      const speedFov = (this.currentSpeed > 80) ? (this.currentSpeed - 80) * 0.14 : 0;
+      const targetFov = Math.max(55, Math.min(96, baseFov + speedFov + profileFov));
+      if (Math.abs(this.camera.fov - targetFov) > 0.08) {
+        this.camera.fov += (targetFov - this.camera.fov) * 4.0 * dt;
+        this.camera.updateProjectionMatrix();
+      }
 
       // 9. Télémétrie HUD avec Armure et Sayanfinity
       this.ui.updateHUD(
