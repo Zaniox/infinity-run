@@ -1,4 +1,4 @@
-/**
+/**\n * // SOUNDRISE : INFINITY RUN - by zanioxx_off
  * // SOUNDRISE : INFINITY RUN - AUTHENTIFICATION COMPTE GOOGLE & PROFIL PILOTE
  * Intégration Google Identity Services (GIS), session locale persistante,
  * extraction du profil (Nom, Email, Avatar HD Google) et attribution du Pseudo unique.

@@ -1,4 +1,4 @@
-/**
+/**\n * // SOUNDRISE : INFINITY RUN - by zanioxx_off
  * // SOUNDRISE : INFINITY RUN - MOTEUR PRINCIPAL (ES6)
  * Orchestrateur Three.js 60 FPS, Entrées, Caméra 3e personne,
  * Boucle de vol et Synchronisation Audio-Réactive.
@@ -33,6 +33,7 @@ class GameApp {
     this.STATE_GAMEOVER = 'GAMEOVER';
     this.state = this.STATE_MENU;
     this.isMultiplayerDuel = false;
+    this.isPaused = false;
 
     // Statistiques de vol
     this.distance = 0;
@@ -125,13 +126,18 @@ class GameApp {
     this.cameraTarget = new THREE.Vector3(0, 2.0, -16);
     this.camera.lookAt(this.cameraTarget);
 
+    this.isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.innerWidth <= 820;
+    if (this.isMobile) {
+      document.body.classList.add('touch-device');
+    }
+
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
       antialias: true,
       powerPreference: 'high-performance'
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.isMobile ? 1.5 : 2.0));
 
     // Ombres nettes et douces (Race the Sun style)
     this.renderer.shadowMap.enabled = true;
@@ -139,6 +145,40 @@ class GameApp {
 
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
+  }
+
+  togglePause() {
+    if (this.state === this.STATE_PLAYING) {
+      if (this.isPaused) {
+        this.resumeGame();
+      } else {
+        this.pauseGame();
+      }
+    } else if (this.state === this.STATE_GAMEOVER) {
+      if (this.ui && this.ui.isPauseMenuVisible()) {
+        this.ui.hidePauseMenu();
+      } else if (this.ui) {
+        this.ui.showPauseMenu();
+      }
+    }
+  }
+
+  pauseGame() {
+    if (this.state !== this.STATE_PLAYING) return;
+    this.isPaused = true;
+    if (this.ui) this.ui.showPauseMenu();
+    if (this.audio && this.audio.audioElement && !this.audio.audioElement.paused) {
+      this.audio.audioElement.pause();
+    }
+  }
+
+  resumeGame() {
+    this.isPaused = false;
+    if (this.ui) this.ui.hidePauseMenu();
+    this.clock.getDelta(); // Réinitialiser le delta pour éviter un bond brutal après la pause
+    if (this.audio && this.audio.isPlaying && this.audio.audioElement && this.audio.audioElement.paused && !this.audio.isMuted) {
+      this.audio.audioElement.play().catch(() => {});
+    }
   }
 
   startGame() {
@@ -152,14 +192,20 @@ class GameApp {
       this.auth.loginAsGuest();
     }
 
+    this.isPaused = false;
     this.state = this.STATE_PLAYING;
-    if (this.ui) this.ui.hideStartMenu();
+    if (this.ui) {
+      this.ui.hideStartMenu();
+      this.ui.hidePauseMenu();
+    }
     if (!this.audio.isPlaying) this.audio.start();
     const track = this.audio.getCurrentTrack();
     this.onTrackChange(this.audio.currentTrackIndex, track);
   }
 
   restartGame() {
+    this.isPaused = false;
+    if (this.ui) this.ui.hidePauseMenu();
     this.isMultiplayerDuel = false;
     if (this.multiplayer) {
       this.multiplayer.leaveRoom();
@@ -216,6 +262,8 @@ class GameApp {
   }
 
   startMultiplayerGame(startCycleIndex = 0) {
+    this.isPaused = false;
+    if (this.ui) this.ui.hidePauseMenu();
     this.isMultiplayerDuel = true;
     if (this.rivalLasers) {
       this.rivalLasers.forEach(rl => {
@@ -290,13 +338,18 @@ class GameApp {
 
   bindInputEvents() {
     window.addEventListener('keydown', (e) => {
+      if (e.code === 'Escape') {
+        e.preventDefault();
+        this.togglePause();
+        return;
+      }
       if (['ArrowLeft', 'KeyA', 'KeyQ'].includes(e.code)) this.keyLeft = true;
       if (['ArrowRight', 'KeyD'].includes(e.code)) this.keyRight = true;
       if (['ArrowUp', 'KeyW', 'KeyZ'].includes(e.code)) this.keyUp = true;
       if (['ArrowDown', 'KeyS'].includes(e.code)) this.keyDown = true;
       if (e.code === 'Space') {
         this.keyFire = true;
-        if (this.state === this.STATE_PLAYING) {
+        if (this.state === this.STATE_PLAYING && !this.isPaused) {
           this.firePlayerLaser();
           e.preventDefault();
         }
@@ -315,25 +368,125 @@ class GameApp {
 
     // Tir au clic gauche de souris pendant le vol Star Fox
     window.addEventListener('mousedown', (e) => {
-      if (e.button === 0 && this.state === this.STATE_PLAYING) {
+      if (e.button === 0 && this.state === this.STATE_PLAYING && !this.isPaused) {
+        if (e.target && e.target.closest && (e.target.closest('.modal-overlay') || e.target.closest('#mobile-controls') || e.target.closest('#hud-overlay button'))) {
+          return;
+        }
         this.firePlayerLaser();
       }
     });
 
-    // Tactile mobile
+    // Contrôles tactiles dédiés smartphone
+    const joyZone = document.getElementById('touch-joystick-zone');
+    const joyBase = document.getElementById('touch-joystick-base');
+    const joyKnob = document.getElementById('touch-joystick-knob');
+    const btnMobileFire = document.getElementById('btn-mobile-fire');
+    const btnMobileBoost = document.getElementById('btn-mobile-boost');
+
+    if (btnMobileFire) {
+      const handleTouchFire = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (this.state === this.STATE_PLAYING && !this.isPaused) {
+          this.firePlayerLaser();
+        }
+      };
+      btnMobileFire.addEventListener('touchstart', handleTouchFire, { passive: false });
+      btnMobileFire.addEventListener('click', handleTouchFire);
+    }
+
+    if (btnMobileBoost) {
+      const handleTouchBoost = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (this.state === this.STATE_PLAYING && !this.isPaused && this.player) {
+          this.player.activateBoost(3.5, 28.0);
+        }
+      };
+      btnMobileBoost.addEventListener('touchstart', handleTouchBoost, { passive: false });
+      btnMobileBoost.addEventListener('click', handleTouchBoost);
+    }
+
+    if (joyZone && joyBase && joyKnob) {
+      let joyTouchId = null;
+      let baseCenterX = 0;
+      let baseCenterY = 0;
+      const maxRadius = 46;
+
+      joyZone.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (joyTouchId !== null) return;
+        const touch = e.changedTouches[0];
+        joyTouchId = touch.identifier;
+        const rect = joyZone.getBoundingClientRect();
+        baseCenterX = touch.clientX - rect.left;
+        baseCenterY = touch.clientY - rect.top;
+
+        joyBase.style.left = `${baseCenterX}px`;
+        joyBase.style.top = `${baseCenterY}px`;
+        joyBase.classList.remove('hidden');
+        joyKnob.style.transform = 'translate(-50%, -50%)';
+        this.isPointerDown = true;
+      }, { passive: false });
+
+      joyZone.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (joyTouchId === null) return;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const touch = e.changedTouches[i];
+          if (touch.identifier === joyTouchId) {
+            const rect = joyZone.getBoundingClientRect();
+            const curX = touch.clientX - rect.left;
+            const curY = touch.clientY - rect.top;
+            let dx = curX - baseCenterX;
+            let dy = curY - baseCenterY;
+            const dist = Math.hypot(dx, dy);
+            if (dist > maxRadius) {
+              dx = (dx / dist) * maxRadius;
+              dy = (dy / dist) * maxRadius;
+            }
+            joyKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            this.inputAxisX = dx / maxRadius;
+            this.inputAxisY = -dy / maxRadius; // Glisser vers le haut élève l'altitude
+            break;
+          }
+        }
+      }, { passive: false });
+
+      const endJoy = (e) => {
+        if (joyTouchId === null) return;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === joyTouchId) {
+            joyTouchId = null;
+            joyBase.classList.add('hidden');
+            joyKnob.style.transform = 'translate(-50%, -50%)';
+            this.isPointerDown = false;
+            this.inputAxisX = 0;
+            this.inputAxisY = 0;
+            break;
+          }
+        }
+      };
+
+      joyZone.addEventListener('touchend', endJoy, { passive: false });
+      joyZone.addEventListener('touchcancel', endJoy, { passive: false });
+    }
+
+    // Fallback tactile sur écran
     window.addEventListener('pointerdown', (e) => {
-      if (e.pointerType === 'touch') {
+      if (e.pointerType === 'touch' && !e.target.closest('#mobile-controls') && !e.target.closest('.modal-overlay')) {
         this.isPointerDown = true;
         this.pointerStartX = e.clientX;
         this.pointerStartY = e.clientY;
-        if (this.state === this.STATE_PLAYING) {
-          this.firePlayerLaser();
-        }
       }
     });
 
     window.addEventListener('pointermove', (e) => {
-      if (this.isPointerDown && e.pointerType === 'touch') {
+      if (this.isPointerDown && e.pointerType === 'touch' && !e.target.closest('#touch-joystick-zone')) {
         const diffX = (e.clientX - this.pointerStartX) / (window.innerWidth * 0.22);
         const diffY = (this.pointerStartY - e.clientY) / (window.innerHeight * 0.22);
         this.inputAxisX = Math.max(-1, Math.min(1, diffX));
@@ -360,7 +513,7 @@ class GameApp {
     else if (this.keyDown && !this.keyUp) this.inputAxisY = -1;
     else if (!this.keyUp && !this.keyDown && !this.isPointerDown) this.inputAxisY = 0;
 
-    if (this.keyFire && this.state === this.STATE_PLAYING) {
+    if (this.keyFire && this.state === this.STATE_PLAYING && !this.isPaused) {
       this.firePlayerLaser();
     }
   }
@@ -372,13 +525,20 @@ class GameApp {
       this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(w, h);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || w <= 820;
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2.0));
     });
   }
 
   // Boucle de rendu 60 FPS
   animate() {
     requestAnimationFrame(this.animate);
+
+    if (this.isPaused) {
+      // En mode pause, maintien de l'affichage statique de la scène sans faire avancer le jeu
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
 
     const dt = Math.min(this.clock.getDelta(), 0.1);
     const time = performance.now() * 0.001;

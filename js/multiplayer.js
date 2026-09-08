@@ -1,4 +1,4 @@
-/**
+/**\n * // SOUNDRISE : INFINITY RUN - by zanioxx_off
  * // SOUNDRISE : INFINITY RUN - MOTEUR MULTIJOUEUR 1V1 EN TEMPS RÉEL
  * Salons Publics & Privés, Synchronisation P2P (WebRTC / PeerJS + BroadcastChannel),
  * Rendu 3D de l'Adversaire dans la course et Arbitrage de Victoire/Défaite.

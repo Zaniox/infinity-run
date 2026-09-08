@@ -1,4 +1,4 @@
-/**
+/**\n * // SOUNDRISE : INFINITY RUN - by zanioxx_off
  * // SOUNDRISE : INFINITY RUN - CIBLE, HORIZON & NITY
  * Nity en vol devant Infi (z = -58), aspiration cosmique vers le Trou Noir,
  * flux gravitationnels d'accrétion et sillage de cœurs à collecter.

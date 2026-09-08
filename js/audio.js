@@ -1,4 +1,4 @@
-/**
+/**\n * // SOUNDRISE : INFINITY RUN - by zanioxx_off
  * // SOUNDRISE : INFINITY RUN - MOTEUR AUDIO
  * Web Audio API + HTML5 Audio Streaming + Analyseur FFT 20-120 Hz + Fallback Synthétiseur
  */

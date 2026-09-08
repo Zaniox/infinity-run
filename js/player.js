@@ -1,4 +1,4 @@
-/**
+/**\n * // SOUNDRISE : INFINITY RUN - by zanioxx_off
  * // SOUNDRISE : INFINITY RUN - JOUEUR (« INFI »)
  * Modèle 3D Métallique Sombre, Tête Sphérique avec Infini & Yeux en Arc,
  * Cœur Émissif Dynamique, Physique Glider Race the Sun et Particules de Dislocation.
@@ -731,6 +731,11 @@ export class Player {
 
   canSmashObstacles() {
     return this.saiyanTimer > 0;
+  }
+
+  activateBoost(duration = 3.5, speed = 28.0) {
+    this.boostTimer = duration;
+    this.boostExtraSpeed = speed;
   }
 
   // --- 3. SYSTÈME DE TIRS BLASTER LASER (STAR FOX DYNAMIQUE) ---

@@ -1,4 +1,4 @@
-/**
+/**\n * // SOUNDRISE : INFINITY RUN - by zanioxx_off
  * // SOUNDRISE : INFINITY RUN - SYSTÈME DE PARTICULES RÉALISTES
  * Générateur de textures procédurales haute définition pour bannir
  * définitivement les carrés Three.js par défaut et offrir un rendu

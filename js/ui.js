@@ -1,4 +1,4 @@
-/**
+/**\n * // SOUNDRISE : INFINITY RUN - by zanioxx_off
  * // SOUNDRISE : INFINITY RUN - INTERFACE UTILISATEUR, AUTHENTIFICATION & CLASSEMENT MONDIAL
  * Écran d'accueil épuré, Authentification Google (GIS & Direct), Gestion du Pseudo,
  * Leaderboard mondial en direct, Jauge d'énergie et Écran de Game Over synchronisé.
@@ -133,6 +133,21 @@ export class UIManager {
     this.gameoverWorldRankText = document.getElementById('gameover-world-rank-text');
     this.btnGameoverLeaderboard = document.getElementById('btn-gameover-leaderboard');
     this.btnRestart = document.getElementById('btn-restart');
+
+    // Menu Pause & Contrôles Mobiles
+    this.pauseMenu = document.getElementById('pause-menu');
+    this.btnPauseResume = document.getElementById('btn-pause-resume');
+    this.btnPauseRestart = document.getElementById('btn-pause-restart');
+    this.btnPauseAudio = document.getElementById('btn-pause-audio');
+    this.btnPauseMenu = document.getElementById('btn-pause-menu');
+
+    this.mobileControls = document.getElementById('mobile-controls');
+    this.btnMobilePause = document.getElementById('btn-mobile-pause');
+    this.touchJoystickZone = document.getElementById('touch-joystick-zone');
+    this.touchJoystickBase = document.getElementById('touch-joystick-base');
+    this.touchJoystickKnob = document.getElementById('touch-joystick-knob');
+    this.btnMobileFire = document.getElementById('btn-mobile-fire');
+    this.btnMobileBoost = document.getElementById('btn-mobile-boost');
 
     // Feinte Cosmique & Modal Troll du Cycle 8
     this.cosmicFlash = document.getElementById('cosmic-flash');
@@ -395,6 +410,57 @@ export class UIManager {
       };
       this.btnRestart.addEventListener('click', handleRestart);
       this.btnRestart.addEventListener('pointerdown', handleRestart);
+    }
+
+    // 9b. Menu Pause & Contrôle Mobile Pause
+    if (this.btnPauseResume) {
+      this.btnPauseResume.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.gameApp) window.gameApp.resumeGame();
+      });
+    }
+
+    if (this.btnPauseRestart) {
+      this.btnPauseRestart.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.hidePauseMenu();
+        if (window.gameApp) {
+          window.gameApp.isPaused = false;
+          window.gameApp.restartGame();
+        }
+      });
+    }
+
+    if (this.btnPauseAudio) {
+      this.btnPauseAudio.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.gameApp && window.gameApp.audio) {
+          const isMuted = window.gameApp.audio.toggleMute();
+          this.setAudioState(!isMuted);
+          this.btnPauseAudio.textContent = isMuted ? '🔇 Son : Coupé' : '🔊 Son : Activé';
+        }
+      });
+    }
+
+    if (this.btnPauseMenu) {
+      this.btnPauseMenu.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.hidePauseMenu();
+        this.hideGameOver();
+        if (window.gameApp) {
+          window.gameApp.isPaused = false;
+          window.gameApp.state = window.gameApp.STATE_MENU;
+          window.gameApp.world.reset();
+          this.showStartMenu();
+        }
+      });
+    }
+
+    if (this.btnMobilePause) {
+      this.btnMobilePause.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.gameApp) window.gameApp.togglePause();
+      });
     }
 
     // 10. Bouton Troll Continue
@@ -993,6 +1059,23 @@ export class UIManager {
 
   isGameOverVisible() {
     return this.gameOverModal && !this.gameOverModal.classList.contains('hidden');
+  }
+
+  // --- GESTION DU MENU PAUSE (ÉCHAP / BOUTON PAUSE) ---
+  showPauseMenu() {
+    if (this.pauseMenu) {
+      this.pauseMenu.classList.remove('hidden');
+    }
+  }
+
+  hidePauseMenu() {
+    if (this.pauseMenu) {
+      this.pauseMenu.classList.add('hidden');
+    }
+  }
+
+  isPauseMenuVisible() {
+    return this.pauseMenu && !this.pauseMenu.classList.contains('hidden');
   }
 
   // --- GESTION DU MENU PRINCIPAL PLAY ---

@@ -2870,5 +2870,216 @@ html, body {
   box-shadow: 0 0 25px rgba(34, 197, 94, 0.5) !important;
 }
 
+/* ==========================================================================
+   MENU PAUSE ÉPURÉ & MODERNE (by zanioxx_off)
+   ========================================================================== */
+.pause-card {
+  max-width: 480px;
+  background: rgba(10, 5, 20, 0.94);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  box-shadow: 0 0 50px rgba(0, 240, 255, 0.25), 0 0 100px rgba(168, 85, 247, 0.2);
+}
+
+.pause-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.btn-pause-resume {
+  background: linear-gradient(135deg, #00f0ff 0%, #3b82f6 50%, #8b5cf6 100%);
+  border-color: #00f0ff;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.4);
+}
+
+.pause-sub-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.pause-sub-buttons .btn-menu-action {
+  padding: 10px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.pause-sub-buttons .btn-menu-action:hover {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: #00f0ff;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   CONTRÔLES TACTILES SMARTPHONE (by zanioxx_off)
+   ========================================================================== */
+.mobile-controls-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 80;
+  display: none; /* Actif sur mobile */
+}
+
+@media (hover: none) or (pointer: coarse), (max-width: 900px) {
+  .mobile-controls-layer {
+    display: block;
+  }
+  .hud-footer {
+    display: none !important;
+  }
+  .hud-stats {
+    transform: scale(0.80);
+    transform-origin: top left;
+  }
+}
+
+.touch-joystick-zone {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60%;
+  height: 75%;
+  pointer-events: auto;
+  touch-action: none;
+  display: flex;
+  align-items: flex-end;
+  padding: 24px 28px;
+}
+
+.touch-hint-pill {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.touch-joystick-base {
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: rgba(0, 240, 255, 0.08);
+  border: 2px solid rgba(0, 240, 255, 0.35);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.touch-joystick-knob {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #00f0ff 0%, #0284c7 100%);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.8);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.btn-mobile-pause {
+  position: absolute;
+  top: 76px;
+  right: 18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  color: #00f0ff;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.btn-mobile-pause:active {
+  transform: scale(0.9);
+  background: rgba(0, 240, 255, 0.25);
+}
+
+.mobile-action-buttons {
+  position: absolute;
+  bottom: 24px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  pointer-events: auto;
+}
+
+.btn-touch-action {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 240, 255, 0.5);
+  background: rgba(15, 23, 42, 0.88);
+  color: #ffffff;
+  font-size: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  touch-action: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.touch-action-label {
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+}
+
+.btn-touch-fire {
+  border-color: rgba(0, 240, 255, 0.65);
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.35);
+}
+
+.btn-touch-fire:active {
+  transform: scale(0.92);
+  background: rgba(0, 240, 255, 0.35);
+  border-color: #00f0ff;
+}
+
+.btn-touch-boost {
+  border-color: rgba(168, 85, 247, 0.65);
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.35);
+}
+
+.btn-touch-boost:active {
+  transform: scale(0.92);
+  background: rgba(168, 85, 247, 0.35);
+  border-color: #c084fc;
+}
+
 
 

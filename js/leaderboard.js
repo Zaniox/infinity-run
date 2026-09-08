@@ -1,4 +1,4 @@
-/**
+/**\n * // SOUNDRISE : INFINITY RUN - by zanioxx_off
  * // SOUNDRISE : INFINITY RUN - CLASSEMENT MONDIAL RÉEL & SYNCHRONISÉ
  * Stockage cloud persistant mondial (API REST HTTPS CORS), synchronisation temps réel,
  * gestion du top 100 mondial, calcul du rang mondial et cache hors-ligne.

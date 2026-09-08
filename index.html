@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>// SOUNDRISE : INFINITY RUN</title>
+  <title>// SOUNDRISE : INFINITY RUN - by zanioxx_off</title>
   <link rel="stylesheet" href="style.css" />
 
   <!-- Google Identity Services (GIS) officiel -->
@@ -60,7 +60,7 @@
       <div class="start-menu-card minimalist">
         <!-- Barre supérieure discrète : Marque & Statut Pilote -->
         <header class="menu-top-bar">
-          <div class="menu-brand-tag">// SOUNDRISE</div>
+          <div class="menu-brand-tag">// SOUNDRISE &bull; by zanioxx_off</div>
           
           <!-- Pilule de profil / Authentification compacte -->
           <div id="menu-auth-section" class="menu-profile-pill">
@@ -306,6 +306,65 @@
         <button id="btn-restart" class="btn-restart">
           <span class="btn-restart-text">REPRENDRE LA TRAVERSÉE</span>
           <span class="btn-restart-sub">[ ESPACE ou ENTRÉE ]</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- MENU PAUSE ÉPURÉ & MODERNE (ÉCHAP / BOUTON PAUSE) -->
+    <div id="pause-menu" class="modal-overlay hidden">
+      <div class="modal-card pause-card">
+        <div class="modal-top-bar"></div>
+        <div class="modal-badge">// SOUNDRISE &bull; by zanioxx_off</div>
+        <h2 class="modal-title">MISSION EN PAUSE</h2>
+        <p class="modal-instruction">Traversée suspendue &bull; Respirez et reprenez la course quand vous le souhaitez.</p>
+
+        <div class="pause-actions">
+          <button id="btn-pause-resume" class="btn-play-giant btn-pause-resume" type="button">
+            <div class="btn-shimmer"></div>
+            <span class="btn-play-icon">▶</span>
+            <span class="btn-play-text">REPRENDRE</span>
+            <span class="btn-play-sub">[ ÉCHAP OU CLIC ]</span>
+          </button>
+
+          <div class="pause-sub-buttons">
+            <button id="btn-pause-restart" class="btn-menu-action" type="button">
+              🔄 Recommencer
+            </button>
+            <button id="btn-pause-audio" class="btn-menu-action" type="button">
+              🔊 Son : Activé
+            </button>
+            <button id="btn-pause-menu" class="btn-menu-action" type="button">
+              🚪 Menu Principal
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTRÔLES TACTILES POUR SMARTPHONE (AUTO-DÉTECTÉS) -->
+    <div id="mobile-controls" class="mobile-controls-layer">
+      <!-- Zone de joystick tactile virtuel sur l'écran gauche/centre -->
+      <div id="touch-joystick-zone" class="touch-joystick-zone">
+        <div id="touch-joystick-base" class="touch-joystick-base hidden">
+          <div id="touch-joystick-knob" class="touch-joystick-knob"></div>
+        </div>
+        <div class="touch-hint-pill">GLISSEZ POUR PILOTER</div>
+      </div>
+
+      <!-- Bouton Pause mobile en haut à droite -->
+      <button id="btn-mobile-pause" class="btn-mobile-pause" type="button" title="Mettre en pause">
+        ⏸
+      </button>
+
+      <!-- Boutons d'action tactiles sur l'écran droit -->
+      <div class="mobile-action-buttons">
+        <button id="btn-mobile-boost" class="btn-touch-action btn-touch-boost" type="button">
+          ⚡
+          <span class="touch-action-label">BOOST</span>
+        </button>
+        <button id="btn-mobile-fire" class="btn-touch-action btn-touch-fire" type="button">
+          🔫
+          <span class="touch-action-label">BLASTER</span>
         </button>
       </div>
     </div>

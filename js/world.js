@@ -1,4 +1,4 @@
-/**
+/**\n * // SOUNDRISE : INFINITY RUN - by zanioxx_off
  * // SOUNDRISE : INFINITY RUN - MONDE & 8 CYCLES (STYLE RACE THE SUN)
  * Sol Solide Uni à Relief Doux (Aucune Grille Filaire), Ombres Directionnelles Nettes,
  * Volumes Géométriques Épurés et Transitions Atmosphériques Fluides.
@@ -453,45 +453,45 @@ function createCycleGroundTextures() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Dégradé d'eau océanique profonde
+    // Dégradé d'eau océanique turquoise profonde & saphir
     const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
-    bgGrad.addColorStop(0, '#010d1c');
-    bgGrad.addColorStop(0.5, '#022442');
-    bgGrad.addColorStop(1, '#010d1c');
+    bgGrad.addColorStop(0, '#042848');
+    bgGrad.addColorStop(0.5, '#085387');
+    bgGrad.addColorStop(1, '#042848');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, 512, 512);
 
     // Courants de fond marins sinusoïdaux
     ctx.globalCompositeOperation = 'screen';
-    for (let c = 0; c < 7; c++) {
+    for (let c = 0; c < 8; c++) {
       const pts = [];
-      const baseY = (c / 7) * 512;
+      const baseY = (c / 8) * 512;
       for (let x = 0; x <= 512; x += 16) {
-        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + c * 1.2) * 32;
+        const y = baseY + Math.sin((x / 512) * Math.PI * 4 + c * 1.2) * 36;
         pts.push([x, y]);
       }
-      drawSeamlessCurve(ctx, pts, 'rgba(0, 160, 240, 0.22)', 44);
+      drawSeamlessCurve(ctx, pts, 'rgba(0, 210, 255, 0.38)', 48);
     }
 
     // Réseau vivant de caustiques cristallines sous-marines
     for (let i = 0; i < 54; i++) {
       const cx = (i * 79) % 512;
       const cy = (i * 137) % 512;
-      const r = 24 + ((i * 23) % 48);
-      const rGrad = ctx.createRadialGradient(cx, cy, r * 0.15, cx, cy, r);
-      rGrad.addColorStop(0, 'rgba(0, 245, 255, 0.32)');
-      rGrad.addColorStop(0.65, 'rgba(0, 170, 255, 0.14)');
-      rGrad.addColorStop(1, 'rgba(0, 80, 180, 0)');
-      drawSeamlessCircle(ctx, cx, cy, r, rGrad, 'rgba(140, 240, 255, 0.30)', 2.0);
+      const r = 26 + ((i * 23) % 48);
+      const rGrad = ctx.createRadialGradient(cx, cy, r * 0.12, cx, cy, r);
+      rGrad.addColorStop(0, 'rgba(130, 245, 255, 0.58)');
+      rGrad.addColorStop(0.6, 'rgba(0, 195, 255, 0.32)');
+      rGrad.addColorStop(1, 'rgba(0, 110, 220, 0)');
+      drawSeamlessCircle(ctx, cx, cy, r, rGrad, 'rgba(170, 250, 255, 0.48)', 2.2);
     }
 
     // Écume bioluminescente et micro-gouttelettes
     ctx.globalCompositeOperation = 'source-over';
-    for (let b = 0; b < 160; b++) {
+    for (let b = 0; b < 180; b++) {
       const bx = (b * 163) % 512;
       const by = (b * 211) % 512;
-      const br = 1.0 + ((b * 11) % 2.5);
-      drawSeamlessCircle(ctx, bx, by, br, 'rgba(215, 250, 255, 0.65)');
+      const br = 1.2 + ((b * 11) % 2.8);
+      drawSeamlessCircle(ctx, bx, by, br, 'rgba(235, 255, 255, 0.88)');
     }
 
     const tex = new THREE.CanvasTexture(canvas);
@@ -931,45 +931,60 @@ export class World {
 
   // Terrain solide avec textures procédurales haute définition des 8 cycles
   setupSolidTerrain() {
-    this.trackWidth = 140;
-    this.sectionLength = 180;
-    this.terrainSections = [];
+    // Dimensions monumentales continues : AUCUNE COUTURE, AUCUN TROU NOIR, AUCUN DÉCHIREMENT
+    this.trackWidth = 380;
+    this.trackLength = 460;
 
-    // Matériau solide avec texture procédurale du Cycle 1
+    // Matériau solide uni standard pour les cycles terrestres et géologiques
     this.groundMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       map: this.cycleGroundTextures[0],
-      roughness: 0.40,
-      metalness: 0.08,
+      roughness: 0.35,
+      metalness: 0.10,
       flatShading: false
     });
 
-    // 3 grandes sections coulissantes pour couvrir de +90 à -450 sans couture
-    for (let i = 0; i < 3; i++) {
-      const geo = new THREE.PlaneGeometry(this.trackWidth, this.sectionLength, 32, 48);
-      const pos = geo.attributes.position;
+    // Vraie Eau 3D liquide réaliste pour le Cycle 1 (Chute / Eau)
+    this.waterMaterial = new THREE.MeshStandardMaterial({
+      color: 0x0099dd,
+      emissive: 0x002244,
+      emissiveIntensity: 0.40,
+      map: this.cycleGroundTextures[0],
+      roughness: 0.08,
+      metalness: 0.28,
+      transparent: true,
+      opacity: 0.94,
+      flatShading: false
+    });
 
-      for (let j = 0; j < pos.count; j++) {
-        const x = pos.getX(j);
-        const y = pos.getY(j);
-        const distFromCenter = Math.abs(x);
-        if (distFromCenter > 26) {
-          const elev = Math.pow((distFromCenter - 26) / 36, 2) * 8.5;
-          const noise = Math.sin(x * 0.12) * Math.cos(y * 0.08) * 1.4;
-          pos.setZ(j, elev + noise);
-        }
+    // Grand terrain unifié continu géant (64 x 92 segments = 6k vertices, fluide 60fps)
+    const geo = new THREE.PlaneGeometry(this.trackWidth, this.trackLength, 68, 92);
+    const pos = geo.attributes.position;
+
+    for (let j = 0; j < pos.count; j++) {
+      const x = pos.getX(j);
+      const y = pos.getY(j);
+      const distFromCenter = Math.abs(x);
+      // Chenal de vol central (|x| <= 30) totalement plat pour un vol rapide et clair
+      // Berges latérales (|x| > 30) qui montent en parois de canyon naturelles majestueuses
+      if (distFromCenter > 30) {
+        const elev = Math.pow((distFromCenter - 30) / 45, 2) * 26.0;
+        const noise = Math.sin(x * 0.10) * Math.cos(y * 0.06) * 2.2;
+        pos.setZ(j, elev + noise);
       }
-      geo.computeVertexNormals();
-      geo.userData = { basePositions: new Float32Array(pos.array) };
-
-      const mesh = new THREE.Mesh(geo, this.groundMaterial);
-      mesh.rotation.x = -Math.PI / 2;
-      mesh.position.z = -i * this.sectionLength + this.sectionLength * 0.5;
-      mesh.receiveShadow = true;
-
-      this.scene.add(mesh);
-      this.terrainSections.push(mesh);
     }
+    geo.computeVertexNormals();
+    geo.userData = { basePositions: new Float32Array(pos.array) };
+
+    // Le terrain est centré à z = -180 pour couvrir de +50 (derrière la caméra) jusqu'à -410 (fond du brouillard)
+    this.terrainMesh = new THREE.Mesh(geo, this.waterMaterial);
+    this.terrainMesh.rotation.x = -Math.PI / 2;
+    this.terrainMesh.position.set(0, 0, -180);
+    this.terrainMesh.receiveShadow = true;
+    this.scene.add(this.terrainMesh);
+
+    // Référence conservée pour compatibilité totale du code existant
+    this.terrainSections = [this.terrainMesh];
 
     // Matériau commun des monolithes géométriques
     this.monolithMaterial = new THREE.MeshStandardMaterial({
@@ -980,7 +995,7 @@ export class World {
     });
   }
 
-  // Animation physique 3D des vagues et déformations du terrain selon l'élément
+  // Animation physique 3D de vraie eau liquide et déformations du terrain
   updateTerrainMesh(time) {
     const isWater = (this.currentCycleIndex === 0);
     const isTransitioningWater = this.isTransitioning && (this.targetCycleIndex === 0 || this.currentCycleIndex === 0);
@@ -991,32 +1006,29 @@ export class World {
         waveWeight = (this.targetCycleIndex === 0) ? this.transitionProgress : (1.0 - this.transitionProgress);
       }
 
-      // Fréquences spatiales harmoniques pour continuité absolue sans couture (sectionLength = 180)
-      // kz1 = 8*PI/180 -> 180 * kz1 = 8*PI (exactement 4 oscillations complètes par section)
-      // kz2 = 4*PI/180 -> 180 * kz2 = 4*PI (exactement 2 oscillations complètes par section)
-      const kz1 = (Math.PI * 8.0) / this.sectionLength;
-      const kz2 = (Math.PI * 4.0) / this.sectionLength;
+      if (this.terrainMesh.material !== this.waterMaterial) {
+        this.terrainMesh.material = this.waterMaterial;
+      }
 
-      for (const mesh of this.terrainSections) {
-        const geo = mesh.geometry;
-        const pos = geo.attributes.position;
-        const base = geo.userData.basePositions;
-        if (!base) continue;
-
+      const geo = this.terrainMesh.geometry;
+      const pos = geo.attributes.position;
+      const base = geo.userData.basePositions;
+      if (base) {
+        const flowZ = (this.totalDistance || 0) * 0.08;
         for (let j = 0; j < pos.count; j++) {
           const x = base[j * 3];
           const y = base[j * 3 + 1];
           const bz = base[j * 3 + 2];
-          // Local y correspond à -World Z du fait de la rotation X = -PI/2
-          const worldZ = mesh.position.z - y;
+          const worldZ = this.terrainMesh.position.z - y;
 
-          // Vagues de houle océanique ondulantes harmoniques
-          const wave1 = Math.sin(x * 0.14 + time * 3.2) * Math.cos(worldZ * kz1 + time * 2.4) * 1.5;
-          const wave2 = Math.sin((x * 0.08) + worldZ * kz2 + time * 1.8) * 0.8;
+          // Houle liquide 3D vivante se propageant physiquement vers le vaisseau
+          const wavePhase = (worldZ - flowZ);
+          const wave1 = Math.sin(x * 0.12 + time * 3.2) * Math.cos(wavePhase * 0.08 + time * 1.8) * 1.7;
+          const wave2 = Math.sin(x * 0.06 + wavePhase * 0.04 + time * 1.4) * 0.85;
 
-          // Amortissement latéral progressif vers les berges rocheuses pour supprimer tout déchirement
+          // Amortissement fluide vers les falaises rocheuses latérales pour raccord sans faille
           const absX = Math.abs(x);
-          const lateralDamp = Math.max(0.0, Math.min(1.0, 1.0 - (absX - 22.0) / 14.0));
+          const lateralDamp = Math.max(0.0, Math.min(1.0, 1.0 - (absX - 22.0) / 12.0));
 
           pos.setZ(j, bz + (wave1 + wave2) * waveWeight * lateralDamp);
         }
@@ -1025,16 +1037,15 @@ export class World {
       }
       this.wasWater = true;
     } else if (this.wasWater) {
-      // Rétablir le terrain solide sans vagues
-      for (const mesh of this.terrainSections) {
-        const geo = mesh.geometry;
-        const pos = geo.attributes.position;
-        const base = geo.userData.basePositions;
-        if (base) {
-          pos.array.set(base);
-          pos.needsUpdate = true;
-          geo.computeVertexNormals();
-        }
+      // Rétablir le matériau solide du cycle
+      this.terrainMesh.material = this.groundMaterial;
+      const geo = this.terrainMesh.geometry;
+      const pos = geo.attributes.position;
+      const base = geo.userData.basePositions;
+      if (base) {
+        pos.array.set(base);
+        pos.needsUpdate = true;
+        geo.computeVertexNormals();
       }
       this.wasWater = false;
     }
@@ -1056,15 +1067,17 @@ export class World {
     }
     this.sideProps = [];
 
-    const count = 8;
-    const spacing = 35;
-    const startZ = 20;
+    // Densité et profondeur accrues pour border tout le canyon (14 paires = 28 décors majeurs)
+    const count = 14;
+    const spacing = 30;
+    const startZ = 30;
 
     for (let i = 0; i < count; i++) {
       const z = startZ - i * spacing;
       for (const side of [-1, 1]) {
-        const x = side * (33 + ((i * 7) % 5));
-        const propMesh = this.buildSidePropMesh(cycleIndex, side);
+        // Positionnés sur les crêtes de canyon (|x| = 38 à 50)
+        const x = side * (38 + ((i * 7) % 12));
+        const propMesh = this.buildSidePropMesh(cycleIndex, side, i);
         propMesh.position.set(x, 0, z);
         this.sidePropsGroup.add(propMesh);
         this.sideProps.push({ mesh: propMesh, side });
@@ -1072,251 +1085,244 @@ export class World {
     }
   }
 
-  buildSidePropMesh(cycleIndex, side) {
+  buildSidePropMesh(cycleIndex, side, index = 0) {
     const group = new THREE.Group();
 
     switch (cycleIndex) {
-      case 0: { // Eau : Trombe d'eau monumentale, geyser abyssal et anneaux d'écume marine
-        const geo = new THREE.CylinderGeometry(1.2, 3.4, 26, 16);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x03223f,
-          roughness: 0.08,
-          metalness: 0.88,
-          emissive: 0x00f0ff,
-          emissiveIntensity: 0.80,
-          transparent: true,
-          opacity: 0.88
+      case 0: { // Cycle 1 : Eau / Chute (Falaises Océaniques Sombre, Spires Aquatiques & Cascades)
+        // Falaise côtière de roche abyssale
+        const cliffGeo = new THREE.CylinderGeometry(2.4, 4.6, 28, 12);
+        const cliffMat = new THREE.MeshStandardMaterial({
+          color: 0x02172b,
+          roughness: 0.15,
+          metalness: 0.75,
+          flatShading: true
         });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 13;
-        group.add(mesh);
+        const cliff = new THREE.Mesh(cliffGeo, cliffMat);
+        cliff.position.y = 14;
+        group.add(cliff);
 
-        // Orbe d'eau lumineuse au sommet
+        // Rideau d'eau translucide ruisselant sur la falaise
+        const waterCurtainGeo = new THREE.CylinderGeometry(2.6, 4.8, 26, 12, 1, true);
+        const waterCurtainMat = new THREE.MeshBasicMaterial({
+          color: 0x00f0ff,
+          transparent: true,
+          opacity: 0.45,
+          blending: THREE.AdditiveBlending
+        });
+        const waterCurtain = new THREE.Mesh(waterCurtainGeo, waterCurtainMat);
+        waterCurtain.position.y = 14;
+        group.add(waterCurtain);
+
+        // Cristal d'eau lumineux au sommet
         const orb = new THREE.Mesh(
-          new THREE.SphereGeometry(2.0, 16, 16),
-          new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.9 })
+          new THREE.OctahedronGeometry(2.2, 0),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
         );
-        orb.position.y = 26.5;
+        orb.position.y = 29.5;
         group.add(orb);
 
         // Anneaux d'écume marine
         for (let r = 0; r < 2; r++) {
           const ring = new THREE.Mesh(
-            new THREE.TorusGeometry(3.0 + r * 1.4, 0.16, 8, 24),
-            new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 })
+            new THREE.TorusGeometry(3.5 + r * 1.5, 0.18, 8, 24),
+            new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.75 })
           );
-          ring.position.y = 10 + r * 10;
+          ring.position.y = 10 + r * 12;
           ring.rotation.x = Math.PI / 2.2;
           group.add(ring);
         }
         break;
       }
-      case 1: { // Terre : Dolmen tellurique colossal en strates rocheuses et terreuses (sans vert uniforme)
-        const geo = new THREE.BoxGeometry(4.4, 18, 4.4);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x3a2414,
-          roughness: 0.92,
-          metalness: 0.06,
-          emissive: 0x78350f,
-          emissiveIntensity: 0.22,
+      case 1: { // Cycle 2 : Terre / Résilience (Canyon Tellurique, Mégalithes & Arches de Pierre)
+        const pillarGeo = new THREE.BoxGeometry(6.5, 28, 6.5);
+        const pillarMat = new THREE.MeshStandardMaterial({
+          color: 0x361f12,
+          roughness: 0.95,
+          metalness: 0.05,
           flatShading: true
         });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 9;
-        mesh.rotation.y = (side > 0 ? 0.35 : -0.35);
-        group.add(mesh);
+        const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+        pillar.position.y = 14;
+        pillar.rotation.y = (side > 0 ? 0.35 : -0.35);
+        group.add(pillar);
 
-        // Linteau supérieur tellurique (terre cuite et ocre)
+        // Linteau d'arche rocheuse tellurique
         const lintelMat = new THREE.MeshStandardMaterial({
-          color: 0x4e331e,
-          roughness: 0.95,
+          color: 0x4a2a18,
+          roughness: 0.92,
           metalness: 0.04,
           flatShading: true
         });
-        const lintel = new THREE.Mesh(new THREE.BoxGeometry(6.8, 2.4, 5.0), lintelMat);
-        lintel.position.y = 19;
+        const lintel = new THREE.Mesh(new THREE.BoxGeometry(9.5, 3.5, 6.0), lintelMat);
+        lintel.position.y = 28;
         group.add(lintel);
 
-        // Bloc de roche sédimentaire fracturé suspendu au centre
+        // Mégalithes fracturés en lévitation
         const rock = new THREE.Mesh(
-          new THREE.DodecahedronGeometry(1.8, 0),
-          new THREE.MeshStandardMaterial({ color: 0x24170e, roughness: 0.88, flatShading: true })
+          new THREE.DodecahedronGeometry(2.4, 0),
+          new THREE.MeshStandardMaterial({ color: 0x22130a, roughness: 0.88, flatShading: true })
         );
-        rock.position.set(0, 12, 0);
+        rock.position.set(0, 16, 0);
         group.add(rock);
         break;
       }
-      case 2: { // Feu : Cheminée volcanique basaltique avec cratère de lave en fusion
-        const geo = new THREE.ConeGeometry(3.2, 22, 16);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x220404,
-          roughness: 0.65,
-          metalness: 0.35,
-          emissive: 0xef4444,
-          emissiveIntensity: 0.85
+      case 2: { // Cycle 3 : Feu / Obsession (Caldeira Volcanique, Cheminées de Basalte & Magma Émissif)
+        const coneGeo = new THREE.ConeGeometry(4.4, 30, 14);
+        const coneMat = new THREE.MeshStandardMaterial({
+          color: 0x0d0303,
+          roughness: 0.82,
+          metalness: 0.25,
+          flatShading: true
         });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 11;
-        group.add(mesh);
+        const cone = new THREE.Mesh(coneGeo, coneMat);
+        cone.position.y = 15;
+        group.add(cone);
 
-        // Cône de magma incandescent au sommet
-        const magma = new THREE.Mesh(
-          new THREE.ConeGeometry(1.8, 4.0, 12),
-          new THREE.MeshBasicMaterial({ color: 0xf97316 })
+        // Cratère de lave en fusion au sommet
+        const lavaCrater = new THREE.Mesh(
+          new THREE.SphereGeometry(2.8, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0xff3300 })
         );
-        magma.position.y = 22;
-        group.add(magma);
+        lavaCrater.position.y = 29;
+        group.add(lavaCrater);
 
-        // Anneau de braises
-        const ring = new THREE.Mesh(
-          new THREE.TorusGeometry(3.6, 0.2, 8, 20),
-          new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.8 })
+        // Anneau magmatique incandescent
+        const magmaRing = new THREE.Mesh(
+          new THREE.TorusGeometry(4.2, 0.45, 8, 24),
+          new THREE.MeshBasicMaterial({ color: 0xff7700 })
         );
-        ring.position.y = 16;
-        ring.rotation.x = Math.PI / 2.2;
-        group.add(ring);
+        magmaRing.position.y = 21;
+        magmaRing.rotation.x = Math.PI / 2.3;
+        group.add(magmaRing);
         break;
       }
-      case 3: { // Électricité : Relais Tesla haute tension avec bobines et électrode plasma
-        const geo = new THREE.CylinderGeometry(0.7, 1.4, 24, 12);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x201a02,
-          metalness: 0.85,
+      case 3: { // Cycle 4 : Électricité / Amour (Mégastructures Cyberpunk, Pylônes Tesla & Conduits Neon)
+        const towerGeo = new THREE.BoxGeometry(4.5, 32, 4.5);
+        const towerMat = new THREE.MeshStandardMaterial({
+          color: 0x080914,
           roughness: 0.25,
-          emissive: 0xeab308,
-          emissiveIntensity: 0.85
+          metalness: 0.90
         });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 12;
-        group.add(mesh);
+        const tower = new THREE.Mesh(towerGeo, towerMat);
+        tower.position.y = 16;
+        group.add(tower);
 
-        // Électrode plasma sphérique
-        const sphere = new THREE.Mesh(
-          new THREE.SphereGeometry(2.0, 16, 16),
-          new THREE.MeshBasicMaterial({ color: 0xfef08a })
+        // Tête de bobine Tesla dorée
+        const coilGeo = new THREE.TorusGeometry(3.6, 0.45, 12, 28);
+        const coilMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+        const coil = new THREE.Mesh(coilGeo, coilMat);
+        coil.position.y = 31;
+        coil.rotation.x = Math.PI / 2;
+        group.add(coil);
+
+        // Émetteur plasma haute tension
+        const emitter = new THREE.Mesh(
+          new THREE.SphereGeometry(1.8, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0xffffff })
         );
-        sphere.position.y = 24.5;
-        group.add(sphere);
-
-        // 3 Anneaux de bobinage Tesla
-        for (let h = 8; h <= 20; h += 5) {
-          const ring = new THREE.Mesh(
-            new THREE.TorusGeometry(2.2, 0.18, 8, 16),
-            new THREE.MeshBasicMaterial({ color: 0xfacc15 })
-          );
-          ring.position.y = h;
-          ring.rotation.x = Math.PI / 2;
-          group.add(ring);
-        }
+        emitter.position.y = 33;
+        group.add(emitter);
         break;
       }
-      case 4: { // Lumière / Bonheur : Obélisque d'albâtre céleste bordé de filigranes dorés (Anti-éblouissement)
-        const geo = new THREE.OctahedronGeometry(2.2, 0);
-        geo.scale(1.0, 4.0, 1.0);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x1e293b,
+      case 4: { // Cycle 5 : Lumière / Bonheur (Colonnades de Marbre Blanc, Obélisques Solaires & Or Céleste)
+        const colGeo = new THREE.CylinderGeometry(2.4, 3.2, 34, 16);
+        const colMat = new THREE.MeshStandardMaterial({
+          color: 0xf1f5f9,
+          roughness: 0.18,
+          metalness: 0.12
+        });
+        const col = new THREE.Mesh(colGeo, colMat);
+        col.position.y = 17;
+        group.add(col);
+
+        // Chapiteau et anneau doré céleste
+        const capRing = new THREE.Mesh(
+          new THREE.TorusGeometry(3.6, 0.35, 12, 24),
+          new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xeab308, emissiveIntensity: 0.65, roughness: 0.2 })
+        );
+        capRing.position.y = 33;
+        capRing.rotation.x = Math.PI / 2;
+        group.add(capRing);
+
+        // Obélisque radiant au sommet
+        const obelisk = new THREE.Mesh(
+          new THREE.OctahedronGeometry(2.2, 0),
+          new THREE.MeshBasicMaterial({ color: 0xffffff })
+        );
+        obelisk.position.y = 35;
+        group.add(obelisk);
+        break;
+      }
+      case 5: { // Cycle 6 : Chaos / Ombre (Aiguilles d'Obsidienne Tranchante & Monolithes de Vide)
+        const spikeGeo = new THREE.ConeGeometry(3.8, 36, 4);
+        const spikeMat = new THREE.MeshStandardMaterial({
+          color: 0x08080c,
+          roughness: 0.08,
+          metalness: 0.95,
+          flatShading: true
+        });
+        const spike = new THREE.Mesh(spikeGeo, spikeMat);
+        spike.position.y = 18;
+        spike.rotation.y = Math.PI / 4;
+        group.add(spike);
+
+        // Fragment d'obsidienne lévitant
+        const shard = new THREE.Mesh(
+          new THREE.TetrahedronGeometry(2.5, 0),
+          new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.1, metalness: 0.9 })
+        );
+        shard.position.y = 37;
+        group.add(shard);
+        break;
+      }
+      case 6: { // Cycle 7 : Vent / Ambition (Aiguilles Supersoniques, Plateformes Nuageuses & Spires Célestes)
+        const needleGeo = new THREE.CylinderGeometry(0.8, 3.4, 38, 8);
+        const needleMat = new THREE.MeshStandardMaterial({
+          color: 0x0369a1,
           roughness: 0.22,
-          metalness: 0.65,
-          emissive: 0x475569,
-          emissiveIntensity: 0.3
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 12;
-        group.add(mesh);
-
-        // Filigranes géométriques dorés (lignes propres, aucune agression visuelle)
-        const wireMat = new THREE.MeshBasicMaterial({
-          color: 0xfde047,
-          wireframe: true,
-          transparent: true,
-          opacity: 0.8
-        });
-        const wire = new THREE.Mesh(geo.clone(), wireMat);
-        wire.position.y = 12;
-        wire.scale.setScalar(1.035);
-        group.add(wire);
-
-        // Couronne fine en or doux
-        const halo = new THREE.Mesh(
-          new THREE.TorusGeometry(3.0, 0.08, 12, 32),
-          new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.75 })
-        );
-        halo.position.y = 18;
-        halo.rotation.x = Math.PI / 3;
-        group.add(halo);
-        break;
-      }
-      case 5: { // Ombre : Monolithe fractal de ténèbres avec cristaux d'obsidienne
-        const geo = new THREE.BoxGeometry(3.0, 24, 3.0);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x08080a,
-          roughness: 0.95,
-          metalness: 0.05,
-          emissive: 0x475569,
-          emissiveIntensity: 0.40
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 12;
-        group.add(mesh);
-
-        // Éperons d'ombre latéraux inclinés
-        for (let s = -1; s <= 1; s += 2) {
-          const claw = new THREE.Mesh(new THREE.ConeGeometry(0.8, 8, 4), mat);
-          claw.position.set(s * 2.2, 14, 0);
-          claw.rotation.z = s * 0.4;
-          group.add(claw);
-        }
-        break;
-      }
-      case 6: { // Vent : Aileron profilé supersonique avec voiles de bourrasque
-        const geo = new THREE.ConeGeometry(1.8, 26, 4);
-        geo.scale(0.5, 1.0, 2.2);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x061e38,
-          roughness: 0.25,
-          metalness: 0.75,
-          emissive: 0x38bdf8,
-          emissiveIntensity: 0.75
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 13;
-        group.add(mesh);
-
-        // Anneau vortex de vent
-        const windRing = new THREE.Mesh(
-          new THREE.TorusGeometry(3.0, 0.15, 8, 20),
-          new THREE.MeshBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.85 })
-        );
-        windRing.position.y = 16;
-        windRing.rotation.y = Math.PI / 2.5;
-        group.add(windRing);
-        break;
-      }
-      case 7: { // Cosmos : Portail quantique & gyroscope gravitationnel
-        const ringGeo = new THREE.TorusGeometry(3.8, 0.35, 12, 32);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0x1a0630,
-          emissive: 0xc084fc,
-          emissiveIntensity: 1.1,
-          roughness: 0.20,
           metalness: 0.85
         });
-        const ring1 = new THREE.Mesh(ringGeo, mat);
-        ring1.position.y = 12;
-        ring1.rotation.y = Math.PI / 2;
-        group.add(ring1);
+        const needle = new THREE.Mesh(needleGeo, needleMat);
+        needle.position.y = 19;
+        group.add(needle);
 
-        const ring2 = new THREE.Mesh(ringGeo, mat);
-        ring2.position.y = 12;
-        ring2.rotation.x = Math.PI / 3;
-        group.add(ring2);
+        // Anneau aérodynamique supersonique
+        const aeroRing = new THREE.Mesh(
+          new THREE.TorusGeometry(3.2, 0.22, 8, 24),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+        );
+        aeroRing.position.y = 26;
+        aeroRing.rotation.x = Math.PI / 2.4;
+        group.add(aeroRing);
+        break;
+      }
+      case 7: { // Cycle 8 : Folie / Cosmos (Portes Dimensionnelles, Tesseracts & Anneaux Galactiques)
+        const frameGeo = new THREE.BoxGeometry(5.2, 34, 5.2);
+        const frameMat = new THREE.MeshStandardMaterial({
+          color: 0x0d011c,
+          roughness: 0.2,
+          metalness: 0.9
+        });
+        const frame = new THREE.Mesh(frameGeo, frameMat);
+        frame.position.y = 17;
+        group.add(frame);
 
-        // Singularité centrale
-        const core = new THREE.Mesh(
-          new THREE.SphereGeometry(1.4, 16, 16),
+        // Anneau de distorsion cosmique pourpre
+        const warpRing = new THREE.Mesh(
+          new THREE.TorusGeometry(3.8, 0.45, 12, 28),
           new THREE.MeshBasicMaterial({ color: 0xa855f7 })
         );
-        core.position.y = 12;
+        warpRing.position.y = 33;
+        warpRing.rotation.x = Math.PI / 2;
+        group.add(warpRing);
+
+        // Tesseract / Noyau cosmique
+        const core = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(2.0, 0),
+          new THREE.MeshBasicMaterial({ color: 0xc084fc, wireframe: true })
+        );
+        core.position.y = 33;
         group.add(core);
         break;
       }
@@ -1328,8 +1334,8 @@ export class World {
     const deltaZ = speed * dt;
     for (const prop of this.sideProps) {
       prop.mesh.position.z += deltaZ;
-      if (prop.mesh.position.z > 25) {
-        prop.mesh.position.z -= 280;
+      if (prop.mesh.position.z > 30) {
+        prop.mesh.position.z -= 420;
       }
       const s = 1.0 + audioPulse * 0.08;
       prop.mesh.scale.set(s, s, s);
@@ -1977,6 +1983,14 @@ export class World {
     this.prevMetalness = this.groundMaterial.metalness;
 
     // Mise à jour des décors de bord de piste avec le nouveau thème
+    // Basculer vers le matériau d'eau ou le matériau solide standard
+    if (this.currentCycleIndex === 0) {
+      this.terrainMesh.material = this.waterMaterial;
+    } else {
+      this.groundMaterial.map = this.cycleGroundTextures[this.currentCycleIndex];
+      this.terrainMesh.material = this.groundMaterial;
+    }
+
     this.createSidePropsForCycle(this.currentCycleIndex);
     this.updateActiveElement(this.currentCycleIndex);
   }
@@ -2889,12 +2903,14 @@ export class World {
       this.groundMaterial.emissiveIntensity = 0;
     }
 
-    // 1. Défilement continu du sol sans couture
-    for (const sec of this.terrainSections) {
-      sec.position.z += deltaZ;
-      if (sec.position.z >= this.sectionLength * 1.5) {
-        sec.position.z -= this.sectionLength * 3;
-      }
+    // 1. Défilement infini et continu de la texture du sol (ZERO rupture, ZERO coupure, ZERO trou noir)
+    this.totalDistance = (this.totalDistance || 0) + deltaZ;
+    const texScroll = deltaZ / 50.0;
+    if (this.groundMaterial && this.groundMaterial.map) {
+      this.groundMaterial.map.offset.y -= texScroll;
+    }
+    if (this.waterMaterial && this.waterMaterial.map) {
+      this.waterMaterial.map.offset.y -= texScroll;
     }
 
     // 2. Extraction des informations de rythme musical (BPM, kick, temps, mesure)
