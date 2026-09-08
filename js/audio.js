@@ -437,6 +437,77 @@ export class AudioManager {
     osc.stop(now + 1.5);
   }
 
+  // SFX : Mélodie féerique de réunion avec Nity (Phase 1 du Climax : tout va bien)
+  playReunionMelody() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+    const chords = [
+      { f: 523.25, t: 0.0, d: 0.8 },  // C5
+      { f: 659.25, t: 0.22, d: 0.8 }, // E5
+      { f: 783.99, t: 0.48, d: 0.9 }, // G5
+      { f: 987.77, t: 0.78, d: 0.9 }, // B5
+      { f: 1046.5, t: 1.08, d: 1.2 }, // C6
+      { f: 1318.51, t: 1.40, d: 1.3 } // E6
+    ];
+    chords.forEach(({ f, t, d }) => {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, now + t);
+      gain.gain.setValueAtTime(0.24, now + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + t + d);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(now + t);
+      osc.stop(now + t + d + 0.05);
+    });
+  }
+
+  // SFX : Aspiration Cataclysmique par le Trou Noir (Phase 2 du Climax : Nity aspirée d'un coup)
+  playBlackHoleSuction() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+
+    // 1. Sub-bass drop grondant (160 Hz -> 24 Hz)
+    const sub = this.audioCtx.createOscillator();
+    const subGain = this.audioCtx.createGain();
+    sub.type = 'sawtooth';
+    sub.frequency.setValueAtTime(160, now);
+    sub.frequency.exponentialRampToValueAtTime(24, now + 1.5);
+    subGain.gain.setValueAtTime(0.7, now);
+    subGain.gain.linearRampToValueAtTime(0.85, now + 0.4);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+    sub.connect(subGain);
+    subGain.connect(this.audioCtx.destination);
+    sub.start(now);
+    sub.stop(now + 1.65);
+
+    // 2. Bruit blanc de vortex d'aspiration tourbillonnant
+    const bufSize = Math.floor(this.audioCtx.sampleRate * 1.6);
+    const buffer = this.audioCtx.createBuffer(1, bufSize, this.audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.sin((i / bufSize) * Math.PI);
+    }
+    const noise = this.audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = this.audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(300, now);
+    filter.frequency.exponentialRampToValueAtTime(3800, now + 0.8);
+    filter.frequency.exponentialRampToValueAtTime(120, now + 1.5);
+    filter.Q.setValueAtTime(3.5, now);
+
+    const noiseGain = this.audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.65, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(this.audioCtx.destination);
+    noise.start(now);
+    noise.stop(now + 1.65);
+  }
+
   // SFX : Accrochage & Contact avec Nity (Carillon cristallin céleste ascendant)
   playNityCatchup() {
     if (!this.isInitialized || !this.audioCtx || this.isMuted) return;

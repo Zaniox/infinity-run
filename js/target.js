@@ -86,12 +86,19 @@ export class TargetManager {
     this.fluxLines.visible = false;
     this.scene.add(this.fluxLines);
 
-    // 6. Animation cinématique de feinte / fuite de Nity (Fin de Cycle 8)
+    // 6. Animation cinématique narrative de climax (Réunion puis Aspiration Trou Noir)
+    this.isClimaxCinematicActive = false;
+    this.cinematicPhase = 'none';
+    this.cinematicTimer = 0;
+    this.cutscenePlayer = null;
+    this.cutsceneCamera = null;
+    this.onCinematicComplete = null;
     this.isEscapingAnimationActive = false;
     this.escapeAnimTimer = 0;
     this.onEscapeCompleteCallback = null;
     this.climaxRatio = 0;
     this.createNityEscapeEffects();
+    this.createClimaxCutsceneAssets();
   }
 
   // --- 1. TROU NOIR GÉANT À L'HORIZON (Singularité & Disque d'accrétion) ---
@@ -449,6 +456,117 @@ export class TargetManager {
     }
   }
 
+  // --- CINÉMATIQUE DE CLIMAX NARRATIVE : RÉUNION PUIS ASPIRATION PAR LE TROU NOIR ---
+  createClimaxCutsceneAssets() {
+    // 1. Particules de Réunion (Cœurs et étincelles célestes flottant entre Infi et Nity)
+    this.reunionCount = 45;
+    const rGeo = new THREE.BufferGeometry();
+    const rPos = new Float32Array(this.reunionCount * 3);
+    const rCol = new Float32Array(this.reunionCount * 3);
+    this.reunionSeeds = [];
+
+    const rColors = [
+      new THREE.Color(0xff66cc), // rose tendre
+      new THREE.Color(0x00f0ff), // cyan doux
+      new THREE.Color(0xfef08a), // or stellaire
+      new THREE.Color(0xffffff)  // blanc pur
+    ];
+
+    for (let i = 0; i < this.reunionCount; i++) {
+      const c = rColors[Math.floor(Math.random() * rColors.length)];
+      rCol[i * 3] = c.r;
+      rCol[i * 3 + 1] = c.g;
+      rCol[i * 3 + 2] = c.b;
+      this.reunionSeeds.push({
+        baseX: (Math.random() - 0.5) * 3.4,
+        baseY: Math.random() * 3.2 - 0.5,
+        baseZ: -10.0 + (Math.random() - 0.5) * 1.5,
+        speedY: 0.8 + Math.random() * 1.2,
+        wobbleSpeed: 2.0 + Math.random() * 3.0,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+
+    rGeo.setAttribute('position', new THREE.BufferAttribute(rPos, 3));
+    rGeo.setAttribute('color', new THREE.BufferAttribute(rCol, 3));
+
+    const rMat = new THREE.PointsMaterial({
+      size: 2.2,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      map: getSoftGlowTexture(),
+      depthWrite: false
+    });
+
+    this.reunionParticles = new THREE.Points(rGeo, rMat);
+    this.reunionParticles.visible = false;
+    this.scene.add(this.reunionParticles);
+
+    // 2. Lignes de vortex gravitationnel (Rayons violents reliant Nity au Trou Noir)
+    this.vortexLineCount = 32;
+    const vGeo = new THREE.BufferGeometry();
+    this.vortexLinePositions = new Float32Array(this.vortexLineCount * 2 * 3);
+    vGeo.setAttribute('position', new THREE.BufferAttribute(this.vortexLinePositions, 3));
+
+    this.vortexLineMat = new THREE.LineBasicMaterial({
+      color: 0xbd00ff,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending
+    });
+
+    this.vortexLines = new THREE.LineSegments(vGeo, this.vortexLineMat);
+    this.vortexLines.visible = false;
+    this.scene.add(this.vortexLines);
+  }
+
+  startClimaxCinematic(player, camera, audioManager, onComplete) {
+    this.isClimaxCinematicActive = true;
+    this.cinematicPhase = 'reunion';
+    this.cinematicTimer = 0;
+    this.cutscenePlayer = player;
+    this.cutsceneCamera = camera;
+    this.audioManager = audioManager;
+    this.onCinematicComplete = onComplete;
+
+    // Mélodie féerique de réunion
+    if (audioManager && audioManager.playReunionMelody) {
+      audioManager.playReunionMelody();
+    }
+
+    // Positions initiales côte à côte (Infi à gauche, Nity à droite)
+    this.nityGroup.position.set(1.5, this.nityBaseY, -10.0);
+    this.nityAvatar.scale.set(1, 1, 1);
+    this.nityAvatar.rotation.set(0, 0, 0);
+    this.nityModelContainer.rotation.set(0, -Math.PI / 2 + 0.25, 0); // Regarde tendrement Infi
+
+    if (player && player.mesh) {
+      player.mesh.position.set(-1.5, this.nityBaseY, -10.0);
+      player.mesh.rotation.set(0, Math.PI / 2 - 0.25, 0); // Regarde tendrement Nity
+    }
+
+    // Réinitialiser et afficher les particules de réunion
+    if (this.reunionParticles) {
+      const pos = this.reunionParticles.geometry.attributes.position.array;
+      for (let i = 0; i < this.reunionCount; i++) {
+        const s = this.reunionSeeds[i];
+        pos[i * 3] = s.baseX;
+        pos[i * 3 + 1] = this.nityBaseY + s.baseY;
+        pos[i * 3 + 2] = s.baseZ;
+      }
+      this.reunionParticles.geometry.attributes.position.needsUpdate = true;
+      this.reunionParticles.material.opacity = 0.95;
+      this.reunionParticles.visible = true;
+    }
+
+    if (this.vortexLines) {
+      this.vortexLines.visible = false;
+      this.vortexLineMat.opacity = 0;
+    }
+  }
+
   // --- 3. COURANT GRAVITATIONNEL D'ASPIRATION (NITY -> TROU NOIR) ---
   createGravitationalSuctionStream() {
     this.suctionParticleCount = 240;
@@ -711,6 +829,137 @@ export class TargetManager {
 
     // Suivi subtil du regard vers l'horizon
     this.horizonGroup.position.x = playerPos.x * 0.12;
+
+    // Cinématique Narrative de Climax (Phase 1: Réunion douce, Phase 2: Aspiration brutale par le Trou Noir)
+    if (this.isClimaxCinematicActive) {
+      this.cinematicTimer += dt;
+      const t = this.cinematicTimer;
+      const cam = this.cutsceneCamera;
+      const player = this.cutscenePlayer;
+
+      if (t < 2.4) {
+        // === PHASE 1 : LA RÉUNION CÉLESTE (« Tout se passe bien ») ===
+        const floatY = this.nityBaseY + Math.sin(t * 2.8) * 0.28;
+        this.nityGroup.position.set(1.5, floatY, -10.0);
+        this.nityAvatar.scale.set(1, 1, 1);
+        this.nityAvatar.rotation.set(0, 0, 0);
+        this.nityModelContainer.rotation.set(0, -Math.PI / 2 + 0.25, 0); // Regarde tendrement vers Infi
+        this.nityRing.rotation.z += dt * 1.8;
+
+        if (player && player.mesh) {
+          player.mesh.position.set(-1.5, floatY, -10.0);
+          player.mesh.rotation.set(0, Math.PI / 2 - 0.25, 0); // Regarde tendrement vers Nity
+        }
+
+        // Caméra cinématique rapprochée en plan moyen
+        if (cam) {
+          cam.position.set(0, this.nityBaseY + 1.2, -4.2);
+          cam.lookAt(0, this.nityBaseY + 0.85, -10.0);
+          cam.rotation.z = Math.sin(t * 1.2) * 0.02;
+        }
+
+        // Animation des particules douces de réunion
+        if (this.reunionParticles && this.reunionParticles.visible) {
+          const pos = this.reunionParticles.geometry.attributes.position.array;
+          for (let i = 0; i < this.reunionCount; i++) {
+            const s = this.reunionSeeds[i];
+            pos[i * 3] = s.baseX + Math.sin(t * s.wobbleSpeed + s.phase) * 0.35;
+            pos[i * 3 + 1] += s.speedY * dt;
+            if (pos[i * 3 + 1] > (this.nityBaseY + 3.8)) {
+              pos[i * 3 + 1] = this.nityBaseY - 0.8;
+            }
+          }
+          this.reunionParticles.geometry.attributes.position.needsUpdate = true;
+          this.reunionParticles.material.opacity = Math.min(1.0, 0.5 + Math.sin(t * 3.5) * 0.4);
+        }
+      } else if (t < 4.0) {
+        // === PHASE 2 : L'ASPIRATION BRUTALE PAR LE TROU NOIR ===
+        if (this.cinematicPhase === 'reunion') {
+          this.cinematicPhase = 'suction';
+          if (this.audioManager && this.audioManager.playBlackHoleSuction) {
+            this.audioManager.playBlackHoleSuction();
+          }
+          if (window.gameApp && window.gameApp.ui) {
+            window.gameApp.ui.showClimaxAlert('// ATTRACTION DE LA SINGULARITÉ ! ANOMALIE GRAVITATIONNELLE 🕳️', true);
+          }
+          if (this.reunionParticles) this.reunionParticles.visible = false;
+          if (this.vortexLines) this.vortexLines.visible = true;
+        }
+
+        const p = Math.min(1.0, (t - 2.4) / 1.6);
+        const easePull = Math.pow(p, 3.2);
+
+        // 1. Violent Screen Shake sur la caméra
+        const shakeIntensity = 0.55 * (0.3 + p * 0.7);
+        if (cam) {
+          cam.position.set(
+            (Math.random() - 0.5) * shakeIntensity,
+            this.nityBaseY + 1.2 + (Math.random() - 0.5) * shakeIntensity,
+            -4.2 + (Math.random() - 0.5) * shakeIntensity
+          );
+          cam.lookAt(0, this.nityBaseY + 0.8, -10.0 - easePull * 120.0);
+        }
+
+        // 2. Nity arrachée vers le trou noir à haute vitesse
+        const nityZ = -10.0 - easePull * 350.0;
+        const nityY = this.nityBaseY + (this.horizonY - this.nityBaseY) * easePull;
+        const nityX = 1.5 * (1.0 - easePull);
+        this.nityGroup.position.set(nityX, nityY, nityZ);
+
+        // Rotation désordonnée de Nity prise dans le vortex
+        this.nityModelContainer.rotation.x += dt * 18.0;
+        this.nityModelContainer.rotation.y += dt * 28.0;
+        this.nityModelContainer.rotation.z += dt * 36.0 * (0.2 + p);
+        this.nityRing.rotation.z += dt * 30.0;
+
+        // Rétrécissement de Nity à l'approche de la singularité
+        const shrinkScale = Math.max(0.01, 1.0 - p * 0.92);
+        this.nityAvatar.scale.set(shrinkScale, shrinkScale, shrinkScale);
+
+        // 3. Réaction d'Infi : se tend en avant en détresse
+        if (player && player.mesh) {
+          player.mesh.position.set(-0.5 * (1.0 - p), this.nityBaseY, -10.0 - p * 3.5);
+          player.mesh.rotation.set(-0.45, 0, 0);
+        }
+
+        // 4. Rayons de vortex gravitationnels reliant Nity à la singularité
+        if (this.vortexLines && this.vortexLines.visible) {
+          const vPos = this.vortexLines.geometry.attributes.position.array;
+          const bhZ = this.horizonZ;
+          const bhY = this.horizonY;
+          for (let i = 0; i < this.vortexLineCount; i++) {
+            const angle = (i / this.vortexLineCount) * Math.PI * 2 + t * 4.0;
+            const rad = 18.0 * (1.0 - p * 0.4);
+            vPos[i * 6] = nityX + (Math.random() - 0.5) * 1.5;
+            vPos[i * 6 + 1] = nityY + (Math.random() - 0.5) * 1.5;
+            vPos[i * 6 + 2] = nityZ;
+            vPos[i * 6 + 3] = Math.cos(angle) * rad;
+            vPos[i * 6 + 4] = bhY + Math.sin(angle) * rad;
+            vPos[i * 6 + 5] = bhZ;
+          }
+          this.vortexLines.geometry.attributes.position.needsUpdate = true;
+          this.vortexLineMat.opacity = Math.min(0.9, p * 1.2);
+        }
+
+        // Expansion furieuse du trou noir
+        if (this.blackHoleGroup) {
+          const bhScale = 1.0 + p * 0.8;
+          this.blackHoleGroup.scale.set(bhScale, bhScale, bhScale);
+          this.photonRingMat.opacity = 1.0;
+        }
+      } else {
+        // === FIN DE LA CINÉMATIQUE ===
+        this.isClimaxCinematicActive = false;
+        if (this.reunionParticles) this.reunionParticles.visible = false;
+        if (this.vortexLines) this.vortexLines.visible = false;
+        if (this.onCinematicComplete) {
+          const cb = this.onCinematicComplete;
+          this.onCinematicComplete = null;
+          cb();
+        }
+      }
+      return;
+    }
 
     // 2. Cinématique de Nity aspirée vers le Trou Noir ou Animation de Fuite / Feinte
     if (this.nityGroup) {
@@ -986,9 +1235,9 @@ export class TargetManager {
   // Animation de Nity lors du rattrapage (Climax du Cycle 8)
   setClimaxDistance(distRatio) {
     this.climaxRatio = Math.max(0, Math.min(1.0, distRatio));
-    if (!this.isEscapingAnimationActive) {
-      // distRatio va de 0 (normal à z=-58) à 1.0 (contact direct à z=-10.5)
-      const targetZ = -58 + this.climaxRatio * 47.5;
+    if (!this.isEscapingAnimationActive && !this.isClimaxCinematicActive) {
+      // distRatio va de 0 (normal à z=-58) à 1.0 (contact direct à z=-10.0)
+      const targetZ = -58 + this.climaxRatio * 48.0;
       this.nityGroup.position.z = THREE.MathUtils.lerp(this.nityGroup.position.z, targetZ, 0.12);
     }
   }
@@ -1004,12 +1253,21 @@ export class TargetManager {
     this.isEscapingAnimationActive = false;
     this.escapeAnimTimer = 0;
     this.onEscapeCompleteCallback = null;
+    this.isClimaxCinematicActive = false;
+    this.cinematicPhase = 'none';
+    this.cinematicTimer = 0;
+    this.onCinematicComplete = null;
     if (this.escapeShockwave) this.escapeShockwave.visible = false;
     if (this.stardustPoints) this.stardustPoints.visible = false;
+    if (this.reunionParticles) this.reunionParticles.visible = false;
+    if (this.vortexLines) this.vortexLines.visible = false;
     this.nityGroup.position.set(0, this.nityBaseY, this.nityBaseZ);
     if (this.nityAvatar) {
       this.nityAvatar.scale.set(1, 1, 1);
       this.nityAvatar.rotation.set(0, 0, 0);
+    }
+    if (this.blackHoleGroup) {
+      this.blackHoleGroup.scale.set(1, 1, 1);
     }
     if (this.nityModelContainer) this.nityModelContainer.rotation.y = Math.PI;
     if (this.mirageGroup) this.mirageGroup.visible = false;

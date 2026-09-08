@@ -604,7 +604,10 @@ class GameApp {
       this.camera.updateProjectionMatrix();
 
       // 3. Mise à jour de la physique de vol d'Infi & gestion thermique du blaster
-      this.player.update(dt, this.inputAxisX, this.inputAxisY, currentBpm, bass, this.audio);
+      const isCinematic = this.target && this.target.isClimaxCinematicActive;
+      const inputX = isCinematic ? 0 : this.inputAxisX;
+      const inputY = isCinematic ? 0 : this.inputAxisY;
+      this.player.update(dt, inputX, inputY, currentBpm, bass, this.audio);
 
       // Si Infi s'est écrasé suite à une panne d'énergie
       if (this.player.isDead) {
@@ -636,6 +639,11 @@ class GameApp {
       const beatInfo = this.audio.getBeatInfo();
 
       this.world.update(dt, this.currentSpeed, beatInfo, bass, (box, obs, obsIdx) => {
+        // Ignorer les collisions pendant la cinématique narrative de fin
+        if (this.target && this.target.isClimaxCinematicActive) {
+          return false;
+        }
+
         // Test de collision entre la sphère du joueur et la boîte d'obstacle
         if (box.intersectsSphere(this.player.boundingSphere)) {
           // Période de grâce d'invulnérabilité
@@ -811,33 +819,35 @@ class GameApp {
         this.player.setFlightProfile(profile, curTime);
       }
 
-      // Suivi caméra 3e personne cinématographique
-      const tCamX = playerPos.x * 0.36;
-      const tCamY = Math.max(2.2, playerPos.y + 2.7 + profileCamY);
-      const tCamZ = playerPos.z + 8.8;
+      // Suivi caméra 3e personne cinématographique (désactivé pendant la cinématique de fin)
+      if (!this.target || !this.target.isClimaxCinematicActive) {
+        const tCamX = playerPos.x * 0.36;
+        const tCamY = Math.max(2.2, playerPos.y + 2.7 + profileCamY);
+        const tCamZ = playerPos.z + 8.8;
 
-      this.camera.position.x += (tCamX - this.camera.position.x) * 6.0 * dt;
-      this.camera.position.y += (tCamY - this.camera.position.y) * 5.0 * dt;
-      this.camera.position.z += (tCamZ - this.camera.position.z) * 5.0 * dt;
+        this.camera.position.x += (tCamX - this.camera.position.x) * 6.0 * dt;
+        this.camera.position.y += (tCamY - this.camera.position.y) * 5.0 * dt;
+        this.camera.position.z += (tCamZ - this.camera.position.z) * 5.0 * dt;
 
-      // La caméra vise en avant avec l'inclinaison propre à l'élément (piqué, droit, montée)
-      this.cameraTarget.set(
-        playerPos.x * 0.22 + profileTargetX,
-        Math.max(1.0, playerPos.y * 0.45 + 1.8 + profileTargetY),
-        -52
-      );
-      this.camera.lookAt(this.cameraTarget);
+        // La caméra vise en avant avec l'inclinaison propre à l'élément (piqué, droit, montée)
+        this.cameraTarget.set(
+          playerPos.x * 0.22 + profileTargetX,
+          Math.max(1.0, playerPos.y * 0.45 + 1.8 + profileTargetY),
+          -52
+        );
+        this.camera.lookAt(this.cameraTarget);
 
-      // Inclinaison en roulis de la caméra
-      this.camera.rotation.z += profileRoll;
+        // Inclinaison en roulis de la caméra
+        this.camera.rotation.z += profileRoll;
 
-      // Champ de vision (FOV) dynamique
-      const baseFov = 75;
-      const speedFov = (this.currentSpeed > 80) ? (this.currentSpeed - 80) * 0.14 : 0;
-      const targetFov = Math.max(55, Math.min(96, baseFov + speedFov + profileFov));
-      if (Math.abs(this.camera.fov - targetFov) > 0.08) {
-        this.camera.fov += (targetFov - this.camera.fov) * 4.0 * dt;
-        this.camera.updateProjectionMatrix();
+        // Champ de vision (FOV) dynamique
+        const baseFov = 75;
+        const speedFov = (this.currentSpeed > 80) ? (this.currentSpeed - 80) * 0.14 : 0;
+        const targetFov = Math.max(55, Math.min(96, baseFov + speedFov + profileFov));
+        if (Math.abs(this.camera.fov - targetFov) > 0.08) {
+          this.camera.fov += (targetFov - this.camera.fov) * 4.0 * dt;
+          this.camera.updateProjectionMatrix();
+        }
       }
 
       // 9. Télémétrie HUD avec Armure, Purity, Score en Direct et Surchauffe Blaster
@@ -952,32 +962,30 @@ class GameApp {
       }).catch((e) => console.warn(e));
     }
 
-    // 1. Son d'accroche cristallin & alerte de contact dans le HUD
-    if (this.audio.playNityCatchup) this.audio.playNityCatchup();
-    this.ui.showClimaxAlert('// CONTACT ÉTABLI AVEC NITY ! ✨', true);
+    // 1. Alerte de contact dans le HUD
+    this.ui.showClimaxAlert('// CONTACT ÉTABLI • EN HARMONIE AVEC NITY... ✨', true);
 
-    // 2. Animation cinématique en jeu : pirouette de Nity face caméra, onde de choc & explosion stardust
-    const onEscapeDone = () => {
+    // 2. Cinématique narrative en 2 phases (Réunion paisible puis Aspiration brutale par le Trou Noir)
+    const onCinematicDone = () => {
       // 3. Flash cosmique aveuglant & célébration
       this.ui.triggerFlash();
       if (this.ui.triggerVictoryCelebration) this.ui.triggerVictoryCelebration();
 
-      // 4. SFX de fuite espiègle (« Poof ! ») + Sub-Warp + Fanfare
-      if (this.audio.playNityEscape) this.audio.playNityEscape();
+      // 4. Effondrement spatial & Fanfare
       this.audio.playCosmicWarp();
       if (this.audio.playVictoryFanfare) this.audio.playVictoryFanfare();
 
-      // 5. Affichage du Modal Troll officiel épuré (Feinte Cosmique Infinie)
+      // 5. Affichage du Modal « TU CROYAIS ÉCHAPPER À INFINITY ? »
       const nextLoop = this.loopCount + 1;
       this.ui.showTrollModal(nextLoop, () => {
         this.continueAfterTroll();
       });
     };
 
-    if (this.target && this.target.triggerNityEscapeAnimation) {
-      this.target.triggerNityEscapeAnimation(onEscapeDone);
+    if (this.target && this.target.startClimaxCinematic) {
+      this.target.startClimaxCinematic(this.player, this.camera, this.audio, onCinematicDone);
     } else {
-      onEscapeDone();
+      onCinematicDone();
     }
   }
 
