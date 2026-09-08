@@ -25,11 +25,23 @@ export class LeaderboardManager {
     }
     return [
       {
+        pseudo: 'zanioxx_off',
+        googleUid: 'maximenax05@gmail.com',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=zanioxx_off&backgroundColor=020617',
+        score: 285400,
+        distance: 12600,
+        maxSpeed: 380,
+        cycle: 'Folie',
+        rank: 'MUCH LOVE',
+        isFounder: true,
+        date: '2026-09-08'
+      },
+      {
         pseudo: 'Infi_Master',
         googleUid: 'goog_system_1',
         avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=InfiMaster&backgroundColor=020617',
-        score: 82500,
-        distance: 4120,
+        score: 164200,
+        distance: 7420,
         maxSpeed: 345,
         cycle: 'Folie',
         rank: 'MUCH LOVE',
@@ -39,8 +51,8 @@ export class LeaderboardManager {
         pseudo: 'Nity_Hunter',
         googleUid: 'goog_system_2',
         avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=NityHunter&backgroundColor=020617',
-        score: 51200,
-        distance: 3150,
+        score: 122800,
+        distance: 5150,
         maxSpeed: 315,
         cycle: 'Ambition',
         rank: 'SUBA Y SU',
@@ -50,8 +62,8 @@ export class LeaderboardManager {
         pseudo: 'CyberGlider',
         googleUid: 'goog_system_3',
         avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=CyberGlider&backgroundColor=020617',
-        score: 32400,
-        distance: 2280,
+        score: 88400,
+        distance: 3280,
         maxSpeed: 290,
         cycle: 'Amour',
         rank: 'SUBA Y',
@@ -61,8 +73,8 @@ export class LeaderboardManager {
         pseudo: 'CosmicRider',
         googleUid: 'goog_system_4',
         avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=CosmicRider&backgroundColor=020617',
-        score: 19800,
-        distance: 1450,
+        score: 45200,
+        distance: 1850,
         maxSpeed: 270,
         cycle: 'Résilience',
         rank: 'SUBA',
@@ -89,11 +101,15 @@ export class LeaderboardManager {
     }
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1800);
       const response = await fetch(this.cloudEndpoint, {
+        signal: controller.signal,
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       });
 
+      clearTimeout(timeoutId);
       if (response.ok) {
         const json = await response.json();
         let scores = [];
@@ -141,6 +157,7 @@ export class LeaderboardManager {
     let isNewRecord = false;
     const nowStr = new Date().toISOString().split('T')[0];
 
+    const isFounder = (entry.pseudo.toLowerCase() === 'zanioxx_off' || (entry.googleUid && entry.googleUid.toLowerCase() === 'maximenax05@gmail.com') || !!entry.isFounder);
     const cleanEntry = {
       pseudo: entry.pseudo.trim(),
       googleUid: entry.googleUid || '',
@@ -150,6 +167,7 @@ export class LeaderboardManager {
       maxSpeed: Math.round((entry.maxSpeed || 68) * 3.6),
       cycle: entry.cycle || 'Chute',
       rank: entry.rank || 'SU',
+      isFounder,
       date: nowStr
     };
 

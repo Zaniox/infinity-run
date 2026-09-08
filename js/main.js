@@ -12,6 +12,8 @@ import { UIManager } from './ui.js';
 import { AuthManager } from './auth.js';
 import { LeaderboardManager } from './leaderboard.js';
 import { MultiplayerManager } from './multiplayer.js';
+import { settings } from './settings.js';
+import { i18n } from './i18n.js';
 
 class GameApp {
   constructor() {
@@ -23,6 +25,9 @@ class GameApp {
     // Gestionnaires d'Authentification Google et de Classement Mondial
     this.auth = new AuthManager((user) => {
       if (this.ui) this.ui.updateAuthState(user);
+      if (this.player && this.player.setFounder) {
+        this.player.setFounder(this.auth && this.auth.isFounder && this.auth.isFounder());
+      }
     });
     this.leaderboard = new LeaderboardManager();
 
@@ -62,6 +67,9 @@ class GameApp {
     this.world = new World(this.scene);
     this.player = new Player(this.scene);
     this.player.group.position.set(0, 3.5, 0); // Altitude de vol saine initiale
+    if (this.player.setFounder) {
+      this.player.setFounder(this.auth && this.auth.isFounder && this.auth.isFounder());
+    }
     this.target = new TargetManager(this.scene);
 
     this.audio = new AudioManager((cycleIndex, track) => {
@@ -82,9 +90,44 @@ class GameApp {
     );
     this.ui.setMultiplayer(this.multiplayer);
 
+    // Initialisation des volumes et qualité graphique selon les réglages
+    if (this.audio) {
+      this.audio.setMusicVolume(settings.get('musicVolume'));
+      this.audio.setSfxVolume(settings.get('sfxVolume'));
+    }
+    this.applyGraphicsQuality(settings.get('graphicsQuality') || 'high');
+    settings.onSettingChanged((key, val) => {
+      if (key === 'musicVolume' && this.audio) this.audio.setMusicVolume(val);
+      if (key === 'sfxVolume' && this.audio) this.audio.setSfxVolume(val);
+      if (key === 'graphicsQuality') this.applyGraphicsQuality(val);
+    });
+
     // Lasers tirés par l'adversaire en multijoueur
     this.multiplayer.onRivalLaserFire = (x, y, z) => {
       this.spawnRivalLaser(x, y, z);
+    };
+
+    // Synchronisation de la perte de vie du rival en duel 1v1 (3 vies)
+    this.multiplayer.onRivalLifeLost = (livesRemaining, dist) => {
+      if (this.ui) {
+        const rivalName = this.multiplayer.opponentUser ? this.multiplayer.opponentUser.pseudo : 'RIVAL';
+        this.ui.updateDuelLives(this.multiplayer.lives, livesRemaining, rivalName);
+        this.ui.showClimaxAlert(`💥 ${rivalName.toUpperCase()} A PERDU UNE VIE (${livesRemaining}/3) !`, false);
+        setTimeout(() => { if (this.ui) this.ui.hideClimaxAlert(); }, 2200);
+      }
+    };
+
+    // Fin de duel multijoueur (Victoire ou Défaite)
+    this.multiplayer.onDuelEnd = (data) => {
+      this.isMultiplayerDuel = false;
+      this.multiplayer.isDuelActive = false;
+      // Immédiatement immuniser le joueur victorieux pour empêcher tout crash derrière le modal
+      if (data && data.isWinner && this.player) {
+        this.player.invulnerableTimer = 9999;
+      }
+      if (this.ui) {
+        this.ui.showDuelResult(data);
+      }
     };
 
     window.gameApp = this;
@@ -149,6 +192,23 @@ class GameApp {
     this.renderer.toneMappingExposure = 1.0;
   }
 
+  applyGraphicsQuality(quality) {
+    if (!this.renderer) return;
+    const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.innerWidth <= 820;
+    if (quality === 'low') {
+      this.renderer.setPixelRatio(1.0);
+      this.renderer.shadowMap.enabled = false;
+    } else if (quality === 'high') {
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.25 : 1.6));
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    } else if (quality === 'ultra') {
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    }
+  }
+
   togglePause() {
     if (this.state === this.STATE_PLAYING) {
       if (this.isPaused) {
@@ -195,13 +255,18 @@ class GameApp {
     }
 
     this.isPaused = false;
+    this.isMultiplayerDuel = false;
     this.state = this.STATE_PLAYING;
     if (this.ui) {
       this.ui.hideStartMenu();
       this.ui.hidePauseMenu();
+      this.ui.hideDuelLives();
     }
     // Réinitialisation intégrale pour garantir un décollage propre sans drops accumulés
     this.player.reset();
+    if (this.player.setFounder) {
+      this.player.setFounder(this.auth && this.auth.isFounder && this.auth.isFounder());
+    }
     this.target.reset();
     this.world.reset();
     this.distance = 0;
@@ -213,7 +278,10 @@ class GameApp {
 
   restartGame() {
     this.isPaused = false;
-    if (this.ui) this.ui.hidePauseMenu();
+    if (this.ui) {
+      this.ui.hidePauseMenu();
+      this.ui.hideDuelLives();
+    }
     this.isMultiplayerDuel = false;
     if (this.multiplayer) {
       this.multiplayer.leaveRoom();
@@ -247,6 +315,9 @@ class GameApp {
 
     // Réinitialisation du joueur, de la cible et du monde
     this.player.reset();
+    if (this.player.setFounder) {
+      this.player.setFounder(this.auth && this.auth.isFounder && this.auth.isFounder());
+    }
     this.target.reset();
     this.world.reset();
 
@@ -295,8 +366,22 @@ class GameApp {
     this.isClimaxFeinteActive = false;
 
     this.player.reset();
+    if (this.player.setFounder) {
+      this.player.setFounder(this.auth && this.auth.isFounder && this.auth.isFounder());
+    }
     this.target.reset();
     this.world.reset();
+
+    // Initialisation des 3 vies par pilote pour le duel 1v1
+    if (this.multiplayer) {
+      this.multiplayer.lives = 3;
+      this.multiplayer.opponentData.lives = 3;
+      this.multiplayer.isDuelActive = true;
+    }
+    const rivalName = this.multiplayer?.opponentUser ? this.multiplayer.opponentUser.pseudo : 'RIVAL';
+    if (this.ui) {
+      this.ui.updateDuelLives(3, 3, rivalName);
+    }
 
     this.camera.position.set(0, 4.2, 9.5);
     this.cameraTarget.set(0, 2.0, -16);
@@ -605,14 +690,36 @@ class GameApp {
 
       // 3. Mise à jour de la physique de vol d'Infi & gestion thermique du blaster
       const isCinematic = this.target && this.target.isClimaxCinematicActive;
-      const inputX = isCinematic ? 0 : this.inputAxisX;
-      const inputY = isCinematic ? 0 : this.inputAxisY;
+      const sens = settings.get('flightSensitivity') || 1.0;
+      const inputX = isCinematic ? 0 : this.inputAxisX * sens;
+      const inputY = isCinematic ? 0 : this.inputAxisY * sens;
       this.player.update(dt, inputX, inputY, currentBpm, bass, this.audio);
 
       // Si Infi s'est écrasé suite à une panne d'énergie
       if (this.player.isDead) {
-        this.state = this.STATE_DYING;
-        this.audio.playCrash();
+        if (this.isMultiplayerDuel && this.multiplayer && this.multiplayer.isDuelActive) {
+          const currentTrackIdx = this.audio ? this.audio.currentTrackIndex : 0;
+          const lifeRes = this.multiplayer.recordLifeLost(this.distance, currentTrackIdx);
+          if (!lifeRes.isEliminated && lifeRes.lives > 0) {
+            this.player.isDead = false;
+            this.player.invulnerableTimer = 2.5;
+            this.player.energy = 100;
+            this.audio.playCrash();
+            if (this.ui) {
+              const rivalName = this.multiplayer.opponentUser ? this.multiplayer.opponentUser.pseudo : 'RIVAL';
+              this.ui.updateDuelLives(this.multiplayer.lives, this.multiplayer.opponentData.lives, rivalName);
+              this.ui.showClimaxAlert(`💔 ÉNERGIE ÉPUISÉE ! IL VOUS RESTE ${this.multiplayer.lives} VIE(S)`, true);
+              setTimeout(() => { if (this.ui) this.ui.hideClimaxAlert(); }, 2200);
+            }
+          } else {
+            this.state = this.STATE_DYING;
+            this.audio.playCrash();
+            if (this.ui) this.ui.updateDuelLives(0, this.multiplayer.opponentData.lives);
+          }
+        } else {
+          this.state = this.STATE_DYING;
+          this.audio.playCrash();
+        }
       }
 
       // Collision des lasers Star Fox avec les obstacles (Gain de points + Combat text flottant)
@@ -633,6 +740,18 @@ class GameApp {
           this.target.spawnDropAt(hitPos.x, Math.max(1.5, hitPos.y), hitPos.z, 'heart');
         }
       });
+
+      // Avertissement sonore pré-surchauffe du blaster
+      if (this.player.blasterHeat >= 0.75 && !this.player.isOverheated) {
+        if (!this._hasWarnedOverheat) {
+          this._hasWarnedOverheat = true;
+          if (this.audio && this.audio.playOverheatWarning) {
+            this.audio.playOverheatWarning();
+          }
+        }
+      } else if (this.player.blasterHeat < 0.5) {
+        this._hasWarnedOverheat = false;
+      }
 
       // 4. Défilement du monde et des obstacles synchronisés au beat musical absolu
       const playerPos = this.player.group.position;
@@ -674,14 +793,56 @@ class GameApp {
             return 'destroy';
           }
 
-          // Cas 3 : Mort / Crash direct
+          // Cas 3 : Mort / Crash direct ou Perte d'une vie en Duel 1v1
+          if (this.isMultiplayerDuel && this.multiplayer && this.multiplayer.isDuelActive) {
+            const currentTrackIdx = this.audio ? this.audio.currentTrackIndex : 0;
+            const lifeRes = this.multiplayer.recordLifeLost(this.distance, currentTrackIdx);
+            if (!lifeRes.isEliminated && lifeRes.lives > 0) {
+              this.player.invulnerableTimer = 2.5;
+              this.player.energy = 100;
+              this.audio.playCrash();
+              if (this.ui) {
+                const rivalName = this.multiplayer.opponentUser ? this.multiplayer.opponentUser.pseudo : 'RIVAL';
+                this.ui.updateDuelLives(this.multiplayer.lives, this.multiplayer.opponentData.lives, rivalName);
+                this.ui.showClimaxAlert(`💔 COLLISION ! IL VOUS RESTE ${this.multiplayer.lives} VIE(S)`, true);
+                setTimeout(() => { if (this.ui) this.ui.hideClimaxAlert(); }, 2200);
+              }
+              return 'destroy';
+            } else {
+              this.player.triggerCrash();
+              this.audio.playCrash();
+              this.state = this.STATE_DYING;
+              if (this.ui) this.ui.updateDuelLives(0, this.multiplayer.opponentData.lives);
+              return 'crash';
+            }
+          }
+
           this.player.triggerCrash();
           this.audio.playCrash();
           this.state = this.STATE_DYING;
           return 'crash';
         }
         return false;
-      });
+      }, (obs, dist) => {
+        // Détection de Frôlement In Extremis (Near Miss / Close Call)
+        if (this.state === this.STATE_PLAYING && !this.isPaused) {
+          const pts = 300;
+          this.obstacleScore = (this.obstacleScore || 0) + pts;
+          this.distance += 15;
+          if (this.audio && this.audio.playNearMiss) {
+            this.audio.playNearMiss();
+          }
+          if (this.ui) {
+            this.ui.showFloatingScore(pts, false, 'FRÔLEMENT !', 'near-miss');
+          }
+        }
+      }, playerPos);
+
+      // Mise à jour dynamique des lignes de vitesse Hyperdrive 3D
+      if (this.world.updateSpeedLines) {
+        const isBoost = (this.player.boostTimer > 0) || this.player.isSayanfinityActive() || (this.world.isTransitioning);
+        this.world.updateSpeedLines(dt, this.currentSpeed, isBoost);
+      }
 
       // 5. Mise à jour du trou noir, de Nity, des drops et attraction magnétique
       this.target.update(
@@ -803,11 +964,15 @@ class GameApp {
       if (profile.rollWobbleAmp > 0) {
         profileRoll += Math.sin(curTime * (profile.rollWobbleFreq || 2.0)) * profile.rollWobbleAmp;
       }
-      // Turbulences erratiques (ex: Cycle 6 Chaos)
-      if (profile.turbulence > 0) {
-        profileTargetX += (Math.sin(curTime * 17.3) + Math.cos(curTime * 29.1)) * profile.turbulence * 3.0;
-        profileCamY += (Math.sin(curTime * 21.4) + Math.cos(curTime * 33.7)) * profile.turbulence * 1.5;
-        profileRoll += Math.sin(curTime * 24.5) * profile.turbulence * 0.45;
+      // Turbulences erratiques (ex: Cycle 6 Chaos) & Secousses de caméra
+      const enableShake = settings.get('screenShake');
+      if (profile.turbulence > 0 && enableShake) {
+        profileTargetX += (Math.sin(curTime * 17.3) + Math.cos(curTime * 29.1)) * profile.turbulence * 2.0;
+        profileCamY += (Math.sin(curTime * 21.4) + Math.cos(curTime * 33.7)) * profile.turbulence * 1.0;
+        profileRoll += Math.sin(curTime * 24.5) * profile.turbulence * 0.25;
+      }
+      if (!enableShake) {
+        profileRoll = 0;
       }
       // Distorsion psychédélique du champ de vision (ex: Cycle 8 Folie)
       if (profile.fovMod !== 0) {
@@ -913,15 +1078,23 @@ class GameApp {
           this.ui.showGameOver(reason, this.distance, this.maxSpeed, this.heartsCount, this.obstaclesDestroyed || 0, totalScore);
         }
 
-        // Enregistrement automatique au Classement Mondial officiel
-        if (this.auth && this.auth.isAuthenticated() && this.auth.hasPseudo() && this.leaderboard) {
-          const user = this.auth.getUser();
-          const rankInfo = this.ui.computeRank(totalScore);
+        // Enregistrement universel au Classement Mondial (100% des pilotes, enregistrés ou invités)
+        const rankInfo = this.ui.computeRank(totalScore);
+        const user = this.auth ? this.auth.getUser() : null;
+        let pilotPseudo = (user && user.pseudo) ? user.pseudo.trim() : '';
+        if (!pilotPseudo) {
+          pilotPseudo = this.auth?.getGuestPseudo ? this.auth.getGuestPseudo() : 'Pilote_Anonyme';
+        }
 
+        if (this.auth) {
+          this.auth.saveProgression(totalScore, this.distance, rankInfo.rank);
+        }
+
+        if (this.leaderboard) {
           this.leaderboard.submitScore({
-            pseudo: user.pseudo,
-            googleUid: user.googleUid,
-            avatar: user.picture,
+            pseudo: pilotPseudo,
+            googleUid: user ? user.googleUid : null,
+            avatar: user ? user.picture : 'https://api.dicebear.com/7.x/bottts/svg?seed=pilot',
             score: totalScore,
             distance: this.distance,
             maxSpeed: this.maxSpeed,
@@ -945,15 +1118,24 @@ class GameApp {
     if (this.isClimaxFeinteActive) return;
     this.isClimaxFeinteActive = true;
 
-    // Enregistrement au classement mondial pour l'accomplissement du cycle
-    if (this.auth && this.auth.isAuthenticated() && this.auth.hasPseudo() && this.leaderboard) {
-      const user = this.auth.getUser();
-      const totalScore = Math.floor(this.distance * 10 + this.heartsCount * 250 + (this.obstacleScore || 0));
-      const rankInfo = this.ui.computeRank(totalScore);
+    // Enregistrement universel au classement mondial pour l'accomplissement du cycle
+    const totalScore = Math.floor(this.distance * 10 + this.heartsCount * 250 + (this.obstacleScore || 0));
+    const rankInfo = this.ui.computeRank(totalScore);
+    const user = this.auth ? this.auth.getUser() : null;
+    let pilotPseudo = (user && user.pseudo) ? user.pseudo.trim() : '';
+    if (!pilotPseudo) {
+      pilotPseudo = this.auth?.getGuestPseudo ? this.auth.getGuestPseudo() : 'Pilote_Anonyme';
+    }
+
+    if (this.auth) {
+      this.auth.saveProgression(totalScore, this.distance, rankInfo.rank);
+    }
+
+    if (this.leaderboard) {
       this.leaderboard.submitScore({
-        pseudo: user.pseudo,
-        googleUid: user.googleUid,
-        avatar: user.picture,
+        pseudo: pilotPseudo,
+        googleUid: user ? user.googleUid : null,
+        avatar: user ? user.picture : 'https://api.dicebear.com/7.x/bottts/svg?seed=pilot',
         score: totalScore,
         distance: this.distance,
         maxSpeed: this.maxSpeed,

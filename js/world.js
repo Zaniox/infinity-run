@@ -150,9 +150,9 @@ export const CYCLES_DATA = [
 export const CYCLE_FLIGHT_PROFILES = [
   // 0: Chute (Noir / Eau) - "au début la map ça va vers le bas" : Piqué abyssal vers les profondeurs (-8.6°)
   {
-    pitch: -0.15, // Piqué vers le bas
-    camYOffset: 1.6,
-    targetYOffset: -4.2,
+    pitch: -0.18, // Piqué abyssal profond vers le bas
+    camYOffset: 2.2,
+    targetYOffset: -6.5,
     rollWobbleAmp: 0.02,
     rollWobbleFreq: 1.0,
     waveAltitudeAmp: 0.0,
@@ -211,12 +211,12 @@ export const CYCLE_FLIGHT_PROFILES = [
     pitch: 0.0,
     camYOffset: 0.0,
     targetYOffset: 0.0,
-    rollWobbleAmp: 0.18,
-    rollWobbleFreq: 4.8,
-    waveAltitudeAmp: 0.9,
-    waveAltitudeFreq: 4.0,
-    fovMod: 3.5,
-    turbulence: 0.24 // Fortes secousses multidirectionnelles
+    rollWobbleAmp: 0.08,
+    rollWobbleFreq: 2.2,
+    waveAltitudeAmp: 0.35,
+    waveAltitudeFreq: 2.0,
+    fovMod: 1.5,
+    turbulence: 0.08 // Turbulences cinématiques lissées (anti-mal de tête)
   },
   // 6: Ambition (Bleu / Vent) - "ambition ça monte vers le haut" : Ascension supersonique prononcée (+14.3°)
   {
@@ -235,12 +235,12 @@ export const CYCLE_FLIGHT_PROFILES = [
     pitch: -0.05,
     camYOffset: 0.4,
     targetYOffset: -1.0,
-    rollWobbleAmp: 0.24,
-    rollWobbleFreq: 2.8,
-    waveAltitudeAmp: 1.5,
-    waveAltitudeFreq: 2.4,
-    fovMod: 14.0, // Pulsation de champ de vision psychédélique
-    turbulence: 0.18
+    rollWobbleAmp: 0.10,
+    rollWobbleFreq: 2.0,
+    waveAltitudeAmp: 0.45,
+    waveAltitudeFreq: 1.8,
+    fovMod: 3.5, // Pulsation de FOV subtile et confortable
+    turbulence: 0.05 // Tremblements apaisés
   }
 ];
 
@@ -887,6 +887,9 @@ export class World {
 
     // Bassin d'ondulations d'eau pour le Cycle 1 (Chute / Eau)
     this.setupWaterRipplesPool();
+
+    // Lignes de vitesse Hyperdrive 3D (Speed Streaks cinématiques)
+    this.setupSpeedLines();
 
     // Système de Portail de Transition 3D monumental
     this.transitionPortal = null;
@@ -2261,6 +2264,94 @@ export class World {
 
   // --- LES 8 TROLLS ET OBSTACLES PAR CYCLE ---
 
+  
+  // --- OBSTACLES SUSPENDUS & HAUTE ALTITUDE (ANTI-TRICHE EN HAUTEUR) ---
+  spawnHighAltitudeHazard(x, cycleIdx) {
+    const group = new THREE.Group();
+    const subBoxes = [];
+    const altY = 7.5 + Math.random() * 3.5; // Altitude comprise entre 7.5 et 11.0
+
+    switch (cycleIdx) {
+      case 0: { // Eau : Orbe d'eau tourbillonnante & cascade suspendue
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x0284c7, emissive: 0x00f0ff, emissiveIntensity: 0.8,
+          roughness: 0.1, metalness: 0.85, transparent: true, opacity: 0.85
+        });
+        const orb = new THREE.Mesh(new THREE.SphereGeometry(1.9, 14, 14), mat);
+        group.add(orb);
+        subBoxes.push({ mesh: orb, box: new THREE.Box3() });
+
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(2.8, 0.2, 8, 24), new THREE.MeshBasicMaterial({ color: 0xbae6fd }));
+        ring.rotation.x = Math.PI / 2.2;
+        group.add(ring);
+        break;
+      }
+      case 1: { // Terre : Stalactite tellurique tombant du plafond
+        const mat = new THREE.MeshStandardMaterial({ color: 0x3d2714, roughness: 0.9, flatShading: true });
+        const stalactite = new THREE.Mesh(new THREE.ConeGeometry(2.2, 10.0, 6), mat);
+        stalactite.rotation.x = Math.PI; // Pointe vers le bas
+        group.add(stalactite);
+        subBoxes.push({ mesh: stalactite, box: new THREE.Box3() });
+        break;
+      }
+      case 2: { // Feu : Mine de magma incandescent
+        const mat = new THREE.MeshStandardMaterial({ color: 0xff2200, emissive: 0xff5500, emissiveIntensity: 1.2, roughness: 0.3 });
+        const sphere = new THREE.Mesh(new THREE.DodecahedronGeometry(2.0, 1), mat);
+        group.add(sphere);
+        subBoxes.push({ mesh: sphere, box: new THREE.Box3() });
+
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(3.0, 0.25, 8, 20), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
+        ring.rotation.y = Math.PI / 4;
+        group.add(ring);
+        break;
+      }
+      case 3: { // Électricité : Nœud Tesla haute-tension
+        const mat = new THREE.MeshStandardMaterial({ color: 0x0f172a, emissive: 0xfacc15, emissiveIntensity: 1.0, roughness: 0.2 });
+        const node = new THREE.Mesh(new THREE.OctahedronGeometry(2.0), mat);
+        group.add(node);
+        subBoxes.push({ mesh: node, box: new THREE.Box3() });
+        break;
+      }
+      case 4: { // Lumière : Prisme solaire rayonnant
+        const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfef08a, emissiveIntensity: 0.9, roughness: 0.1 });
+        const prism = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 2.2, 7.0, 5), mat);
+        group.add(prism);
+        subBoxes.push({ mesh: prism, box: new THREE.Box3() });
+        break;
+      }
+      case 5: { // Ombre : Monolithe du vide inversé
+        const mat = new THREE.MeshStandardMaterial({ color: 0x050508, roughness: 0.1, metalness: 0.95, flatShading: true });
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(2.2, 11.0, 5), mat);
+        spike.rotation.x = Math.PI;
+        group.add(spike);
+        subBoxes.push({ mesh: spike, box: new THREE.Box3() });
+        break;
+      }
+      case 6: { // Vent : Turbine éolienne supersonique
+        const mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.7, 1.8), mat);
+        group.add(wing);
+        subBoxes.push({ mesh: wing, box: new THREE.Box3() });
+        break;
+      }
+      default: { // Cosmos : Faille de distorsion spatiale
+        const mat = new THREE.MeshStandardMaterial({ color: 0x110224, emissive: 0xc084fc, emissiveIntensity: 1.2 });
+        const core = new THREE.Mesh(new THREE.SphereGeometry(1.8, 12, 12), mat);
+        group.add(core);
+        subBoxes.push({ mesh: core, box: new THREE.Box3() });
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(3.0, 0.28, 8, 24), new THREE.MeshBasicMaterial({ color: 0xa855f7 }));
+        ring.rotation.x = Math.PI / 2.3;
+        group.add(ring);
+        break;
+      }
+    }
+
+    group.position.set(x, altY, this.spawnDistance);
+    const obj = { mesh: group, subBoxes, type: 'spin', rotSpeed: 1.8 };
+    this.scene.add(group);
+    this.obstacles.push(obj);
+  }
+
   // 1. Monolithe classique
   spawnMonolith(x, scaleY = 1.0) {
     const w = 4.0 + Math.random() * 3.5;
@@ -3390,7 +3481,7 @@ export class World {
   }
 
   // Mise à jour fluide du monde avec synchronisation audio absolue (BPM, temps, mesure, kick)
-  update(dt, speed, bpmOrAudioInfo, bassEnergy = 0, onCollisionCheck) {
+  update(dt, speed, bpmOrAudioInfo, bassEnergy = 0, onCollisionCheck = null, onNearMiss = null, playerPos = null) {
     const deltaZ = speed * dt;
     const time = performance.now() * 0.001;
 
@@ -3430,7 +3521,12 @@ export class World {
     }
 
     // Animation 3D physique des vagues d'eau et du relief
-    this.updateTerrainMesh(time);
+    this.updateTerrainMesh(time, dt);
+    // Pente descendante réelle pour le Cycle 1 (Chute océanique vers le bas)
+    if (this.terrainMesh) {
+      const targetSlope = (this.currentCycleIndex === 0) ? (-Math.PI / 2 - 0.075) : (-Math.PI / 2);
+      this.terrainMesh.rotation.x += (targetSlope - this.terrainMesh.rotation.x) * 2.0 * dt;
+    }
 
     // Défilement continu et fluide des textures (UV Flow vivant)
     if (this.groundMaterial && this.groundMaterial.map) {
@@ -3518,7 +3614,7 @@ export class World {
     this.timeSinceLastSpawn = (this.timeSinceLastSpawn || 0) + dt;
     const cycleIdx = this.currentCycleIndex || 0;
     // Espacement progressif resserré au fil des cycles (Cycle 1 ~1.1s, Cycle 8 ~0.40s)
-    const minSpawnDelay = Math.max(0.38, 1.15 - cycleIdx * 0.11);
+    const minSpawnDelay = Math.max(0.52, 1.15 - cycleIdx * 0.08); // Cadence recalibrée et juste
 
     // Cadencement sur le rythme musical (BPM)
     let isSpawnBeat = isNewBeat;
@@ -3606,6 +3702,11 @@ export class World {
         const lanes = [-15, -9, 0, 9, 15];
         const lx = lanes[Math.floor(Math.random() * lanes.length)];
         spawnSingle(lx);
+        // 25% de chance d'ajouter un obstacle en haute altitude pour empêcher le survol
+        if (Math.random() < 0.28) {
+          const altLane = (Math.random() - 0.5) * 22;
+          this.spawnHighAltitudeHazard(altLane, cycleIdx);
+        }
       }
     }
 
@@ -3683,8 +3784,8 @@ export class World {
         const pulse = 1.0 + Math.sin(time * 6.0) * 0.18 * (1.0 + audioPulse * 0.8);
         obs.mesh.scale.set(pulse, pulse, pulse);
       } else if (obs.type === 'glitch') {
-        if (isNewBeat && Math.random() < 0.45) {
-          obs.mesh.position.x += (Math.random() - 0.5) * 3.0;
+        if (isNewBeat && Math.random() < 0.25) {
+          obs.mesh.position.x += (Math.random() - 0.5) * 1.2;
         }
       }
 
@@ -3712,6 +3813,19 @@ export class World {
         if (hitResult === 'destroy' || hitResult === 'smash') {
           this.destroyObstacle(i, hitResult === 'smash');
           continue;
+        }
+      }
+
+      // Détection de Frôlement In Extremis (Near Miss / Close Call)
+      if (onNearMiss && playerPos && !obs.hasNearMissed && !obs.isDestroyed) {
+        const obsZ = obs.mesh.position.z;
+        if (obsZ >= -3.0 && obsZ <= 3.8) {
+          const dx = Math.abs(obs.mesh.position.x - playerPos.x);
+          const dy = Math.abs(obs.mesh.position.y - playerPos.y);
+          if (dx >= 1.2 && dx <= 4.2 && dy <= 3.8) {
+            obs.hasNearMissed = true;
+            onNearMiss(obs, Math.hypot(dx, dy));
+          }
         }
       }
 
@@ -3763,6 +3877,82 @@ export class World {
     }
   }
 
+  // --- LIGNES DE VITESSE HYPERDRIVE (SPEED STREAKS 3D) ---
+  setupSpeedLines() {
+    this.speedLineCount = 140;
+    const geo = new THREE.BufferGeometry();
+    this.speedLinePositions = new Float32Array(this.speedLineCount * 6);
+
+    for (let i = 0; i < this.speedLineCount; i++) {
+      const x = (Math.random() - 0.5) * 44;
+      const y = 1.0 + Math.random() * 14;
+      const z = -Math.random() * 180;
+      const len = 3.5 + Math.random() * 8.0;
+
+      this.speedLinePositions[i * 6] = x;
+      this.speedLinePositions[i * 6 + 1] = y;
+      this.speedLinePositions[i * 6 + 2] = z;
+
+      this.speedLinePositions[i * 6 + 3] = x;
+      this.speedLinePositions[i * 6 + 4] = y;
+      this.speedLinePositions[i * 6 + 5] = z - len;
+    }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(this.speedLinePositions, 3));
+
+    this.speedLineMat = new THREE.LineBasicMaterial({
+      color: 0xbae6fd,
+      transparent: true,
+      opacity: 0.0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    this.speedLinesMesh = new THREE.LineSegments(geo, this.speedLineMat);
+    this.scene.add(this.speedLinesMesh);
+  }
+
+  updateSpeedLines(dt, speed, isBoostOrSaiyan = false) {
+    if (!this.speedLinesMesh) return;
+    const speedRatio = Math.max(0, Math.min(1.0, (speed - 62.0) / 55.0));
+    const targetOpacity = isBoostOrSaiyan ? 0.75 : speedRatio * 0.45;
+    this.speedLineMat.opacity += (targetOpacity - this.speedLineMat.opacity) * 6.0 * dt;
+
+    if (this.speedLineMat.opacity < 0.01) {
+      this.speedLinesMesh.visible = false;
+      return;
+    }
+    this.speedLinesMesh.visible = true;
+
+    if (this.cycle) {
+      this.speedLineMat.color.set(isBoostOrSaiyan ? 0x00f0ff : (this.cycle.primary || 0xbae6fd));
+    }
+
+    const pos = this.speedLinesMesh.geometry.attributes.position.array;
+    const moveZ = (speed * 1.85 + (isBoostOrSaiyan ? 65.0 : 0)) * dt;
+
+    for (let i = 0; i < this.speedLineCount; i++) {
+      pos[i * 6 + 2] += moveZ;
+      pos[i * 6 + 5] += moveZ;
+
+      if (pos[i * 6 + 5] > 25.0) {
+        const x = (Math.random() - 0.5) * 44;
+        const y = 1.0 + Math.random() * 14;
+        const z = -170 - Math.random() * 40;
+        const len = 4.0 + Math.random() * 10.0 + (isBoostOrSaiyan ? 8.0 : 0);
+
+        pos[i * 6] = x;
+        pos[i * 6 + 1] = y;
+        pos[i * 6 + 2] = z;
+
+        pos[i * 6 + 3] = x;
+        pos[i * 6 + 4] = y;
+        pos[i * 6 + 5] = z - len;
+      }
+    }
+    this.speedLinesMesh.geometry.attributes.position.needsUpdate = true;
+  }
+
   reset() {
     if (this.transitionPortal) {
       this.transitionPortal.dispose(this.scene);
@@ -3787,6 +3977,13 @@ export class World {
         exp.pts.material.dispose();
       }
       this.activeExplosions = [];
+    }
+
+    if (this.speedLineMat) {
+      this.speedLineMat.opacity = 0;
+    }
+    if (this.speedLinesMesh) {
+      this.speedLinesMesh.visible = false;
     }
   }
 }

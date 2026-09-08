@@ -2268,14 +2268,15 @@ html, body {
 
 /* Réticule Star Fox */
 .starfox-reticle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 44px;
-  height: 44px;
-  transform: translate(-50%, -50%);
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 46px !important;
+  height: 46px !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
   pointer-events: none;
-  z-index: 50;
+  z-index: 55;
   transition: transform 0.08s ease;
 }
 
@@ -2326,6 +2327,17 @@ html, body {
 .starfox-reticle.hit .reticle-corner {
   border-color: #ffea00;
   box-shadow: 0 0 12px #ffea00;
+}
+
+.starfox-reticle.warning .reticle-corner {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 14px #f59e0b !important;
+  animation: reticlePulseWarning 0.28s ease infinite alternate;
+}
+
+@keyframes reticlePulseWarning {
+  0% { transform: scale(1); opacity: 0.82; }
+  100% { transform: scale(1.12); opacity: 1; }
 }
 
 /* Bannière Sayanfinity */
@@ -3232,6 +3244,13 @@ html, body {
   text-shadow: 0 0 16px rgba(255, 215, 0, 0.95), 0 0 24px #ff2e93;
 }
 
+.floating-score-item.near-miss {
+  font-size: 1.35rem;
+  color: #38bdf8;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.95), 0 0 28px #00f0ff;
+  letter-spacing: 0.12em;
+}
+
 @keyframes floatScoreUp {
   0% {
     opacity: 0;
@@ -3412,4 +3431,510 @@ html, body {
     transform: scale(1) translateY(0);
     filter: brightness(1);
   }
+}
+
+
+/* ==========================================================================
+   REFONTE GAME OVER ÉPURÉ & COMPACT
+   ========================================================================== */
+.modal-stats-hero {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-top: 4px;
+}
+
+.stat-hero-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-hero-val {
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+}
+
+.stat-hero-val.highlight-score {
+  color: #00f0ff;
+  text-shadow: 0 0 16px rgba(0, 240, 255, 0.8);
+}
+
+/* ==========================================================================
+   HUD DUEL 1V1 À 3 VIES
+   ========================================================================== */
+.hud-duel-lives-bar {
+  position: absolute;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.duel-life-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(8, 14, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 6px 14px;
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+}
+
+.duel-life-pill.my-lives {
+  border-color: rgba(0, 240, 255, 0.45);
+}
+
+.duel-life-pill.rival-lives {
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.duel-life-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #94a3b8;
+}
+
+.duel-life-hearts {
+  font-size: 1.05rem;
+  letter-spacing: 2px;
+}
+
+.duel-life-lead-tag {
+  font-family: 'Consolas', monospace;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(8px);
+}
+
+.duel-life-lead-tag.lead {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.5);
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.35);
+}
+
+.duel-life-lead-tag.behind {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.5);
+  box-shadow: 0 0 10px rgba(248, 113, 113, 0.35);
+}
+
+/* ==========================================================================
+   MODAL PARAMÈTRES (8 LANGUES, SLIDERS, QUALITÉ)
+   ========================================================================== */
+.settings-card {
+  max-width: 520px;
+  gap: 14px;
+}
+
+.settings-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
+.settings-row-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.settings-val {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #00f0ff;
+}
+
+.settings-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  background: rgba(30, 41, 59, 0.9);
+  border-radius: 999px;
+  outline: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #00f0ff;
+  box-shadow: 0 0 10px #00f0ff;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.settings-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.lang-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-lang-flag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 6px 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-lang-flag:hover {
+  border-color: #00f0ff;
+  background: rgba(0, 240, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.btn-lang-flag.active {
+  border-color: #00f0ff;
+  background: rgba(0, 240, 255, 0.22);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+.lang-flag {
+  font-size: 1.25rem;
+}
+
+.lang-name {
+  font-size: 0.60rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.settings-toggle-group {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #334155;
+  transition: 0.2s;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 2px;
+  background-color: white;
+  transition: 0.2s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #00f0ff;
+  box-shadow: 0 0 8px #00f0ff;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+  background-color: #020617;
+}
+
+.quality-selector-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn-quality-opt {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 7px;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-quality-opt.active {
+  color: #ffffff;
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.22);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+
+/* ==========================================================================
+   MODAL COMPTE & RÔLE FONDATEUR 👑
+   ========================================================================== */
+.account-card {
+  max-width: 460px;
+}
+
+.account-tabs {
+  display: flex;
+  width: 100%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 14px;
+}
+
+.account-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px;
+  color: #94a3b8;
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.account-tab.active {
+  color: #00f0ff;
+  border-bottom-color: #00f0ff;
+}
+
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: left;
+}
+
+.form-group label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+}
+
+.form-group input {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #ffffff;
+  font-size: 0.88rem;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.btn-account-submit {
+  background: linear-gradient(135deg, #00f0ff, #0284c7);
+  border: none;
+  border-radius: 999px;
+  padding: 12px;
+  color: #020617;
+  font-weight: 900;
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+  margin-top: 6px;
+  transition: transform 0.15s ease;
+}
+
+.btn-account-submit:hover {
+  transform: scale(1.02);
+}
+
+.account-error {
+  color: #f87171;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(239, 68, 68, 0.12);
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.account-profile-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.account-avatar-large {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 2px solid #00f0ff;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+}
+
+.account-pseudo-large {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.08em;
+}
+
+.badge-founder-tag {
+  background: linear-gradient(135deg, #facc15, #f59e0b);
+  color: #020617;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  box-shadow: 0 0 15px rgba(250, 204, 21, 0.6);
+  animation: founderGlow 1.8s infinite alternate;
+}
+
+@keyframes founderGlow {
+  0% { box-shadow: 0 0 8px rgba(250, 204, 21, 0.4); transform: scale(0.98); }
+  100% { box-shadow: 0 0 20px rgba(250, 204, 21, 0.85); transform: scale(1.02); }
+}
+
+.account-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.account-stat-box {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.as-label {
+  font-size: 0.52rem;
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.as-val {
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #00f0ff;
+}
+
+.btn-account-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: 8px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.15s ease;
+}
+
+.btn-account-danger:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.btn-account-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  color: #00f0ff;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-account-pill:hover {
+  background: rgba(0, 240, 255, 0.25);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.badge-founder-tag-mini {
+  color: #facc15;
+  text-shadow: 0 0 8px #facc15;
+  font-size: 0.85rem;
+  margin-left: 2px;
+  display: inline-block;
 }

@@ -69,6 +69,9 @@
             <!-- Non connecté (Mode Invité par défaut) -->
             <div id="auth-unlogged" class="profile-pill-content">
               <span class="pill-status"><span class="guest-dot"></span> Invité</span>
+              <button id="btn-open-account-modal" class="btn-account-pill" type="button" title="Créer un compte ou se connecter">
+                <span>👤</span> <span>Compte</span>
+              </button>
               <button id="btn-open-google-login" class="btn-google-pill" type="button" title="Lier un compte Google pour le classement et le 1v1">
                 <svg class="google-icon-mini" viewBox="0 0 24 24" width="14" height="14">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -81,14 +84,16 @@
               <div id="google-signin-btn-container" class="google-btn-slot hidden"></div>
             </div>
 
-            <!-- Connecté avec Google -->
+            <!-- Connecté avec Google / Compte -->
             <div id="auth-logged" class="profile-pill-content hidden">
               <img id="user-avatar-img" class="pill-avatar" src="" alt="Avatar" />
               <div class="pill-user-info">
                 <span id="user-pseudo-display" class="pill-pseudo">--</span>
+                <span id="user-founder-badge" class="badge-founder-tag-mini hidden" title="Fondateur Officiel">👑</span>
                 <span id="user-name-display" class="hidden"></span>
                 <span id="user-best-stats" class="hidden"><span id="user-best-score"></span><span id="user-best-rank"></span></span>
               </div>
+              <button id="btn-open-account-profile" class="btn-pill-icon" type="button" title="Mon Compte Soundrise">👤</button>
               <button id="btn-edit-pseudo" class="btn-pill-icon" type="button" title="Modifier le pseudo">✏️</button>
               <button id="btn-logout" class="btn-pill-icon btn-pill-exit" type="button" title="Déconnexion">🚪</button>
             </div>
@@ -126,6 +131,10 @@
             <span class="pill-btn-icon">🏆</span>
             <span id="btn-lb-text">Classement Mondial</span>
           </button>
+          <button id="btn-open-settings" class="btn-secondary-pill" type="button">
+            <span class="pill-btn-icon">⚙️</span>
+            <span id="btn-settings-text">Paramètres</span>
+          </button>
           <button id="btn-open-multiplayer" class="btn-secondary-pill" type="button">
             <span class="pill-btn-icon">⚔️</span>
             <span id="btn-mp-text">Duel 1 vs 1</span>
@@ -147,6 +156,19 @@
         <span class="intro-sub">VOL GLIDER &bull; [ESPACE] POUR TIRER AU BLASTER &bull; CŒURS VITAUX</span>
       </div>
 
+      
+        <!-- Affichage 1v1 à 3 Vies -->
+        <div id="hud-duel-lives-bar" class="hud-duel-lives-bar hidden">
+          <div class="duel-life-pill my-lives">
+            <span class="duel-life-label">VOS VIES</span>
+            <span id="my-lives-display" class="duel-life-hearts">❤️❤️❤️</span>
+          </div>
+          <div class="duel-life-pill rival-lives">
+            <span class="duel-life-label">RIVAL</span>
+            <span id="rival-lives-display" class="duel-life-hearts">❤️❤️❤️</span>
+          </div>
+        </div>
+  
       <div id="floating-combat-container" class="floating-combat-container"></div>
       <div id="death-vignette" class="death-vignette hidden"></div>
       <div id="victory-confetti-layer" class="victory-confetti-layer hidden"></div>
@@ -219,6 +241,18 @@
         <div id="climax-title" class="climax-title">RATTRAPAGE DE NITY EN COURS...</div>
       </div>
 
+      <!-- Barre de Vies Duel 1v1 (3 vies par pilote) -->
+      <div id="hud-duel-lives-bar" class="hud-duel-lives-bar hidden">
+        <div class="duel-life-pill my-lives">
+          <span class="duel-life-label">VOUS</span>
+          <span id="my-lives-display" class="duel-life-hearts">❤️❤️❤️</span>
+        </div>
+        <div class="duel-life-pill rival-lives">
+          <span class="duel-life-label" id="rival-lives-label">RIVAL</span>
+          <span id="rival-lives-display" class="duel-life-hearts">❤️❤️❤️</span>
+        </div>
+      </div>
+
       <!-- Télémétrie de vol -->
       <aside class="hud-telemetry">
         <div class="telemetry-item">
@@ -287,22 +321,14 @@
         <h2 class="modal-title">HORIZON DES ÉVÉNEMENTS</h2>
         <div id="death-reason" class="modal-reason">IMPACT CRITIQUE &bull; STRUCTURE DÉSINTÉGRÉE</div>
 
-        <div class="modal-stats">
-          <div class="stat-box">
+        <div class="modal-stats-hero">
+          <div class="stat-hero-col">
             <span class="stat-label">DISTANCE</span>
-            <span id="final-distance" class="stat-value">0 M</span>
+            <span id="final-distance" class="stat-hero-val">0 M</span>
           </div>
-          <div class="stat-box">
-            <span class="stat-label">VITESSE MAX</span>
-            <span id="final-speed" class="stat-value">0 KM/H</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-label">CŒURS DE NITY</span>
-            <span id="final-hearts" class="stat-value highlight-heart">0</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-label">OBSTACLES BROYÉS</span>
-            <span id="final-destroyed" class="stat-value highlight-destroyed">0</span>
+          <div class="stat-hero-col">
+            <span class="stat-label">SCORE TOTAL</span>
+            <span id="final-score" class="stat-hero-val highlight-score">0 PTS</span>
           </div>
         </div>
 
@@ -354,6 +380,10 @@
           <div class="pause-sub-buttons">
             <button id="btn-pause-restart" class="btn-menu-action" type="button">
               🔄 Recommencer
+            </button>
+            <button id="btn-pause-settings" class="btn-menu-action" type="button">
+              <span class="menu-action-icon">⚙️</span>
+              <span class="menu-action-text">PARAMÈTRES DU JEU</span>
             </button>
             <button id="btn-pause-audio" class="btn-menu-action" type="button">
               🔊 Son : Activé
@@ -716,7 +746,149 @@
     </div>
   </div>
 
-  <!-- Point d'entrée ES6 modulaire -->
+    <!-- MODAL PARAMÈTRES (LANGUE, AUDIO, MANIABILITÉ, CONFORT) -->
+    <div id="settings-modal" class="modal-overlay hidden">
+      <div class="modal-card settings-card">
+        <div class="modal-top-bar"></div>
+        <button id="btn-close-settings" class="modal-close-corner" type="button" title="Fermer">✕</button>
+        <div class="modal-badge">// CONFIGURATION & ACCESSIBILITÉ</div>
+        <h2 class="modal-title">⚙️ PARAMÈTRES DU JEU</h2>
+
+        <!-- Sélecteur Strict des 8 Langues les Plus Parlées au Monde -->
+        <div class="settings-group">
+          <label class="settings-label">LANGUE / LANGUAGE (8 MONDIALES)</label>
+          <div id="lang-selector-grid" class="lang-selector-grid">
+            <button class="btn-lang-flag active" data-lang="fr" type="button"><span class="lang-flag">🇫🇷</span><span class="lang-name">Français</span></button>
+            <button class="btn-lang-flag" data-lang="en" type="button"><span class="lang-flag">🇬🇧</span><span class="lang-name">English</span></button>
+            <button class="btn-lang-flag" data-lang="zh" type="button"><span class="lang-flag">🇨🇳</span><span class="lang-name">中文</span></button>
+            <button class="btn-lang-flag" data-lang="hi" type="button"><span class="lang-flag">🇮🇳</span><span class="lang-name">हिन्दी</span></button>
+            <button class="btn-lang-flag" data-lang="es" type="button"><span class="lang-flag">🇪🇸</span><span class="lang-name">Español</span></button>
+            <button class="btn-lang-flag" data-lang="ar" type="button"><span class="lang-flag">🇸🇦</span><span class="lang-name">العربية</span></button>
+            <button class="btn-lang-flag" data-lang="bn" type="button"><span class="lang-flag">🇧🇩</span><span class="lang-name">বাংলা</span></button>
+            <button class="btn-lang-flag" data-lang="pt" type="button"><span class="lang-flag">🇵🇹</span><span class="lang-name">Português</span></button>
+          </div>
+        </div>
+
+        <!-- Volume Musique -->
+        <div class="settings-group">
+          <div class="settings-row-label">
+            <label class="settings-label">VOLUME MUSIQUE</label>
+            <span id="music-vol-val" class="settings-val">75%</span>
+          </div>
+          <input id="slider-music-vol" type="range" min="0" max="100" value="75" class="settings-slider" />
+        </div>
+
+        <!-- Volume SFX -->
+        <div class="settings-group">
+          <div class="settings-row-label">
+            <label class="settings-label">VOLUME BRUITAGES / SFX</label>
+            <span id="sfx-vol-val" class="settings-val">85%</span>
+          </div>
+          <input id="slider-sfx-vol" type="range" min="0" max="100" value="85" class="settings-slider" />
+        </div>
+
+        <!-- Sensibilité de pilotage -->
+        <div class="settings-group">
+          <div class="settings-row-label">
+            <label class="settings-label">SENSIBILITÉ DE PILOTAGE</label>
+            <span id="sens-val" class="settings-val">100%</span>
+          </div>
+          <input id="slider-sensitivity" type="range" min="50" max="150" value="100" class="settings-slider" />
+        </div>
+
+        <!-- Secousses écran -->
+        <div class="settings-group settings-toggle-group">
+          <label class="settings-label">SECOUSSES CAMÉRA (SCREEN SHAKE)</label>
+          <label class="toggle-switch">
+            <input id="toggle-screen-shake" type="checkbox" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- Qualité graphique -->
+        <div class="settings-group">
+          <label class="settings-label">QUALITÉ GRAPHIQUE</label>
+          <div class="quality-selector-row">
+            <button class="btn-quality-opt" data-quality="eco" type="button">ÉCO</button>
+            <button class="btn-quality-opt active" data-quality="high" type="button">ÉLEVÉE</button>
+            <button class="btn-quality-opt" data-quality="ultra" type="button">ULTRA</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL COMPTE PILOTE (EMAIL, PSEUDO, MOT DE PASSE, RÔLE FONDATEUR) -->
+    <div id="account-modal" class="modal-overlay hidden">
+      <div class="modal-card account-card">
+        <div class="modal-top-bar"></div>
+        <button id="btn-close-account" class="modal-close-corner" type="button" title="Fermer">✕</button>
+        <div class="modal-badge">// PROFIL OFFICIEL DU PILOTE</div>
+        <h2 class="modal-title">👤 COMPTE SOUNDRISE</h2>
+
+        <!-- Vue Profil Connecté -->
+        <div id="account-profile-view" class="account-profile-view hidden">
+          <img id="account-avatar-large" class="account-avatar-large" src="" alt="Avatar" />
+          <h3 id="account-pseudo-large" class="account-pseudo-large">--</h3>
+          <div id="account-founder-tag" class="badge-founder-tag hidden">👑 FONDATEUR OFFICIEL</div>
+          <span id="account-email-display" class="account-email-display">--</span>
+          <div class="account-stats-grid">
+            <div class="account-stat-box">
+              <span class="as-label">MEILLEUR SCORE</span>
+              <span id="as-score" class="as-val">0 PTS</span>
+            </div>
+            <div class="account-stat-box">
+              <span class="as-label">DISTANCE RECORD</span>
+              <span id="as-dist" class="as-val">0 M</span>
+            </div>
+            <div class="account-stat-box">
+              <span class="as-label">RANG SUPRÊME</span>
+              <span id="as-rank" class="as-val">SU</span>
+            </div>
+          </div>
+          <button id="btn-account-logout" class="btn-account-danger" type="button">SE DÉCONNECTER</button>
+        </div>
+
+        <!-- Vue Inscription & Connexion -->
+        <div id="account-forms-view" class="account-forms-view">
+          <div class="account-tabs">
+            <button id="tab-btn-register" class="account-tab active" type="button">Créer un compte</button>
+            <button id="tab-btn-login" class="account-tab" type="button">Se connecter</button>
+          </div>
+
+          <form id="form-register" class="account-form">
+            <div class="form-group">
+              <label>ADRESSE EMAIL</label>
+              <input id="reg-email" type="email" placeholder="pilote@example.com" required autocomplete="email" />
+            </div>
+            <div class="form-group">
+              <label>PSEUDO DE PILOTE</label>
+              <input id="reg-pseudo" type="text" placeholder="Ex: zanioxx_off" required autocomplete="username" />
+            </div>
+            <div class="form-group">
+              <label>MOT DE PASSE</label>
+              <input id="reg-password" type="password" placeholder="••••••••" required autocomplete="new-password" />
+            </div>
+            <div id="reg-error" class="account-error hidden"></div>
+            <button type="submit" class="btn-account-submit">CRÉER MON COMPTE & SAUVEGARDER</button>
+          </form>
+
+          <form id="form-login" class="account-form hidden">
+            <div class="form-group">
+              <label>ADRESSE EMAIL</label>
+              <input id="log-email" type="email" placeholder="pilote@example.com" required autocomplete="email" />
+            </div>
+            <div class="form-group">
+              <label>MOT DE PASSE</label>
+              <input id="log-password" type="password" placeholder="••••••••" required autocomplete="current-password" />
+            </div>
+            <div id="log-error" class="account-error hidden"></div>
+            <button type="submit" class="btn-account-submit">SE CONNECTER</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  <!-- Point d'entrée ES6 modulaire officiel -->
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

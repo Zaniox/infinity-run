@@ -3,6 +3,8 @@
  * Écran d'accueil épuré, Authentification Google (GIS & Direct), Gestion du Pseudo,
  * Leaderboard mondial en direct, Jauge d'énergie et Écran de Game Over synchronisé.
  */
+import { i18n, t } from './i18n.js';
+import { settings } from './settings.js';
 
 export class UIManager {
   constructor(
@@ -229,6 +231,55 @@ export class UIManager {
     this.duelRivalCycle = document.getElementById('duel-rival-cycle');
     this.btnDuelRematch = document.getElementById('btn-duel-rematch');
     this.btnDuelQuit = document.getElementById('btn-duel-quit');
+
+    // Modal Paramètres (Audio, Langue, Commandes, Graphismes)
+    this.settingsModal = document.getElementById('settings-modal');
+    this.btnOpenSettings = document.getElementById('btn-open-settings');
+    this.btnPauseSettings = document.getElementById('btn-pause-settings');
+    this.btnCloseSettings = document.getElementById('btn-close-settings');
+    this.sliderMusicVol = document.getElementById('slider-music-vol');
+    this.musicVolVal = document.getElementById('music-vol-val');
+    this.sliderSfxVol = document.getElementById('slider-sfx-vol');
+    this.sfxVolVal = document.getElementById('sfx-vol-val');
+    this.sliderSensitivity = document.getElementById('slider-sensitivity');
+    this.sensVal = document.getElementById('sens-val');
+    this.toggleScreenShake = document.getElementById('toggle-screen-shake');
+    this.langFlagButtons = document.querySelectorAll('.btn-lang-flag');
+    this.qualityButtons = document.querySelectorAll('.btn-quality-opt');
+
+    // Modal Compte Pilote (Connexion, Inscription, Rôle Fondateur)
+    this.accountModal = document.getElementById('account-modal');
+    this.btnOpenAccountModal = document.getElementById('btn-open-account-modal');
+    this.btnOpenAccountProfile = document.getElementById('btn-open-account-profile');
+    this.btnCloseAccount = document.getElementById('btn-close-account');
+    this.accountProfileView = document.getElementById('account-profile-view');
+    this.accountFormsView = document.getElementById('account-forms-view');
+    this.tabBtnRegister = document.getElementById('tab-btn-register');
+    this.tabBtnLogin = document.getElementById('tab-btn-login');
+    this.formRegister = document.getElementById('form-register');
+    this.formLogin = document.getElementById('form-login');
+    this.regEmail = document.getElementById('reg-email');
+    this.regPseudo = document.getElementById('reg-pseudo');
+    this.regPassword = document.getElementById('reg-password');
+    this.regError = document.getElementById('reg-error');
+    this.logEmail = document.getElementById('log-email');
+    this.logPassword = document.getElementById('log-password');
+    this.logError = document.getElementById('log-error');
+    this.accountAvatarLarge = document.getElementById('account-avatar-large');
+    this.accountPseudoLarge = document.getElementById('account-pseudo-large');
+    this.accountFounderTag = document.getElementById('account-founder-tag');
+    this.accountEmailDisplay = document.getElementById('account-email-display');
+    this.asScore = document.getElementById('as-score');
+    this.asDist = document.getElementById('as-dist');
+    this.asRank = document.getElementById('as-rank');
+    this.btnAccountLogout = document.getElementById('btn-account-logout');
+    this.userFounderBadge = document.getElementById('user-founder-badge');
+
+    // HUD Duel 1v1 (3 vies)
+    this.hudDuelLivesBar = document.getElementById('hud-duel-lives-bar');
+    this.myLivesDisplay = document.getElementById('my-lives-display');
+    this.rivalLivesDisplay = document.getElementById('rival-lives-display');
+    this.rivalLivesLabel = document.getElementById('rival-lives-label');
   }
 
   bindEvents() {
@@ -609,13 +660,166 @@ export class UIManager {
       });
     }
 
-    // 12. Raccourcis clavier (Espace / Entrée / Échap)
+    // 12. Paramètres (Bouton d'ouverture, fermeture, sliders et langue)
+    if (this.btnOpenSettings) {
+      this.btnOpenSettings.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openSettingsModal();
+      });
+    }
+    if (this.btnPauseSettings) {
+      this.btnPauseSettings.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openSettingsModal();
+      });
+    }
+    if (this.btnCloseSettings) {
+      this.btnCloseSettings.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.closeSettingsModal();
+      });
+    }
+
+    if (this.sliderMusicVol) {
+      this.sliderMusicVol.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
+        if (this.musicVolVal) this.musicVolVal.textContent = `${val}%`;
+        settings.setMusicVolume(val / 100);
+      });
+    }
+    if (this.sliderSfxVol) {
+      this.sliderSfxVol.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
+        if (this.sfxVolVal) this.sfxVolVal.textContent = `${val}%`;
+        settings.setSfxVolume(val / 100);
+      });
+    }
+    if (this.sliderSensitivity) {
+      this.sliderSensitivity.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
+        if (this.sensVal) this.sensVal.textContent = `${val}%`;
+        settings.setFlightSensitivity(val / 100);
+      });
+    }
+    if (this.toggleScreenShake) {
+      this.toggleScreenShake.addEventListener('change', (e) => {
+        settings.setScreenShake(e.target.checked);
+      });
+    }
+
+    if (this.langFlagButtons) {
+      this.langFlagButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const lang = btn.dataset.lang;
+          settings.setLanguage(lang);
+          i18n.setLanguage(lang);
+          this.langFlagButtons.forEach(b => b.classList.toggle('active', b === btn));
+          this.applyLanguage();
+        });
+      });
+    }
+
+    if (this.qualityButtons) {
+      this.qualityButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const q = btn.dataset.quality;
+          settings.setGraphicsQuality(q);
+          this.qualityButtons.forEach(b => b.classList.toggle('active', b === btn));
+        });
+      });
+    }
+
+    // 13. Compte Pilote (Connexion, Inscription, Rôle Fondateur)
+    if (this.btnOpenAccountModal) {
+      this.btnOpenAccountModal.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openAccountModal();
+      });
+    }
+    if (this.btnOpenAccountProfile) {
+      this.btnOpenAccountProfile.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openAccountModal();
+      });
+    }
+    if (this.btnCloseAccount) {
+      this.btnCloseAccount.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.closeAccountModal();
+      });
+    }
+
+    if (this.tabBtnRegister) {
+      this.tabBtnRegister.addEventListener('click', () => this.switchAccountTab('register'));
+    }
+    if (this.tabBtnLogin) {
+      this.tabBtnLogin.addEventListener('click', () => this.switchAccountTab('login'));
+    }
+
+    if (this.formRegister) {
+      this.formRegister.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = this.regEmail?.value || '';
+        const pseudo = this.regPseudo?.value || '';
+        const password = this.regPassword?.value || '';
+
+        if (!this.auth) return;
+        const res = this.auth.register(email, pseudo, password);
+        if (res.success) {
+          this.closeAccountModal();
+          this.updateAuthState(this.auth.getUser());
+          this.showClimaxAlert(res.user.role === 'founder' ? '👑 BIENVENUE FONDATEUR ZANIOXX_OFF !' : '✨ COMPTE CRÉÉ AVEC SUCCÈS !', true);
+          setTimeout(() => this.hideClimaxAlert(), 3000);
+        } else {
+          if (this.regError) {
+            this.regError.textContent = res.message || 'Erreur d\'inscription.';
+            this.regError.classList.remove('hidden');
+          }
+        }
+      });
+    }
+
+    if (this.formLogin) {
+      this.formLogin.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = this.logEmail?.value || '';
+        const password = this.logPassword?.value || '';
+
+        if (!this.auth) return;
+        const res = this.auth.login(email, password);
+        if (res.success) {
+          this.closeAccountModal();
+          this.updateAuthState(this.auth.getUser());
+          this.showClimaxAlert(res.user.role === 'founder' ? '👑 HEUREUX DE VOUS REVOIR FONDATEUR !' : `👋 BON RETOUR @${res.user.pseudo} !`, true);
+          setTimeout(() => this.hideClimaxAlert(), 3000);
+        } else {
+          if (this.logError) {
+            this.logError.textContent = res.message || 'Identifiants invalides.';
+            this.logError.classList.remove('hidden');
+          }
+        }
+      });
+    }
+
+    if (this.btnAccountLogout) {
+      this.btnAccountLogout.addEventListener('click', () => {
+        if (this.auth) {
+          this.auth.logout();
+          this.closeAccountModal();
+          this.updateAuthState(this.auth.getUser());
+        }
+      });
+    }
+
+    // 14. Raccourcis clavier (Espace / Entrée / Échap)
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Escape') {
         if (this.isLeaderboardVisible()) this.closeLeaderboardModal();
         if (this.isGoogleModalVisible()) this.closeGoogleDirectModal();
         if (this.isMultiplayerModalVisible()) this.closeMultiplayerModal();
         if (this.isDuelResultVisible()) this.closeDuelResult();
+        if (this.isSettingsModalVisible()) this.closeSettingsModal();
+        if (this.isAccountModalVisible()) this.closeAccountModal();
         return;
       }
 
@@ -652,25 +856,182 @@ export class UIManager {
       this.isGameOverVisible() ||
       this.isTrollModalVisible() ||
       this.isMultiplayerModalVisible() ||
-      this.isDuelResultVisible()
+      this.isDuelResultVisible() ||
+      this.isSettingsModalVisible() ||
+      this.isAccountModalVisible()
     );
+  }
+
+  // --- MODAL PARAMÈTRES ---
+  openSettingsModal() {
+    if (!this.settingsModal) return;
+    this.updateSettingsUI();
+    this.settingsModal.classList.remove('hidden');
+  }
+
+  closeSettingsModal() {
+    if (this.settingsModal) this.settingsModal.classList.add('hidden');
+  }
+
+  isSettingsModalVisible() {
+    return this.settingsModal && !this.settingsModal.classList.contains('hidden');
+  }
+
+  updateSettingsUI() {
+    const s = settings.getAll();
+    if (this.sliderMusicVol) this.sliderMusicVol.value = Math.round(s.musicVolume * 100);
+    if (this.musicVolVal) this.musicVolVal.textContent = `${Math.round(s.musicVolume * 100)}%`;
+    if (this.sliderSfxVol) this.sliderSfxVol.value = Math.round(s.sfxVolume * 100);
+    if (this.sfxVolVal) this.sfxVolVal.textContent = `${Math.round(s.sfxVolume * 100)}%`;
+    if (this.sliderSensitivity) this.sliderSensitivity.value = Math.round(s.flightSensitivity * 100);
+    if (this.sensVal) this.sensVal.textContent = `${Math.round(s.flightSensitivity * 100)}%`;
+    if (this.toggleScreenShake) this.toggleScreenShake.checked = !!s.screenShake;
+
+    if (this.langFlagButtons) {
+      this.langFlagButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === s.language);
+      });
+    }
+    if (this.qualityButtons) {
+      this.qualityButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.quality === s.graphicsQuality);
+      });
+    }
+  }
+
+  // --- MODAL COMPTE PILOTE ---
+  openAccountModal() {
+    if (!this.accountModal) return;
+    const user = this.auth ? this.auth.getUser() : null;
+    if (user && !user.isGuest) {
+      if (this.accountProfileView) this.accountProfileView.classList.remove('hidden');
+      if (this.accountFormsView) this.accountFormsView.classList.add('hidden');
+      if (this.accountAvatarLarge) this.accountAvatarLarge.src = user.picture || 'https://api.dicebear.com/7.x/bottts/svg?seed=pilot';
+      if (this.accountPseudoLarge) this.accountPseudoLarge.textContent = `@${user.pseudo || 'Pilote'}`;
+      if (this.accountEmailDisplay) this.accountEmailDisplay.textContent = user.email || '';
+      if (this.accountFounderTag) {
+        if (this.auth && this.auth.isFounder && this.auth.isFounder()) {
+          this.accountFounderTag.classList.remove('hidden');
+        } else {
+          this.accountFounderTag.classList.add('hidden');
+        }
+      }
+      if (this.asScore) this.asScore.textContent = `${(user.bestScore || 0).toLocaleString('fr-FR')} PTS`;
+      if (this.asDist) this.asDist.textContent = `${Math.round(user.bestDistance || 0)} M`;
+      if (this.asRank) this.asRank.textContent = user.bestRank || 'SU';
+    } else {
+      if (this.accountProfileView) this.accountProfileView.classList.add('hidden');
+      if (this.accountFormsView) this.accountFormsView.classList.remove('hidden');
+      this.switchAccountTab('register');
+    }
+    this.accountModal.classList.remove('hidden');
+  }
+
+  closeAccountModal() {
+    if (this.accountModal) this.accountModal.classList.add('hidden');
+    if (this.regError) this.regError.classList.add('hidden');
+    if (this.logError) this.logError.classList.add('hidden');
+  }
+
+  isAccountModalVisible() {
+    return this.accountModal && !this.accountModal.classList.contains('hidden');
+  }
+
+  switchAccountTab(tab) {
+    if (this.tabBtnRegister) this.tabBtnRegister.classList.toggle('active', tab === 'register');
+    if (this.tabBtnLogin) this.tabBtnLogin.classList.toggle('active', tab === 'login');
+    if (this.formRegister) this.formRegister.classList.toggle('hidden', tab !== 'register');
+    if (this.formLogin) this.formLogin.classList.toggle('hidden', tab !== 'login');
+    if (this.regError) this.regError.classList.add('hidden');
+    if (this.logError) this.logError.classList.add('hidden');
+  }
+
+  // --- DUEL 1V1 : GESTION DES 3 VIES ---
+  updateDuelLives(myLives = 3, rivalLives = 3, rivalPseudo = null, leadDelta = null) {
+    if (this.hudDuelLivesBar) {
+      this.hudDuelLivesBar.classList.remove('hidden');
+    }
+    const renderHearts = (n) => {
+      let str = '';
+      for (let i = 0; i < 3; i++) {
+        str += i < n ? '❤️' : '🖤';
+      }
+      return str;
+    };
+    if (this.myLivesDisplay) {
+      this.myLivesDisplay.textContent = renderHearts(myLives);
+    }
+    if (this.rivalLivesDisplay) {
+      this.rivalLivesDisplay.textContent = renderHearts(rivalLives);
+    }
+    if (this.rivalLivesLabel && rivalPseudo) {
+      this.rivalLivesLabel.textContent = rivalPseudo.toUpperCase();
+    }
+
+    if (this.hudDuelLivesBar && leadDelta !== null && !isNaN(leadDelta)) {
+      if (!this.duelLeadTag) {
+        this.duelLeadTag = document.createElement('span');
+        this.duelLeadTag.className = 'duel-life-lead-tag';
+        this.hudDuelLivesBar.appendChild(this.duelLeadTag);
+      }
+      const d = Math.round(leadDelta);
+      if (d >= 0) {
+        this.duelLeadTag.className = 'duel-life-lead-tag lead';
+        this.duelLeadTag.textContent = `▲ +${d}M (EN TÊTE)`;
+      } else {
+        this.duelLeadTag.className = 'duel-life-lead-tag behind';
+        this.duelLeadTag.textContent = `▼ ${d}M (RETARD)`;
+      }
+    }
+  }
+
+  hideDuelLives() {
+    if (this.hudDuelLivesBar) {
+      this.hudDuelLivesBar.classList.add('hidden');
+    }
+    if (this.duelLeadTag) {
+      this.duelLeadTag.remove();
+      this.duelLeadTag = null;
+    }
+  }
+
+  // Application dynamique de la langue active
+  applyLanguage() {
+    // Bouton de lancement
+    if (this.btnPlayText && (!this.auth || this.auth.isGuest())) {
+      this.btnPlayText.textContent = t('start_flight') || 'DÉCOLLER';
+    }
+    const sensLabel = document.querySelector('label[for="slider-sensitivity"]');
+    if (sensLabel) sensLabel.textContent = t('sensitivity') || 'SENSIBILITÉ DE PILOTAGE';
+    const shakeLabel = document.querySelector('.settings-toggle-group .settings-label');
+    if (shakeLabel) shakeLabel.textContent = t('screen_shake') || 'SECOUSSES CAMÉRA (SCREEN SHAKE)';
+    const qualLabel = document.querySelector('.quality-selector-row')?.previousElementSibling;
+    if (qualLabel) qualLabel.textContent = t('graphics_quality') || 'QUALITÉ GRAPHIQUE';
   }
 
   // --- MISE À JOUR DE L'ÉTAT D'AUTHENTIFICATION & PROFIL ---
   updateAuthState(user) {
-    if (user && user.googleUid && !user.isGuest) {
-      // Connecté avec Compte Google
+    if (user && !user.isGuest) {
+      // Connecté avec Compte (Email/Mot de passe ou Google)
       if (this.authUnlogged) this.authUnlogged.classList.add('hidden');
       if (this.authLogged) this.authLogged.classList.remove('hidden');
 
-      if (this.userAvatarImg) this.userAvatarImg.src = user.picture;
-      if (this.userNameDisplay) this.userNameDisplay.textContent = user.name || 'Pilote';
+      if (this.userAvatarImg) this.userAvatarImg.src = user.picture || 'https://api.dicebear.com/7.x/bottts/svg?seed=pilot';
+      if (this.userNameDisplay) this.userNameDisplay.textContent = user.name || user.pseudo || 'Pilote';
 
       const pseudo = user.pseudo ? user.pseudo.trim() : '';
 
+      // Badge Fondateur Officiel 👑
+      if (this.userFounderBadge) {
+        if (this.auth && this.auth.isFounder && this.auth.isFounder()) {
+          this.userFounderBadge.classList.remove('hidden');
+        } else {
+          this.userFounderBadge.classList.add('hidden');
+        }
+      }
+
       if (pseudo) {
         if (this.userPseudoDisplay) this.userPseudoDisplay.textContent = `@${pseudo}`;
-        // Déverrouiller le bouton JOUER avec statut mondial
         if (this.btnPlayGame) {
           this.btnPlayGame.classList.remove('locked', 'guest-mode');
         }
@@ -679,7 +1040,6 @@ export class UIManager {
         if (this.btnPlaySub) this.btnPlaySub.textContent = `[ CLASSEMENT ACTIF • @${pseudo} ]`;
       } else {
         if (this.userPseudoDisplay) this.userPseudoDisplay.textContent = 'Non défini';
-        // Bouton invitant à choisir son pseudo
         if (this.btnPlayGame) {
           this.btnPlayGame.classList.add('locked');
           this.btnPlayGame.classList.remove('guest-mode');
@@ -692,9 +1052,10 @@ export class UIManager {
       // Mettre à jour le résumé des scores personnels
       this.updatePersonalBestDisplay();
     } else {
-      // Non connecté avec Google (Mode Invité Solo disponible immédiatement)
+      // Non connecté (Mode Invité Solo disponible immédiatement)
       if (this.authUnlogged) this.authUnlogged.classList.remove('hidden');
       if (this.authLogged) this.authLogged.classList.add('hidden');
+      if (this.userFounderBadge) this.userFounderBadge.classList.add('hidden');
 
       if (this.btnPlayGame) {
         this.btnPlayGame.classList.remove('locked');
@@ -893,6 +1254,7 @@ export class UIManager {
         this.blasterHeatLabel.classList.add('pulse-alert');
       }
       if (this.starfoxReticle) {
+        this.starfoxReticle.classList.remove('warning');
         this.starfoxReticle.classList.add('overheated');
       }
     } else {
@@ -907,7 +1269,13 @@ export class UIManager {
           this.blasterHeatLabel.style.color = '#f59e0b';
           this.blasterHeatLabel.classList.remove('pulse-alert');
         }
+        if (this.starfoxReticle) {
+          this.starfoxReticle.classList.add('warning');
+        }
       } else if (pct > 35) {
+        if (this.starfoxReticle) {
+          this.starfoxReticle.classList.remove('warning');
+        }
         this.blasterHeatFill.style.background = '#38bdf8';
         this.blasterHeatFill.style.boxShadow = '0 0 6px #38bdf8';
         if (this.blasterHeatLabel) {
@@ -916,6 +1284,9 @@ export class UIManager {
           this.blasterHeatLabel.classList.remove('pulse-alert');
         }
       } else {
+        if (this.starfoxReticle) {
+          this.starfoxReticle.classList.remove('warning');
+        }
         this.blasterHeatFill.style.background = '#00f0ff';
         this.blasterHeatFill.style.boxShadow = '0 0 6px #00f0ff';
         if (this.blasterHeatLabel) {
@@ -927,10 +1298,10 @@ export class UIManager {
     }
   }
 
-  showFloatingScore(pts, isCrit = false, label = '') {
+  showFloatingScore(pts, isCrit = false, label = '', extraClass = '') {
     if (!this.floatingCombatContainer) return;
     const el = document.createElement('div');
-    el.className = `floating-score-item ${isCrit ? 'crit' : ''}`;
+    el.className = `floating-score-item ${isCrit ? 'crit' : ''} ${extraClass}`.trim();
     el.textContent = `+${pts} PTS ${label}`.trim();
     const offX = (Math.random() - 0.5) * 120;
     const offY = (Math.random() - 0.5) * 60;
@@ -1061,7 +1432,7 @@ export class UIManager {
   }
 
   computeRank(score) {
-    if (score >= 75000) {
+    if (score >= 160000) {
       return {
         rank: 'MUCH LOVE',
         title: 'RANG SUPRÊME • LÉGENDE COSMIQUE',
@@ -1070,7 +1441,7 @@ export class UIManager {
         glow: 'rgba(255, 46, 147, 0.95)',
         isSupreme: true
       };
-    } else if (score >= 45000) {
+    } else if (score >= 110000) {
       return {
         rank: 'SUBA Y SU',
         title: 'LÉGENDAIRE / EXCEPTIONNEL',
@@ -1079,7 +1450,7 @@ export class UIManager {
         glow: 'rgba(254, 240, 138, 0.9)',
         isSupreme: false
       };
-    } else if (score >= 28000) {
+    } else if (score >= 70000) {
       return {
         rank: 'SUBA Y',
         title: 'TRÈS BON SCORE • PILOTE D\'ÉLITE',
@@ -1088,7 +1459,7 @@ export class UIManager {
         glow: 'rgba(0, 240, 255, 0.8)',
         isSupreme: false
       };
-    } else if (score >= 15000) {
+    } else if (score >= 35000) {
       return {
         rank: 'SUBA',
         title: 'BON SCORE • CONFIRMÉ',
@@ -1101,7 +1472,7 @@ export class UIManager {
       return {
         rank: 'SU',
         title: 'SCORE STANDARD • APPRENTI',
-        desc: 'Premier contact avec le sillage de Nity. Visez 15 000 PTS pour débloquer SUBA !',
+        desc: 'Premier contact avec le sillage de Nity. Visez 35 000 PTS pour débloquer SUBA !',
         color: '#94a3b8',
         glow: 'rgba(148, 163, 184, 0.5)',
         isSupreme: false
@@ -1131,12 +1502,9 @@ export class UIManager {
         : 'IMPACT CRITIQUE • STRUCTURE DÉSINTÉGRÉE';
     }
 
-    // 2. Défilement odomètre dynamique pour toutes les statistiques
-    this.animateStatValue(this.finalDistance, 0, Math.round(distance), 750, ' M');
-    this.animateStatValue(this.finalSpeed, 0, Math.round(maxSpeed * 3.6), 750, ' KM/H');
-    this.animateStatValue(this.finalHearts, 0, heartsCount, 600, '');
-    this.animateStatValue(this.finalDestroyed, 0, destroyedCount, 700, '');
-    this.animateStatValue(this.finalScore, 0, totalScore, 900, ' PTS', true);
+    // 2. Défilement odomètre dynamique pour les statistiques épurées (Distance & Score uniquement)
+    if (this.finalDistance) this.animateStatValue(this.finalDistance, 0, Math.round(distance), 750, ' M');
+    if (this.finalScore) this.animateStatValue(this.finalScore, 0, totalScore, 900, ' PTS', true);
 
     // 3. Animation d'impact percutant sur le Badge de Rang ("Badge Slam")
     if (this.finalRankBadge) {
@@ -1157,15 +1525,12 @@ export class UIManager {
       this.finalRankSub.textContent = `${rankInfo.title} — ${rankInfo.desc}`;
     }
 
-    // Affichage du statut du classement mondial
-    if (this.auth && this.auth.isGuest()) {
-      if (this.gameoverWorldStatus) this.gameoverWorldStatus.textContent = 'SESSION INVITÉE (SOLO HORS CLASSEMENT)';
-      if (this.gameoverWorldRankText) this.gameoverWorldRankText.textContent = 'Score non inscrit au classement mondial. Connectez votre compte Google pour immortaliser vos records !';
-    } else if (worldRankResult) {
+    // Affichage du statut du classement mondial (Enregistrement universel pour 100% des pilotes)
+    if (worldRankResult) {
       this.updateGameOverWorldRank(worldRankResult);
     } else {
       if (this.gameoverWorldStatus) this.gameoverWorldStatus.textContent = 'ENREGISTREMENT AU CLASSEMENT MONDIAL...';
-      if (this.gameoverWorldRankText) this.gameoverWorldRankText.textContent = 'Connexion au serveur cloud...';
+      if (this.gameoverWorldRankText) this.gameoverWorldRankText.textContent = 'Connexion au serveur cloud synchronisé...';
     }
 
     if (this.gameOverModal) {
@@ -1311,7 +1676,12 @@ export class UIManager {
       };
       this.multiplayer.onRivalTelemetry = (data) => {
         const myDist = window.gameApp ? window.gameApp.distance : 0;
-        this.updateRivalTelemetry(data, data.distance - myDist);
+        const lead = myDist - (data.distance || 0);
+        this.updateRivalTelemetry(data, lead);
+        if (window.gameApp && window.gameApp.isMultiplayerDuel) {
+          const rivalName = this.multiplayer.opponentUser ? this.multiplayer.opponentUser.pseudo : 'RIVAL';
+          this.updateDuelLives(this.multiplayer.lives, this.multiplayer.opponentData.lives, rivalName, lead);
+        }
       };
     }
   }
@@ -1555,7 +1925,7 @@ export class UIManager {
     }
     if (this.hudRivalDelta) {
       const d = Math.round(deltaDistance || 0);
-      this.hudRivalDelta.textContent = d >= 0 ? `+${d} M` : `${d} M`;
+      this.hudRivalDelta.textContent = d >= 0 ? `▲ +${d} M` : `▼ ${d} M`;
       this.hudRivalDelta.style.color = d >= 0 ? '#4ade80' : '#f87171';
     }
   }

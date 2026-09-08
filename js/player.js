@@ -26,7 +26,7 @@ export class Player {
 
     // Paramètres physiques & de vol (Feel Race the Sun)
     this.minAltitude = 1.25;
-    this.maxAltitude = 24.0;
+    this.maxAltitude = 11.5; // Plafond sécurisé anti-triche
     this.lateralSpeed = 24.0;
     this.verticalSpeed = 16.5;
     this.maxX = 16.5;
@@ -59,6 +59,7 @@ export class Player {
     this.createShieldMesh();
     this.createSaiyanAura();
     this.createLaserPool();
+    this.createFounderEffects();
 
     // Positionnement initial
     this.group.position.set(0, this.minAltitude, 0);
@@ -489,6 +490,7 @@ export class Player {
 
     this.avatar.visible = false;
     this.heartLight.visible = false;
+    if (this.founderTrailPoints) this.founderTrailPoints.visible = false;
     this.disMat.opacity = 1.0;
 
     const p = this.group.position;
@@ -632,7 +634,7 @@ export class Player {
     return false;
   }
 
-  // --- 2. SYSTÈME PURITY (Aura bleue épousant strictement la silhouette du corps) ---
+  // --- 2. SYSTÈME PURITY (Aura de Saiyan Bleu Clair Lisse Épousant le Corps) ---
   createSaiyanAura() {
     this.saiyanGroup = new THREE.Group();
     this.saiyanGroup.visible = false;
@@ -640,53 +642,46 @@ export class Player {
 
     if (!this.purityAuraMeshes) this.purityAuraMeshes = [];
 
-    // Silhouette Cloaking pour modèle procédural (quand FBX n'est pas encore prêt)
-    const procAuraMat = new THREE.MeshBasicMaterial({
-      color: 0x00f0ff,
+    // 1. Coque anatomique lisse épousant le corps (Super Saiyan Blue Shimmer)
+    const auraCapsuleGeo = new THREE.CapsuleGeometry(0.55, 2.4, 16, 24);
+    this.purityBodyMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
       transparent: true,
-      opacity: 0.55,
-      side: THREE.BackSide,
+      opacity: 0.38,
       blending: THREE.AdditiveBlending,
+      side: THREE.BackSide,
       depthWrite: false
     });
+    this.purityBodyMesh = new THREE.Mesh(auraCapsuleGeo, this.purityBodyMat);
+    this.purityBodyMesh.position.set(0, 0.2, 0);
+    this.saiyanGroup.add(this.purityBodyMesh);
 
-    if (this.headMesh) {
-      const hAura = new THREE.Mesh(this.headMesh.geometry, procAuraMat);
-      hAura.scale.setScalar(1.05);
-      hAura.visible = false;
-      this.headMesh.add(hAura);
-      this.purityAuraMeshes.push(hAura);
-    }
+    // Seconde coque externe d'ondulation d'énergie ascendante
+    const outerCapsuleGeo = new THREE.CapsuleGeometry(0.72, 2.6, 16, 24);
+    this.purityOuterMat = new THREE.MeshBasicMaterial({
+      color: 0x7dd3fc,
+      transparent: true,
+      opacity: 0.22,
+      blending: THREE.AdditiveBlending,
+      side: THREE.BackSide,
+      depthWrite: false
+    });
+    this.purityOuterMesh = new THREE.Mesh(outerCapsuleGeo, this.purityOuterMat);
+    this.purityOuterMesh.position.set(0, 0.2, 0);
+    this.saiyanGroup.add(this.purityOuterMesh);
 
-    if (this.proceduralTorso) {
-      const torsoMeshes = [];
-      this.proceduralTorso.traverse((child) => {
-        if (child.isMesh && child.geometry && !child.userData.isAura) {
-          torsoMeshes.push(child);
-        }
-      });
-      torsoMeshes.forEach((child) => {
-        const tAura = new THREE.Mesh(child.geometry, procAuraMat);
-        tAura.scale.setScalar(1.05);
-        tAura.visible = false;
-        tAura.userData.isAura = true;
-        child.add(tAura);
-        this.purityAuraMeshes.push(tAura);
-      });
-    }
-
-    // Particules de scintillement d'énergie bleue très proches de la peau du corps
-    this.kiParticleCount = 35;
+    // 2. Micro-étincelles bleues claires ascendantes de Ki (Style Saiyan Divin)
+    this.kiParticleCount = 45;
     const kiGeo = new THREE.BufferGeometry();
     this.kiPos = new Float32Array(this.kiParticleCount * 3);
     this.kiSeeds = [];
     for (let i = 0; i < this.kiParticleCount; i++) {
       this.kiSeeds.push({
         angle: Math.random() * Math.PI * 2,
-        radius: 0.42 + Math.random() * 0.55, // Enveloppe étroite du corps
-        y: Math.random() * 3.4 - 1.7,
-        speedY: 0.7 + Math.random() * 1.2,
-        rotSpeed: 0.5 + Math.random() * 0.8
+        radius: 0.45 + Math.random() * 0.55,
+        y: Math.random() * 3.2 - 1.6,
+        speedY: 1.4 + Math.random() * 2.2,
+        rotSpeed: 0.8 + Math.random() * 1.4
       });
       this.kiPos[i * 3] = 0;
       this.kiPos[i * 3 + 1] = 0;
@@ -695,22 +690,19 @@ export class Player {
     kiGeo.setAttribute('position', new THREE.BufferAttribute(this.kiPos, 3));
 
     this.kiMat = new THREE.PointsMaterial({
-      size: 1.1,
-      color: 0x93c5fd,
+      size: 1.4,
+      color: 0xbae6fd,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.75,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
-    if (typeof getSaiyanAuraTexture !== 'undefined') {
-      this.kiMat.map = getSaiyanAuraTexture();
-    }
     this.kiPoints = new THREE.Points(kiGeo, this.kiMat);
     this.saiyanGroup.add(this.kiPoints);
 
-    // Douce lueur ambiante bleue
-    this.saiyanLight = new THREE.PointLight(0x00f0ff, 2.2, 8.0);
-    this.saiyanLight.position.set(0, 0.4, 0);
+    // 3. Lueur ponctuelle céleste bleu clair douce
+    this.saiyanLight = new THREE.PointLight(0x38bdf8, 3.2, 9.0);
+    this.saiyanLight.position.set(0, 0.3, 0);
     this.saiyanGroup.add(this.saiyanLight);
   }
 
@@ -748,9 +740,9 @@ export class Player {
     this.blasterHeat = 0.0;             // De 0.0 (froid) à 1.0 (surchauffe max)
     this.isOverheated = false;          // Vrai quand verrouillé en surchauffe
     this.overheatCooldownTimer = 0.0;   // Décompte de pénalité
-    this.heatPerShot = 0.16;            // +16% de chaleur par tir (~6 tirs pour 100%)
-    this.coolingRate = 0.42;            // Dissipation thermique par seconde
-    this.overheatLockoutDuration = 2.4; // 2.4s de blocage strict si surchauffe atteinte
+    this.heatPerShot = 0.22;            // +22% de chaleur par tir (4-5 tirs max avant surchauffe)
+    this.coolingRate = 0.36;            // Dissipation thermique par seconde
+    this.overheatLockoutDuration = 2.6; // 2.6s de verrouillage de sécurité strict
 
     this.laserGeo = new THREE.CylinderGeometry(0.14, 0.14, 3.6, 8);
     this.laserGeo.rotateX(Math.PI / 2); // Aligné sur l'axe longitudinal (-Z vers l'avant)
@@ -770,6 +762,75 @@ export class Player {
     });
   }
 
+  // --- 4. EFFETS EXCLUSIFS FONDATEUR (OR IMPÉRIAL & RÉACTEURS PHOTONIQUES) ---
+  createFounderEffects() {
+    this.isFounderMode = false;
+    this.founderTrailCount = 52;
+    const geo = new THREE.BufferGeometry();
+    this.founderTrailPos = new Float32Array(this.founderTrailCount * 3);
+    this.founderTrailSeeds = [];
+
+    for (let i = 0; i < this.founderTrailCount; i++) {
+      this.founderTrailPos[i * 3 + 1] = -1000;
+      this.founderTrailSeeds.push({
+        side: i % 2 === 0 ? -0.75 : 0.75,
+        offsetY: -0.2 + (Math.random() - 0.5) * 0.25,
+        z: Math.random() * 8.0,
+        speedZ: 24.0 + Math.random() * 32.0,
+        life: Math.random()
+      });
+    }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(this.founderTrailPos, 3));
+
+    this.founderTrailMat = new THREE.PointsMaterial({
+      size: 2.2,
+      map: getSoftGlowTexture(),
+      color: 0xfbbf24, // Or éclatant
+      transparent: true,
+      opacity: 0.88,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    this.founderTrailPoints = new THREE.Points(geo, this.founderTrailMat);
+    this.founderTrailPoints.visible = false;
+    this.scene.add(this.founderTrailPoints);
+  }
+
+  setFounder(isFounder) {
+    this.isFounderMode = !!isFounder;
+    if (this.founderTrailPoints) {
+      this.founderTrailPoints.visible = this.isFounderMode && !this.isDead;
+    }
+  }
+
+  updateFounderTrail(dt) {
+    if (!this.isFounderMode || !this.founderTrailPoints || this.isDead) {
+      if (this.founderTrailPoints) this.founderTrailPoints.visible = false;
+      return;
+    }
+    this.founderTrailPoints.visible = true;
+    const pos = this.founderTrailPoints.geometry.attributes.position.array;
+    const p = this.group.position;
+
+    for (let i = 0; i < this.founderTrailCount; i++) {
+      const s = this.founderTrailSeeds[i];
+      s.life += dt * 3.4;
+      s.z += s.speedZ * dt;
+
+      if (s.life >= 1.0 || s.z > 8.5) {
+        s.life = 0;
+        s.z = 0.2 + Math.random() * 0.4;
+      }
+
+      pos[i * 3] = p.x + s.side;
+      pos[i * 3 + 1] = p.y + s.offsetY;
+      pos[i * 3 + 2] = p.z + s.z;
+    }
+    this.founderTrailPoints.geometry.attributes.position.needsUpdate = true;
+  }
+
   fireLaser(audioManager) {
     if (this.isDead || this.laserCooldown > 0 || this.isOverheated) return false;
 
@@ -786,23 +847,26 @@ export class Player {
       }
     }
 
-    this.laserCooldown = 0.14; // Cadence Star Fox dynamique
+    this.laserCooldown = 0.16; // Cadence anti-spam mesurée
 
     const p = this.group.position;
     const isSaiyan = this.saiyanTimer > 0;
     const mat = isSaiyan ? this.laserMatSaiyan : this.laserMat;
 
-    // Double tir laser (canon gauche & canon droit d'Infi)
-    const offsets = [-1.4, 1.4];
+    // Double tir laser orienté et convergent vers le réticule central
+    const offsets = [-1.35, 1.35];
     for (const offX of offsets) {
       const mesh = new THREE.Mesh(this.laserGeo, mat);
-      mesh.position.set(p.x + offX, p.y - 0.2, p.z - 1.8);
+      mesh.position.set(p.x + offX, p.y - 0.15, p.z - 1.8);
+      // Légère convergence vers l'axe de mire du réticule
+      mesh.rotation.y = offX > 0 ? 0.022 : -0.022;
       this.scene.add(mesh);
 
       const bbox = new THREE.Box3().setFromObject(mesh);
       this.lasers.push({
         mesh,
         bbox,
+        vx: (offX > 0 ? -1 : 1) * 1.8,
         speed: isSaiyan ? 340.0 : this.laserSpeed,
         damage: isSaiyan ? 999 : 1,
         isSaiyan
@@ -843,6 +907,9 @@ export class Player {
     for (let i = this.lasers.length - 1; i >= 0; i--) {
       const l = this.lasers[i];
       l.mesh.position.z -= l.speed * dt;
+      if (l.vx && Math.abs(l.mesh.position.x - p.x) > 0.2) {
+        l.mesh.position.x += l.vx * dt;
+      }
       l.bbox.setFromObject(l.mesh);
 
       // Despawn lointain
@@ -975,6 +1042,10 @@ export class Player {
     }
 
     p.y += vertVel * dt;
+    if (p.y > 9.2) {
+      // Poussée descendante en haute altitude pour rester dans le canyon de jeu
+      p.y -= (p.y - 9.2) * 3.5 * dt;
+    }
     p.y = Math.max(this.minAltitude, Math.min(this.maxAltitude, p.y));
 
     // Tangage avec inclinaison dynamique du cycle (piqué abyssal, montée céleste/ambition)
@@ -1139,7 +1210,10 @@ export class Player {
       }
     }
 
-    // 12. Échec si énergie à zéro au sol
+    // 12. Traînée réacteurs exclusive Fondateur
+    this.updateFounderTrail(dt);
+
+    // 13. Échec si énergie à zéro au sol
     if (this.energy <= 0 && p.y <= this.minAltitude + 0.05) {
       this.triggerCrash();
     }
@@ -1182,5 +1256,10 @@ export class Player {
     this.blasterHeat = 0.0;
     this.isOverheated = false;
     this.overheatCooldownTimer = 0.0;
+
+    // Reset Effets Fondateur
+    if (this.founderTrailPoints) {
+      this.founderTrailPoints.visible = this.isFounderMode;
+    }
   }
 }

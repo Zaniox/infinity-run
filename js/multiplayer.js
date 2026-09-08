@@ -24,7 +24,12 @@ export class MultiplayerManager {
 
     // Télémétrie de l'adversaire
     this.opponentUser = null;
+    this.lives = 3;
+    this.maxLives = 3;
+    this.onRivalLifeLost = null;
+    this.onRoomDiscovered = null;
     this.opponentData = {
+      lives: 3,
       x: 0, y: 3.5, z: 0,
       pitch: 0, roll: 0,
       hasShield: false,
@@ -210,29 +215,66 @@ export class MultiplayerManager {
 
   // --- GESTION DES SALONS CLOUD ET LOCAUX (ROOMS) ---
   async getPublicRooms() {
+    const roomsMap = new Map();
+    const now = Date.now();
+
+    // 1. Scan direct de toutes les clés de salon locales
     try {
-      const res = await fetch(this.cloudEndpoint);
-      if (res.ok) {
-        const json = await res.json();
-        const rooms = (json && json.data && Array.isArray(json.data.rooms)) ? json.data.rooms : [];
-        const now = Date.now();
-        // Filtrer les salons expirés (> 90 secondes sans battement de cœur)
-        const valid = rooms.filter(r => (now - (r.updatedAt || 0)) < 90000);
-        localStorage.setItem(this.publicRoomsKey, JSON.stringify(valid));
-        return valid;
-      }
-    } catch (e) {
-      console.warn('[Multiplayer] Utilisation du cache local pour les salons:', e);
-    }
-    try {
-      const data = localStorage.getItem(this.publicRoomsKey);
-      if (data) {
-        const rooms = JSON.parse(data);
-        const now = Date.now();
-        return rooms.filter(r => (now - (r.updatedAt || 0)) < 90000);
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('soundrise_room_')) {
+          try {
+            const r = JSON.parse(localStorage.getItem(k));
+            if (r && r.roomId && !r.isPrivate && (now - (r.updatedAt || 0) < 90000)) {
+              roomsMap.set(r.roomId, r);
+            }
+          } catch (e) {}
+        }
       }
     } catch (e) {}
-    return [];
+
+    // 2. Cache local unifié
+    try {
+      const cached = localStorage.getItem(this.publicRoomsKey);
+      if (cached) {
+        const arr = JSON.parse(cached);
+        if (Array.isArray(arr)) {
+          arr.forEach(r => {
+            if (r && r.roomId && !r.isPrivate && (now - (r.updatedAt || 0) < 90000)) {
+              if (!roomsMap.has(r.roomId)) roomsMap.set(r.roomId, r);
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    // 3. Ping d'autres onglets ouverts
+    try {
+      this.roomsChannel.postMessage({ type: 'request_active_rooms' });
+    } catch (e) {}
+
+    // 4. Appel Cloud avec timeout strict 1.5s (ne bloque jamais l'UI)
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      const res = await fetch(this.cloudEndpoint, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const json = await res.json();
+        const cloudRooms = (json && json.data && Array.isArray(json.data.rooms)) ? json.data.rooms : [];
+        cloudRooms.forEach(r => {
+          if (r && r.roomId && !r.isPrivate && (now - (r.updatedAt || 0) < 90000)) {
+            roomsMap.set(r.roomId, r);
+          }
+        });
+      }
+    } catch (e) {}
+
+    const result = Array.from(roomsMap.values()).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    try {
+      localStorage.setItem(this.publicRoomsKey, JSON.stringify(result));
+    } catch (e) {}
+    return result;
   }
 
   getRoomById(roomId) {
@@ -634,6 +676,8 @@ export class MultiplayerManager {
     }
 
     this.isDuelActive = true;
+    this.lives = 3;
+    this.opponentData.lives = 3;
     this.rivalGroup.visible = true;
     this.opponentData.isDead = false;
     this.opponentData.distance = 0;
@@ -731,6 +775,24 @@ export class MultiplayerManager {
     });
   }
 
+  
+  recordLifeLost(distance, cycleIndex) {
+    if (!this.isDuelActive) return { lives: 0, isEliminated: false };
+    this.lives = Math.max(0, this.lives - 1);
+    if (this.lives > 0) {
+      this.sendDuelMessage({
+        type: 'life_lost',
+        livesRemaining: this.lives,
+        distance,
+        cycleIndex
+      });
+      return { lives: this.lives, isEliminated: false };
+    } else {
+      this.sendDeath(distance, cycleIndex, 'all_lives_lost');
+      return { lives: 0, isEliminated: true };
+    }
+  }
+
   sendDeath(distance, cycleIndex, reason) {
     if (!this.isDuelActive) return;
     this.sendDuelMessage({
@@ -814,6 +876,13 @@ export class MultiplayerManager {
         if (this.onRivalLaserFire) this.onRivalLaserFire(data.x, data.y, data.z);
         break;
 
+      case 'life_lost':
+        this.opponentData.lives = data.livesRemaining;
+        if (this.onRivalLifeLost) {
+          this.onRivalLifeLost(data.livesRemaining, data.distance);
+        }
+        break;
+
       case 'player_eliminated':
         // L'adversaire a été éliminé : VICTOIRE POUR NOUS !
         this.opponentData.isDead = true;
@@ -842,7 +911,15 @@ export class MultiplayerManager {
   }
 
   handleRoomsMessage(data) {
-    if (data && data.type === 'rooms_updated' && this.onRoomsListChanged) {
+    if (!data) return;
+    if (data.type === 'request_active_rooms' && this.isHost && this.isInRoom && this.currentRoom && !this.currentRoom.isPrivate) {
+      this.roomsChannel.postMessage({ type: 'report_active_room', room: this.currentRoom });
+    } else if (data.type === 'report_active_room' && data.room) {
+      try {
+        localStorage.setItem(`soundrise_room_${data.room.roomId}`, JSON.stringify(data.room));
+      } catch (e) {}
+      if (this.onRoomDiscovered) this.onRoomDiscovered(data.room);
+    } else if (data.type === 'rooms_updated' && this.onRoomsListChanged) {
       this.onRoomsListChanged(data.rooms);
     }
   }
