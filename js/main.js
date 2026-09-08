@@ -198,6 +198,12 @@ class GameApp {
       this.ui.hideStartMenu();
       this.ui.hidePauseMenu();
     }
+    // Réinitialisation intégrale pour garantir un décollage propre sans drops accumulés
+    this.player.reset();
+    this.target.reset();
+    this.world.reset();
+    this.distance = 0;
+    this.heartsCount = 0;
     if (!this.audio.isPlaying) this.audio.start();
     const track = this.audio.getCurrentTrack();
     this.onTrackChange(this.audio.currentTrackIndex, track);

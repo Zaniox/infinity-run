@@ -40,8 +40,14 @@ export class MultiplayerManager {
     this.roomsChannel = new BroadcastChannel(this.localChannelName);
     this.duelChannel = null;
 
-    // Stockage local des salons publics
+    // Stockage cloud persistant mondial (API REST mondiale)
+    this.cloudEndpoint = 'https://api.restful-api.dev/objects/ff808181a067127101a07f68e41145d7';
     this.publicRoomsKey = 'soundrise_public_rooms_cache';
+
+    // Connexion P2P WebRTC réelle (PeerJS) pour interconnexion cross-sessions et cross-devices
+    this.peer = null;
+    this.p2pConn = null;
+    this.heartbeatInterval = null;
 
     // Initialisation de l'avatar 3D de l'adversaire
     this.initRivalAvatar();
@@ -202,19 +208,30 @@ export class MultiplayerManager {
     texture.needsUpdate = true;
   }
 
-  // --- GESTION DES SALONS (ROOMS) ---
-  getPublicRooms() {
+  // --- GESTION DES SALONS CLOUD ET LOCAUX (ROOMS) ---
+  async getPublicRooms() {
+    try {
+      const res = await fetch(this.cloudEndpoint);
+      if (res.ok) {
+        const json = await res.json();
+        const rooms = (json && json.data && Array.isArray(json.data.rooms)) ? json.data.rooms : [];
+        const now = Date.now();
+        // Filtrer les salons expirés (> 90 secondes sans battement de cœur)
+        const valid = rooms.filter(r => (now - (r.updatedAt || 0)) < 90000);
+        localStorage.setItem(this.publicRoomsKey, JSON.stringify(valid));
+        return valid;
+      }
+    } catch (e) {
+      console.warn('[Multiplayer] Utilisation du cache local pour les salons:', e);
+    }
     try {
       const data = localStorage.getItem(this.publicRoomsKey);
       if (data) {
         const rooms = JSON.parse(data);
         const now = Date.now();
-        // Filtrer les salons expirés (> 90 secondes sans heartbeat)
         return rooms.filter(r => (now - (r.updatedAt || 0)) < 90000);
       }
-    } catch (e) {
-      console.warn(e);
-    }
+    } catch (e) {}
     return [];
   }
 
@@ -224,19 +241,51 @@ export class MultiplayerManager {
     try {
       const single = localStorage.getItem(`soundrise_room_${cleanId}`);
       if (single) return JSON.parse(single);
-      const publicRooms = this.getPublicRooms();
-      return publicRooms.find(r => r.roomId === cleanId) || null;
+      const cached = localStorage.getItem(this.publicRoomsKey);
+      if (cached) {
+        const rooms = JSON.parse(cached);
+        return rooms.find(r => r.roomId === cleanId) || null;
+      }
     } catch (e) {
       return null;
     }
   }
 
-  savePublicRooms(rooms) {
+  async savePublicRooms(rooms) {
     try {
       localStorage.setItem(this.publicRoomsKey, JSON.stringify(rooms));
       this.roomsChannel.postMessage({ type: 'rooms_updated', rooms });
+      await fetch(this.cloudEndpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'SoundriseMultiplayerRooms',
+          data: { rooms }
+        })
+      });
     } catch (e) {
-      console.warn(e);
+      console.warn('[Multiplayer] Erreur sauvegarde cloud des salons:', e);
+    }
+  }
+
+  async addPublicRoomToCloud(newRoom) {
+    try {
+      const current = await this.getPublicRooms();
+      const filtered = current.filter(r => r.roomId !== newRoom.roomId);
+      filtered.unshift(newRoom);
+      await this.savePublicRooms(filtered);
+    } catch (e) {
+      console.warn('[Multiplayer] Erreur ajout salon cloud:', e);
+    }
+  }
+
+  async removePublicRoomFromCloud(roomId) {
+    try {
+      const current = await this.getPublicRooms();
+      const filtered = current.filter(r => r.roomId !== roomId);
+      await this.savePublicRooms(filtered);
+    } catch (e) {
+      console.warn('[Multiplayer] Erreur suppression salon cloud:', e);
     }
   }
 
@@ -261,20 +310,20 @@ export class MultiplayerManager {
   }
 
   createRoom(roomName, isPrivate, startCycleIndex = 0) {
-    const user = this.auth.getUser();
-    if (!user) throw new Error('Connexion Google requise.');
+    const user = this.auth ? this.auth.getUser() : null;
+    const pseudo = (user && user.pseudo) ? user.pseudo : 'Pilote';
 
     const roomId = 'INFI-' + Math.random().toString(36).substring(2, 6).toUpperCase();
     const newRoom = {
       roomId,
-      name: roomName || `Duel de ${user.pseudo}`,
+      name: roomName || `Duel de ${pseudo}`,
       isPrivate: !!isPrivate,
       startCycleIndex: startCycleIndex || 0,
       host: {
-        googleUid: user.googleUid,
-        pseudo: user.pseudo,
-        name: user.name,
-        picture: user.picture
+        googleUid: user ? user.googleUid : 'guest_host_' + Date.now(),
+        pseudo: pseudo,
+        name: user ? user.name : pseudo,
+        picture: user ? user.picture : ''
       },
       guest: null,
       status: 'waiting',
@@ -289,13 +338,24 @@ export class MultiplayerManager {
     this.isReady = false;
     this.opponentReady = false;
 
-    // Enregistrement direct et liste publique
+    // Enregistrement direct local et publication mondiale sur le Cloud
     localStorage.setItem(`soundrise_room_${roomId}`, JSON.stringify(newRoom));
     if (!isPrivate) {
-      const rooms = this.getPublicRooms().filter(r => r.roomId !== roomId);
-      rooms.unshift(newRoom);
-      this.savePublicRooms(rooms);
+      this.addPublicRoomToCloud(newRoom);
     }
+
+    // Heartbeat régulier pour maintenir le salon actif dans le Cloud
+    if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+    this.heartbeatInterval = setInterval(() => {
+      if (this.isHost && this.isInRoom && this.currentRoom && !this.currentRoom.isPrivate) {
+        this.currentRoom.updatedAt = Date.now();
+        localStorage.setItem(`soundrise_room_${this.currentRoom.roomId}`, JSON.stringify(this.currentRoom));
+        this.addPublicRoomToCloud(this.currentRoom);
+      }
+    }, 15000);
+
+    // Initialisation du serveur P2P WebRTC PeerJS
+    this.initHostPeer(roomId);
 
     this.connectDuelChannel(roomId);
     this.startRoomSync();
@@ -397,6 +457,7 @@ export class MultiplayerManager {
 
     localStorage.setItem(`soundrise_room_${cleanCode}`, JSON.stringify(room));
     this.connectDuelChannel(cleanCode);
+    this.initGuestPeer(cleanCode);
     this.startRoomSync();
 
     // Annonce immédiate à l'UI
@@ -412,18 +473,16 @@ export class MultiplayerManager {
         if (this.joinRetryInterval) clearInterval(this.joinRetryInterval);
         return;
       }
-      if (this.duelChannel) {
-        this.duelChannel.postMessage({
-          type: 'guest_join_request',
-          roomId: cleanCode,
-          guest: {
-            googleUid: user.googleUid,
-            pseudo: user.pseudo,
-            name: user.name,
-            picture: user.picture
-          }
-        });
-      }
+      this.sendDuelMessage({
+        type: 'guest_join_request',
+        roomId: cleanCode,
+        guest: {
+          googleUid: user ? user.googleUid : 'guest_' + Date.now(),
+          pseudo: user ? user.pseudo : 'Pilote',
+          name: user ? user.name : 'Pilote',
+          picture: user ? user.picture : ''
+        }
+      });
     };
 
     sendJoin();
@@ -438,6 +497,80 @@ export class MultiplayerManager {
     }, 320);
 
     return this.currentRoom;
+  }
+
+  // --- GESTION DU RÉSEAU P2P WEBRTC (PEERJS) ---
+  initHostPeer(roomId) {
+    if (typeof Peer === 'undefined') return;
+    try {
+      const cleanPeerId = 'soundrise-' + roomId.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (this.peer) {
+        try { this.peer.destroy(); } catch (e) {}
+      }
+      this.peer = new Peer(cleanPeerId);
+      this.peer.on('connection', (conn) => {
+        this.p2pConn = conn;
+        this.setupP2PConnection(conn);
+      });
+      this.peer.on('error', (err) => {
+        console.warn('[Multiplayer P2P Host]', err);
+      });
+    } catch (e) {
+      console.warn('[Multiplayer P2P]', e);
+    }
+  }
+
+  initGuestPeer(roomId) {
+    if (typeof Peer === 'undefined') return;
+    try {
+      const targetPeerId = 'soundrise-' + roomId.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (this.peer) {
+        try { this.peer.destroy(); } catch (e) {}
+      }
+      this.peer = new Peer();
+      this.peer.on('open', () => {
+        const conn = this.peer.connect(targetPeerId);
+        this.p2pConn = conn;
+        this.setupP2PConnection(conn);
+      });
+      this.peer.on('error', (err) => {
+        console.warn('[Multiplayer P2P Guest]', err);
+      });
+    } catch (e) {
+      console.warn('[Multiplayer P2P]', e);
+    }
+  }
+
+  setupP2PConnection(conn) {
+    conn.on('open', () => {
+      console.log('[Multiplayer P2P] Canal de données WebRTC établi');
+      if (!this.isHost && this.auth) {
+        const user = this.auth.getUser();
+        conn.send({
+          type: 'guest_join_request',
+          roomId: this.currentRoom ? this.currentRoom.roomId : '',
+          guest: {
+            googleUid: user ? user.googleUid : 'guest_' + Date.now(),
+            pseudo: user ? user.pseudo : 'Pilote',
+            name: user ? user.name : 'Pilote',
+            picture: user ? user.picture : ''
+          }
+        });
+      }
+    });
+
+    conn.on('data', (data) => {
+      this.handleDuelMessage(data);
+    });
+  }
+
+  sendDuelMessage(msg) {
+    if (this.duelChannel) {
+      try { this.duelChannel.postMessage(msg); } catch (e) {}
+    }
+    if (this.p2pConn && this.p2pConn.open) {
+      try { this.p2pConn.send(msg); } catch (e) {}
+    }
   }
 
   connectDuelChannel(roomId) {
@@ -461,13 +594,11 @@ export class MultiplayerManager {
       localStorage.setItem(`soundrise_room_${this.currentRoom.roomId}`, JSON.stringify(this.currentRoom));
     }
 
-    if (this.duelChannel) {
-      this.duelChannel.postMessage({
-        type: 'ready_changed',
-        isHost: this.isHost,
-        ready: this.isReady
-      });
-    }
+    this.sendDuelMessage({
+      type: 'ready_changed',
+      isHost: this.isHost,
+      ready: this.isReady
+    });
 
     if (this.onRoomUpdate && this.currentRoom) {
       this.onRoomUpdate(this.currentRoom);
@@ -487,12 +618,10 @@ export class MultiplayerManager {
     this.currentRoom.updatedAt = Date.now();
     localStorage.setItem(`soundrise_room_${this.currentRoom.roomId}`, JSON.stringify(this.currentRoom));
 
-    if (this.duelChannel) {
-      this.duelChannel.postMessage({
-        type: 'start_race_countdown',
-        startCycleIndex: startCycle
-      });
-    }
+    this.sendDuelMessage({
+      type: 'start_race_countdown',
+      startCycleIndex: startCycle
+    });
 
     this.triggerRaceStart(startCycle);
   }
@@ -528,20 +657,27 @@ export class MultiplayerManager {
       clearInterval(this.joinRetryInterval);
       this.joinRetryInterval = null;
     }
-
-    if (this.duelChannel && this.currentRoom) {
-      this.duelChannel.postMessage({
-        type: 'player_left',
-        isHost: this.isHost
-      });
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
     }
+
+    this.sendDuelMessage({
+      type: 'player_left',
+      isHost: this.isHost
+    });
 
     if (this.currentRoom) {
       localStorage.removeItem(`soundrise_room_${this.currentRoom.roomId}`);
-      if (!this.currentRoom.isPrivate) {
-        const rooms = this.getPublicRooms().filter(r => r.roomId !== this.currentRoom.roomId);
-        this.savePublicRooms(rooms);
+      if (!this.currentRoom.isPrivate && this.isHost) {
+        this.removePublicRoomFromCloud(this.currentRoom.roomId);
       }
+    }
+
+    if (this.peer) {
+      try { this.peer.destroy(); } catch (e) {}
+      this.peer = null;
+      this.p2pConn = null;
     }
 
     if (this.telemetryInterval) {
@@ -565,11 +701,11 @@ export class MultiplayerManager {
 
   // --- ÉMISSIONS MULTIJOUEUR ---
   sendTelemetry() {
-    if (!this.isDuelActive || !this.duelChannel || !window.gameApp) return;
+    if (!this.isDuelActive || !window.gameApp) return;
     const p = window.gameApp.player;
     if (!p) return;
 
-    this.duelChannel.postMessage({
+    this.sendDuelMessage({
       type: 'telemetry',
       x: p.group.position.x,
       y: p.group.position.y,
@@ -588,16 +724,16 @@ export class MultiplayerManager {
   }
 
   sendLaserFire(x, y, z) {
-    if (!this.isDuelActive || !this.duelChannel) return;
-    this.duelChannel.postMessage({
+    if (!this.isDuelActive) return;
+    this.sendDuelMessage({
       type: 'laser_fired',
       x, y, z
     });
   }
 
   sendDeath(distance, cycleIndex, reason) {
-    if (!this.isDuelActive || !this.duelChannel) return;
-    this.duelChannel.postMessage({
+    if (!this.isDuelActive) return;
+    this.sendDuelMessage({
       type: 'player_eliminated',
       distance,
       cycleIndex,

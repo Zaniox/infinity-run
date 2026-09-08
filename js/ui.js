@@ -1208,10 +1208,23 @@ export class UIManager {
     }
   }
 
-  refreshPublicRooms() {
+  async refreshPublicRooms() {
     if (!this.multiplayer) return;
-    const rooms = this.multiplayer.getPublicRooms();
-    this.renderPublicRooms(rooms);
+    if (this.mpRoomsList) {
+      this.mpRoomsList.innerHTML = `
+        <div class="mp-empty-state">
+          <span class="live-dot" style="display:inline-block;margin-right:6px;"></span>
+          Recherche des salons mondiaux en direct sur le cloud...
+        </div>
+      `;
+    }
+    try {
+      const rooms = await this.multiplayer.getPublicRooms();
+      this.renderPublicRooms(rooms);
+    } catch (e) {
+      console.warn('Erreur chargement salons cloud:', e);
+      this.renderPublicRooms([]);
+    }
   }
 
   renderPublicRooms(rooms) {

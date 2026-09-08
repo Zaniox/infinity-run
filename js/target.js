@@ -666,22 +666,27 @@ export class TargetManager {
     this.suctionMat.opacity = 0.65 + bassEnergy * 0.35;
 
     // 4. Cadencement du sillage semé par Nity (Cœurs, Armures et Sayanfinity)
-    this.heartSpawnTimer += dt;
-    const heartInterval = Math.max(1.4, 2.6 - (speed / 120.0));
-    if (this.heartSpawnTimer >= heartInterval) {
-      this.heartSpawnTimer = 0;
+    // Ne spawner QUE pendant le vol actif (speed > 10.0), jamais dans le menu principal
+    if (speed > 10.0) {
+      this.heartSpawnTimer += dt;
+      const heartInterval = Math.max(1.4, 2.6 - (speed / 120.0));
+      if (this.heartSpawnTimer >= heartInterval) {
+        this.heartSpawnTimer = 0;
 
-      const r = Math.random();
-      if (r < 0.07) {
-        // Drop Sayanfinity rare (~7%)
-        this.spawnSayanfinityFromNity();
-      } else if (r < 0.28) {
-        // Drop Armure régulier (~21%)
-        this.spawnArmorFromNity();
-      } else {
-        // Cœurs vitaux indispensables (~72%)
-        this.spawnHeartFromNity();
+        const r = Math.random();
+        if (r < 0.07) {
+          // Drop Sayanfinity rare (~7%)
+          this.spawnSayanfinityFromNity();
+        } else if (r < 0.28) {
+          // Drop Armure régulier (~21%)
+          this.spawnArmorFromNity();
+        } else {
+          // Cœurs vitaux indispensables (~72%)
+          this.spawnHeartFromNity();
+        }
       }
+    } else {
+      this.heartSpawnTimer = 0;
     }
 
     // 5. Défilement des drops vers Infi + ATTRACTION MAGNÉTIQUE FLUIDE

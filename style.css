@@ -676,18 +676,20 @@ html, body {
 
 .modal-card {
   width: 90%;
-  max-width: 460px;
-  background: rgba(18, 5, 34, 0.9);
-  border: 1px solid rgba(255, 46, 166, 0.4);
-  border-radius: 20px;
-  padding: 32px 28px;
+  max-width: 480px;
+  background: rgba(8, 12, 22, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 28px 26px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 0 40px rgba(255, 46, 166, 0.35), 0 0 80px rgba(147, 51, 234, 0.25);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75), 0 0 1px rgba(255, 255, 255, 0.15);
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 .modal-top-bar {
@@ -695,37 +697,38 @@ html, body {
   top: 0;
   left: 0;
   width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, #00f0ff, #ff2ea6, #a855f7);
-  box-shadow: 0 0 15px #ff2ea6;
+  height: 3px;
+  background: linear-gradient(90deg, #00f0ff, #38bdf8, #818cf8);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
 }
 
 .modal-badge {
-  font-size: 0.62rem;
-  letter-spacing: 0.28em;
-  color: #ff4d6d;
-  font-weight: 800;
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .modal-title {
   font-size: 1.35rem;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   font-weight: 900;
   color: #ffffff;
-  text-shadow: 0 0 15px rgba(255, 46, 166, 0.9);
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
   text-align: center;
 }
 
 .modal-reason {
   font-size: 0.78rem;
-  letter-spacing: 0.16em;
-  font-weight: 700;
-  color: #ff4d6d;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: #f87171;
   text-align: center;
   padding: 6px 14px;
-  background: rgba(239, 68, 68, 0.12);
-  border-radius: 6px;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .modal-stats {
@@ -740,35 +743,35 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  background: rgba(28, 8, 52, 0.65);
-  border: 1px solid rgba(168, 85, 247, 0.25);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
   padding: 12px 6px;
 }
 
 .stat-label {
   font-size: 0.62rem;
   letter-spacing: 0.14em;
-  color: #a855f7;
+  color: #94a3b8;
   font-weight: 700;
 }
 
 .stat-value {
   font-size: 1.15rem;
   letter-spacing: 0.06em;
-  color: #00f0ff;
+  color: #ffffff;
   font-weight: 900;
   font-family: 'Consolas', monospace;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
 }
 
 /* Bloc Rang SUBA */
 .modal-rank-container {
   width: 100%;
-  background: rgba(10, 2, 22, 0.7);
-  border: 1px solid rgba(168, 85, 247, 0.3);
-  border-radius: 12px;
-  padding: 16px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -784,30 +787,29 @@ html, body {
 }
 
 .rank-badge {
-  font-size: 1.8rem;
-  letter-spacing: 0.24em;
+  font-size: 1.6rem;
+  letter-spacing: 0.20em;
   font-weight: 900;
-  color: #00f0ff;
+  color: #38bdf8;
   padding: 6px 20px;
-  border: 2px solid currentColor;
+  border: 1.5px solid currentColor;
   border-radius: 8px;
   text-shadow: 0 0 15px currentColor;
-  margin: 4px 0;
+  margin: 2px 0;
 }
 
 .rank-score {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-family: 'Consolas', monospace;
   font-weight: 900;
   color: #ffffff;
-  letter-spacing: 0.1em;
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.08em;
 }
 
 .rank-sub {
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  color: #cbd5e1;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
   text-align: center;
   margin-top: 2px;
 }
@@ -816,22 +818,23 @@ html, body {
   width: 100%;
   padding: 14px 20px;
   margin-top: 4px;
-  background: linear-gradient(135deg, #ff2ea6, #9333ea);
-  border: 1px solid #ffffff;
-  border-radius: 10px;
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  box-shadow: 0 0 25px rgba(255, 46, 166, 0.6);
-  transition: transform 0.12s ease, box-shadow 0.15s ease;
+  box-shadow: 0 8px 25px rgba(2, 132, 199, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
   pointer-events: auto;
 }
 
 .btn-restart:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 35px rgba(255, 46, 166, 0.9);
+  box-shadow: 0 12px 30px rgba(2, 132, 199, 0.6);
+  border-color: #ffffff;
 }
 
 .btn-restart:active {
@@ -839,15 +842,15 @@ html, body {
 }
 
 .btn-restart-text {
-  font-size: 0.92rem;
-  letter-spacing: 0.22em;
+  font-size: 0.95rem;
+  letter-spacing: 0.20em;
   font-weight: 900;
   color: #ffffff;
 }
 
 .btn-restart-sub {
   font-size: 0.66rem;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   color: rgba(255, 255, 255, 0.85);
   font-weight: 600;
 }
@@ -880,21 +883,20 @@ html, body {
 .start-menu-card.minimalist {
   width: 92%;
   max-width: 480px;
-  background: rgba(10, 6, 22, 0.92);
-  border: 1px solid rgba(0, 240, 255, 0.4);
+  background: rgba(8, 12, 24, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 20px;
   padding: 26px 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 18px;
-  box-shadow: 0 0 50px rgba(0, 240, 255, 0.22), 0 20px 60px rgba(0, 0, 0, 0.85);
-  animation: menuPulseGlow 4s ease-in-out infinite alternate;
+  gap: 16px;
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.8), 0 0 1px rgba(255, 255, 255, 0.18);
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
 }
 
 /* Barre supérieure épurée */
@@ -2875,9 +2877,12 @@ html, body {
    ========================================================================== */
 .pause-card {
   max-width: 480px;
-  background: rgba(10, 5, 20, 0.94);
-  border: 1px solid rgba(0, 240, 255, 0.4);
-  box-shadow: 0 0 50px rgba(0, 240, 255, 0.25), 0 0 100px rgba(168, 85, 247, 0.2);
+  background: rgba(8, 12, 22, 0.90);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75), 0 0 1px rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 .pause-actions {
