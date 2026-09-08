@@ -16,6 +16,8 @@ export class SettingsManager {
       flightSensitivity: 1.0,
       screenShake: true,
       graphicsQuality: 'high',
+      haptics: true,
+      gyroControls: false,
       language: localStorage.getItem('soundrise_language') || 'fr'
     };
 
@@ -94,6 +96,14 @@ export class SettingsManager {
 
   setLanguage(lang) {
     this.set('language', lang);
+  }
+
+  setHaptics(enabled) {
+    this.set('haptics', !!enabled);
+  }
+
+  setGyroControls(enabled) {
+    this.set('gyroControls', !!enabled);
   }
 }
 

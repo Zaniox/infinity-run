@@ -149,11 +149,73 @@ class GameApp {
 
     // Événements d'entrées et redimensionnement
     this.bindInputEvents();
+    this.setupGyroscopeSteering();
     this.bindResize();
+
+    // Vérification initiale de l'orientation mobile
+    if (this.ui && typeof this.ui.checkOrientation === 'function') {
+      this.ui.checkOrientation(this.isMobile, window.innerHeight > window.innerWidth);
+    }
 
     // Boucle d'animation 60 FPS
     this.animate = this.animate.bind(this);
     requestAnimationFrame(this.animate);
+  }
+
+  // Moteur de retour haptique tactile (Vibrations smartphone)
+  triggerHaptic(pattern = 15) {
+    try {
+      if (settings.get('haptics') === false) return;
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(pattern);
+      }
+    } catch (_) {}
+  }
+
+  // Pilotage par inclinaison gyroscopique (DeviceOrientation)
+  setupGyroscopeSteering() {
+    if (typeof window === 'undefined') return;
+
+    const handleOrientation = (e) => {
+      if (this.state !== this.STATE_PLAYING || this.isPaused) return;
+      if (!settings.get('gyroControls')) return;
+      if (this.isPointerDown) return; // Le joystick tactile reste prioritaire
+
+      const isLandscape = window.innerWidth > window.innerHeight;
+      let tilt = 0;
+      if (isLandscape) {
+        tilt = e.beta || 0;
+        if (window.orientation === -90) tilt = -tilt;
+      } else {
+        tilt = e.gamma || 0;
+      }
+
+      const deadzone = 3.5;
+      if (Math.abs(tilt) < deadzone) {
+        if (!this.keyLeft && !this.keyRight && !this.isPointerDown) this.inputAxisX = 0;
+        return;
+      }
+      const sign = Math.sign(tilt);
+      const mag = Math.min(1.0, (Math.abs(tilt) - deadzone) / 22.0);
+      this.inputAxisX = sign * Math.pow(mag, 1.2);
+    };
+
+    if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      this.requestGyroPermission = async () => {
+        try {
+          const resp = await DeviceOrientationEvent.requestPermission();
+          if (resp === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation, true);
+            return true;
+          }
+        } catch (err) {
+          console.warn('Gyro permission error:', err);
+        }
+        return false;
+      };
+    } else if (window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientation', handleOrientation, true);
+    }
   }
 
   // Configuration Three.js avec ShadowMap PCFSoft
@@ -397,6 +459,7 @@ class GameApp {
   firePlayerLaser() {
     if (this.state !== this.STATE_PLAYING) return;
     this.player.fireLaser(this.audio);
+    this.triggerHaptic(14);
     if (this.multiplayer && this.multiplayer.isDuelActive) {
       const p = this.player.group.position;
       this.multiplayer.sendLaserFire(p.x, p.y, p.z);
@@ -480,20 +543,47 @@ class GameApp {
     const btnMobileFire = document.getElementById('btn-mobile-fire');
     const btnMobileBoost = document.getElementById('btn-mobile-boost');
 
+    // Tir blaster continu au maintien (Hold-to-fire)
     if (btnMobileFire) {
-      const handleTouchFire = (e) => {
+      let fireInterval = null;
+
+      const startFire = (e) => {
         if (e) {
           e.preventDefault();
           e.stopPropagation();
         }
         if (this.state === this.STATE_PLAYING && !this.isPaused) {
           this.firePlayerLaser();
+          btnMobileFire.classList.add('is-firing');
+          if (!fireInterval) {
+            fireInterval = setInterval(() => {
+              if (this.state === this.STATE_PLAYING && !this.isPaused) {
+                this.firePlayerLaser();
+              } else {
+                stopFire();
+              }
+            }, 160);
+          }
         }
       };
-      btnMobileFire.addEventListener('touchstart', handleTouchFire, { passive: false });
-      btnMobileFire.addEventListener('click', handleTouchFire);
+
+      const stopFire = (e) => {
+        if (fireInterval) {
+          clearInterval(fireInterval);
+          fireInterval = null;
+        }
+        btnMobileFire.classList.remove('is-firing');
+      };
+
+      btnMobileFire.addEventListener('touchstart', startFire, { passive: false });
+      btnMobileFire.addEventListener('touchend', stopFire, { passive: false });
+      btnMobileFire.addEventListener('touchcancel', stopFire, { passive: false });
+      btnMobileFire.addEventListener('mousedown', startFire);
+      btnMobileFire.addEventListener('mouseup', stopFire);
+      btnMobileFire.addEventListener('mouseleave', stopFire);
     }
 
+    // Bouton Boost instantané
     if (btnMobileBoost) {
       const handleTouchBoost = (e) => {
         if (e) {
@@ -502,23 +592,44 @@ class GameApp {
         }
         if (this.state === this.STATE_PLAYING && !this.isPaused && this.player) {
           this.player.activateBoost(3.5, 28.0);
+          this.triggerHaptic([35, 30, 50]);
+          if (this.audio && this.audio.playPowerup) this.audio.playPowerup();
         }
       };
       btnMobileBoost.addEventListener('touchstart', handleTouchBoost, { passive: false });
       btnMobileBoost.addEventListener('click', handleTouchBoost);
     }
 
+    // Joystick dynamique flottant (auto-centrage, zone morte, courbe exponentielle, double-tap boost)
     if (joyZone && joyBase && joyKnob) {
       let joyTouchId = null;
       let baseCenterX = 0;
       let baseCenterY = 0;
-      const maxRadius = 46;
+      let lastTapTime = 0;
+      let lastTapX = 0;
+      let lastTapY = 0;
+      const maxRadius = 50;
 
       joyZone.addEventListener('touchstart', (e) => {
         e.preventDefault();
         if (joyTouchId !== null) return;
         const touch = e.changedTouches[0];
         joyTouchId = touch.identifier;
+
+        // Détection de Double-Tap pour amorcer le Boost instantanément
+        const now = performance.now();
+        const distFromLastTap = Math.hypot(touch.clientX - lastTapX, touch.clientY - lastTapY);
+        if (now - lastTapTime < 340 && distFromLastTap < 55) {
+          if (this.state === this.STATE_PLAYING && !this.isPaused && this.player) {
+            this.player.activateBoost(3.5, 28.0);
+            this.triggerHaptic([35, 30, 50]);
+            if (this.audio && this.audio.playPowerup) this.audio.playPowerup();
+          }
+        }
+        lastTapTime = now;
+        lastTapX = touch.clientX;
+        lastTapY = touch.clientY;
+
         const rect = joyZone.getBoundingClientRect();
         baseCenterX = touch.clientX - rect.left;
         baseCenterY = touch.clientY - rect.top;
@@ -542,13 +653,40 @@ class GameApp {
             let dx = curX - baseCenterX;
             let dy = curY - baseCenterY;
             const dist = Math.hypot(dx, dy);
-            if (dist > maxRadius) {
-              dx = (dx / dist) * maxRadius;
-              dy = (dy / dist) * maxRadius;
+
+            // Suivi dynamique de la base pour éviter la dérive du pouce (Thumb drift)
+            const followThreshold = maxRadius * 1.15;
+            if (dist > followThreshold) {
+              const excess = dist - followThreshold;
+              baseCenterX += (dx / dist) * excess * 0.45;
+              baseCenterY += (dy / dist) * excess * 0.45;
+              joyBase.style.left = `${baseCenterX}px`;
+              joyBase.style.top = `${baseCenterY}px`;
+              dx = curX - baseCenterX;
+              dy = curY - baseCenterY;
             }
-            joyKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-            this.inputAxisX = dx / maxRadius;
-            this.inputAxisY = -dy / maxRadius; // Glisser vers le haut élève l'altitude
+
+            const currentDist = Math.hypot(dx, dy);
+            const clampedDist = Math.min(currentDist, maxRadius);
+            const normDist = clampedDist / maxRadius;
+
+            // Zone morte et courbe exponentielle pour une précision chirurgicale
+            const deadzone = 0.08;
+            if (normDist < deadzone) {
+              this.inputAxisX = 0;
+              this.inputAxisY = 0;
+            } else {
+              const scaledNorm = (normDist - deadzone) / (1 - deadzone);
+              const curved = Math.pow(scaledNorm, 1.25);
+              const dirX = currentDist > 0 ? (dx / currentDist) : 0;
+              const dirY = currentDist > 0 ? (dy / currentDist) : 0;
+              this.inputAxisX = dirX * curved;
+              this.inputAxisY = -dirY * curved; // Glisser vers le haut élève l'altitude
+            }
+
+            const knobX = (currentDist > 0) ? (dx / currentDist) * clampedDist : 0;
+            const knobY = (currentDist > 0) ? (dy / currentDist) * clampedDist : 0;
+            joyKnob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
             break;
           }
         }
@@ -619,11 +757,18 @@ class GameApp {
     window.addEventListener('resize', () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
+      const isPortrait = h > w;
+      this.isPortrait = isPortrait;
       this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(w, h);
       const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || w <= 820;
+      this.isMobile = isMobile;
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2.0));
+
+      if (this.ui && typeof this.ui.checkOrientation === 'function') {
+        this.ui.checkOrientation(isMobile, isPortrait);
+      }
     });
   }
 
@@ -725,6 +870,7 @@ class GameApp {
       // Collision des lasers Star Fox avec les obstacles (Gain de points + Combat text flottant)
       this.world.checkLaserCollisions(this.player.lasers, (obs, hitPos, isSaiyan) => {
         this.audio.playObstacleDestroyed();
+        this.triggerHaptic(20);
         this.obstaclesDestroyed = (this.obstaclesDestroyed || 0) + 1;
         const pts = isSaiyan ? 300 : 150;
         this.obstacleScore = (this.obstacleScore || 0) + pts;
@@ -773,6 +919,7 @@ class GameApp {
           // Cas 1 : Mode PURITY actif (Invulnérabilité 20s) -> broie l'obstacle instantanément !
           if (this.player.isSayanfinityActive()) {
             this.audio.playSaiyanSmash();
+            this.triggerHaptic([30, 20, 30]);
             this.obstaclesDestroyed = (this.obstaclesDestroyed || 0) + 1;
             const pts = 250;
             this.obstacleScore = (this.obstacleScore || 0) + pts;
@@ -785,6 +932,7 @@ class GameApp {
           // Cas 2 : Bouclier d'Armure actif -> absorbe l'impact, protège et détruit l'obstacle !
           if (this.player.hasShield) {
             this.player.absorbHit(this.audio);
+            this.triggerHaptic([40, 25, 45]);
             this.obstaclesDestroyed = (this.obstaclesDestroyed || 0) + 1;
             const pts = 150;
             this.obstacleScore = (this.obstacleScore || 0) + pts;
@@ -801,6 +949,7 @@ class GameApp {
               this.player.invulnerableTimer = 2.5;
               this.player.energy = 100;
               this.audio.playCrash();
+              this.triggerHaptic([60, 40, 100]);
               if (this.ui) {
                 const rivalName = this.multiplayer.opponentUser ? this.multiplayer.opponentUser.pseudo : 'RIVAL';
                 this.ui.updateDuelLives(this.multiplayer.lives, this.multiplayer.opponentData.lives, rivalName);
@@ -811,6 +960,7 @@ class GameApp {
             } else {
               this.player.triggerCrash();
               this.audio.playCrash();
+              this.triggerHaptic([60, 40, 100]);
               this.state = this.STATE_DYING;
               if (this.ui) this.ui.updateDuelLives(0, this.multiplayer.opponentData.lives);
               return 'crash';
@@ -819,6 +969,7 @@ class GameApp {
 
           this.player.triggerCrash();
           this.audio.playCrash();
+          this.triggerHaptic([60, 40, 100]);
           this.state = this.STATE_DYING;
           return 'crash';
         }
@@ -832,6 +983,7 @@ class GameApp {
           if (this.audio && this.audio.playNearMiss) {
             this.audio.playNearMiss();
           }
+          this.triggerHaptic(18);
           if (this.ui) {
             this.ui.showFloatingScore(pts, false, 'FRÔLEMENT !', 'near-miss');
           }
@@ -986,9 +1138,10 @@ class GameApp {
 
       // Suivi caméra 3e personne cinématographique (désactivé pendant la cinématique de fin)
       if (!this.target || !this.target.isClimaxCinematicActive) {
+        const isPortrait = window.innerHeight > window.innerWidth;
         const tCamX = playerPos.x * 0.36;
-        const tCamY = Math.max(2.2, playerPos.y + 2.7 + profileCamY);
-        const tCamZ = playerPos.z + 8.8;
+        const tCamY = Math.max(2.2, playerPos.y + (isPortrait ? 3.4 : 2.7) + profileCamY);
+        const tCamZ = playerPos.z + (isPortrait ? 10.8 : 8.8);
 
         this.camera.position.x += (tCamX - this.camera.position.x) * 6.0 * dt;
         this.camera.position.y += (tCamY - this.camera.position.y) * 5.0 * dt;
@@ -1005,10 +1158,10 @@ class GameApp {
         // Inclinaison en roulis de la caméra
         this.camera.rotation.z += profileRoll;
 
-        // Champ de vision (FOV) dynamique
-        const baseFov = 75;
+        // Champ de vision (FOV) dynamique adapté portrait / paysage
+        const baseFov = isPortrait ? 88 : 74;
         const speedFov = (this.currentSpeed > 80) ? (this.currentSpeed - 80) * 0.14 : 0;
-        const targetFov = Math.max(55, Math.min(96, baseFov + speedFov + profileFov));
+        const targetFov = Math.max(55, Math.min(100, baseFov + speedFov + profileFov));
         if (Math.abs(this.camera.fov - targetFov) > 0.08) {
           this.camera.fov += (targetFov - this.camera.fov) * 4.0 * dt;
           this.camera.updateProjectionMatrix();

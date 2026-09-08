@@ -403,7 +403,7 @@
         <div id="touch-joystick-base" class="touch-joystick-base hidden">
           <div id="touch-joystick-knob" class="touch-joystick-knob"></div>
         </div>
-        <div class="touch-hint-pill">GLISSEZ POUR PILOTER</div>
+        <div class="touch-hint-pill">GLISSEZ POUR PILOTER &bull; DOUBLE-TOUCHER POUR BOOST</div>
       </div>
 
       <!-- Bouton Pause mobile en haut à droite -->
@@ -421,6 +421,12 @@
           🔫
           <span class="touch-action-label">BLASTER</span>
         </button>
+      </div>
+
+      <!-- Bannière conseil rotation paysage sur mobile -->
+      <div id="mobile-portrait-banner" class="mobile-portrait-banner hidden">
+        <span>🔄 Pivotez en paysage pour une vision panoramique</span>
+        <button id="btn-dismiss-portrait" class="btn-dismiss-portrait" type="button">✕</button>
       </div>
     </div>
 
@@ -801,6 +807,24 @@
           <label class="settings-label">SECOUSSES CAMÉRA (SCREEN SHAKE)</label>
           <label class="toggle-switch">
             <input id="toggle-screen-shake" type="checkbox" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- Vibrations haptiques mobile -->
+        <div class="settings-group settings-toggle-group">
+          <label class="settings-label">VIBRATIONS HAPTIQUES (MOBILE)</label>
+          <label class="toggle-switch">
+            <input id="toggle-haptics" type="checkbox" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- Pilotage Gyroscope / Inclinaison -->
+        <div class="settings-group settings-toggle-group">
+          <label class="settings-label">PILOTAGE PAR INCLINAISON (GYROSCOPE)</label>
+          <label class="toggle-switch">
+            <input id="toggle-gyro" type="checkbox" />
             <span class="toggle-slider"></span>
           </label>
         </div>

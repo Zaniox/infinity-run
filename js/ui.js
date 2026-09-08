@@ -244,6 +244,10 @@ export class UIManager {
     this.sliderSensitivity = document.getElementById('slider-sensitivity');
     this.sensVal = document.getElementById('sens-val');
     this.toggleScreenShake = document.getElementById('toggle-screen-shake');
+    this.toggleHaptics = document.getElementById('toggle-haptics');
+    this.toggleGyro = document.getElementById('toggle-gyro');
+    this.mobilePortraitBanner = document.getElementById('mobile-portrait-banner');
+    this.btnDismissPortrait = document.getElementById('btn-dismiss-portrait');
     this.langFlagButtons = document.querySelectorAll('.btn-lang-flag');
     this.qualityButtons = document.querySelectorAll('.btn-quality-opt');
 
@@ -517,10 +521,20 @@ export class UIManager {
     }
 
     if (this.btnMobilePause) {
-      this.btnMobilePause.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (window.gameApp) window.gameApp.togglePause();
-      });
+      const handleMobilePause = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (window.gameApp) {
+          window.gameApp.togglePause();
+          if (typeof window.gameApp.triggerHaptic === 'function') {
+            window.gameApp.triggerHaptic(18);
+          }
+        }
+      };
+      this.btnMobilePause.addEventListener('touchstart', handleMobilePause, { passive: false });
+      this.btnMobilePause.addEventListener('click', handleMobilePause);
     }
 
     // 10. Bouton Troll Continue
@@ -707,6 +721,33 @@ export class UIManager {
       });
     }
 
+    if (this.toggleHaptics) {
+      this.toggleHaptics.addEventListener('change', (e) => {
+        settings.setHaptics(e.target.checked);
+      });
+    }
+
+    if (this.toggleGyro) {
+      this.toggleGyro.addEventListener('change', async (e) => {
+        const enabled = e.target.checked;
+        if (enabled && window.gameApp && window.gameApp.requestGyroPermission) {
+          const granted = await window.gameApp.requestGyroPermission();
+          if (!granted) {
+            e.target.checked = false;
+            return;
+          }
+        }
+        settings.setGyroControls(enabled);
+      });
+    }
+
+    if (this.btnDismissPortrait) {
+      this.btnDismissPortrait.addEventListener('click', () => {
+        if (this.mobilePortraitBanner) this.mobilePortraitBanner.classList.add('hidden');
+        sessionStorage.setItem('dismiss_portrait_banner', '1');
+      });
+    }
+
     if (this.langFlagButtons) {
       this.langFlagButtons.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -886,6 +927,8 @@ export class UIManager {
     if (this.sliderSensitivity) this.sliderSensitivity.value = Math.round(s.flightSensitivity * 100);
     if (this.sensVal) this.sensVal.textContent = `${Math.round(s.flightSensitivity * 100)}%`;
     if (this.toggleScreenShake) this.toggleScreenShake.checked = !!s.screenShake;
+    if (this.toggleHaptics) this.toggleHaptics.checked = s.haptics !== false;
+    if (this.toggleGyro) this.toggleGyro.checked = !!s.gyroControls;
 
     if (this.langFlagButtons) {
       this.langFlagButtons.forEach(btn => {
@@ -896,6 +939,16 @@ export class UIManager {
       this.qualityButtons.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.quality === s.graphicsQuality);
       });
+    }
+  }
+
+  checkOrientation(isMobile, isPortrait) {
+    if (!this.mobilePortraitBanner) return;
+    const dismissed = sessionStorage.getItem('dismiss_portrait_banner') === '1';
+    if (isMobile && isPortrait && !dismissed) {
+      this.mobilePortraitBanner.classList.remove('hidden');
+    } else {
+      this.mobilePortraitBanner.classList.add('hidden');
     }
   }
 
