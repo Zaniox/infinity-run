@@ -237,6 +237,7 @@ export class UIManager {
     this.toggleScreenShake = document.getElementById('toggle-screen-shake');
     this.toggleHaptics = document.getElementById('toggle-haptics');
     this.toggleGyro = document.getElementById('toggle-gyro');
+    this.toggleReticle = document.getElementById('toggle-reticle');
     this.mobilePortraitBanner = document.getElementById('mobile-portrait-banner');
     this.btnDismissPortrait = document.getElementById('btn-dismiss-portrait');
     this.langFlagButtons = document.querySelectorAll('.btn-lang-flag');
@@ -686,6 +687,16 @@ export class UIManager {
     if (this.toggleScreenShake) {
       this.toggleScreenShake.addEventListener('change', (e) => {
         settings.setScreenShake(e.target.checked);
+      });
+    }
+
+    if (this.toggleReticle) {
+      this.toggleReticle.checked = settings.get('showReticle') !== false;
+      this.toggleReticle.addEventListener('change', (e) => {
+        settings.setShowReticle(e.target.checked);
+        if (!e.target.checked) {
+          this.setReticleVisible(false);
+        }
       });
     }
 
@@ -1453,6 +1464,22 @@ export class UIManager {
     }
   }
 
+  setReticleVisible(visible) {
+    if (!this.starfoxReticle) return;
+    if (visible && settings.get('showReticle') !== false) {
+      this.starfoxReticle.classList.add('active');
+    } else {
+      this.starfoxReticle.classList.remove('active');
+    }
+  }
+
+  updateReticlePosition(screenX, screenY, rollRad = 0) {
+    if (!this.starfoxReticle) return;
+    this.starfoxReticle.style.left = `${screenX}px`;
+    this.starfoxReticle.style.top = `${screenY}px`;
+    this.starfoxReticle.style.transform = `translate(-50%, -50%) rotate(${rollRad}rad)`;
+  }
+
   updateShield(hasShield, armorCount = 0) {
     if (this.hudShield) {
       if (hasShield) {
@@ -1602,6 +1629,7 @@ export class UIManager {
 
   // --- GAME OVER & ANIMATION CINÉMATIQUE DE MORT ---
   showGameOver(reason, distance, maxSpeed, heartsCount, destroyedCount = 0, totalScore = null, worldRankResult = null) {
+    this.setReticleVisible(false);
     if (totalScore == null) {
       totalScore = Math.floor(distance * 10 + heartsCount * 250 + destroyedCount * 150);
     }
@@ -1706,12 +1734,14 @@ export class UIManager {
 
   // --- GESTION DU MENU PAUSE (ÉCHAP / BOUTON PAUSE) ---
   showPauseMenu() {
+    this.setReticleVisible(false);
     if (this.pauseMenu) {
       this.pauseMenu.classList.remove('hidden');
     }
   }
 
   hidePauseMenu() {
+    this.setReticleVisible(true);
     if (this.pauseMenu) {
       this.pauseMenu.classList.add('hidden');
     }
@@ -1725,9 +1755,11 @@ export class UIManager {
   hideStartMenu() {
     if (this.startMenu) this.startMenu.classList.add('hidden');
     if (this.hudOverlay) this.hudOverlay.classList.remove('hidden');
+    this.setReticleVisible(true);
   }
 
   showStartMenu() {
+    this.setReticleVisible(false);
     if (this.startMenu) this.startMenu.classList.remove('hidden');
     if (this.hudOverlay) this.hudOverlay.classList.add('hidden');
     if (this.auth) this.updateAuthState(this.auth.getUser());

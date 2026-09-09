@@ -839,6 +839,8 @@ class GameApp {
     const currentBpm = this.audio.getCurrentTrack().bpm || 130;
 
     if (this.state === this.STATE_MENU) {
+      if (this.ui) this.ui.setReticleVisible(false);
+      this._reticleScreenPos = null;
       // Animation cinématique d'attente dans le Menu Principal
       this.player.updateIdle(dt, currentBpm, bass);
       this.world.updateElements(dt, 16.0, bass, time);
@@ -1310,8 +1312,87 @@ class GameApp {
       }
     }
 
-    // 10. Rendu de la scène
+    // 10. Suivi 3D Star Fox dynamique du réticule de visée sur le vaisseau
+    this.updateReticleTracking(dt);
+
+    // 11. Rendu de la scène
     this.renderer.render(this.scene, this.camera);
+  }
+
+  // Suivi 3D Star Fox dynamique du réticule de visée sur le vaisseau
+  updateReticleTracking(dt) {
+    if (!this.ui) return;
+
+    // Masquage absolu hors du vol actif (menu, pause, mort, gameover, cinématique finale ou désactivation dans les paramètres)
+    const shouldShow = (
+      this.state === this.STATE_PLAYING &&
+      !this.isPaused &&
+      this.player &&
+      !this.player.isDead &&
+      !this.player.isDying &&
+      (!this.target || !this.target.isClimaxCinematicActive) &&
+      settings.get('showReticle') !== false
+    );
+
+    if (!shouldShow) {
+      this.ui.setReticleVisible(false);
+      this._reticleScreenPos = null;
+      return;
+    }
+
+    this.ui.setReticleVisible(true);
+
+    const playerPos = this.player.group.position;
+    const isPortrait = window.innerHeight > window.innerWidth;
+
+    // 1. Calcul de l'axe de visée 3D dans le corridor devant le planeur
+    // Les lasers filent droit à Z = -40 devant la position X et Y du joueur
+    const aimDistance = isPortrait ? 38.0 : 44.0;
+
+    // Légère anticipation dynamique (Lead) selon les commandes de direction
+    const leadX = (this.inputAxisX || 0) * (isPortrait ? 0.75 : 0.95);
+    const leadY = (this.inputAxisY || 0) * 0.45;
+
+    // Position 3D de l'impact laser dans l'espace mondial
+    if (!this._reticleAimVec) this._reticleAimVec = new THREE.Vector3();
+    this._reticleAimVec.set(
+      playerPos.x + leadX,
+      playerPos.y - 0.15 + leadY,
+      playerPos.z - aimDistance
+    );
+
+    // 2. Projection du point 3D vers les coordonnées d'écran 2D (NDC)
+    this.camera.updateMatrixWorld();
+    if (!this._reticleProjVec) this._reticleProjVec = new THREE.Vector3();
+    this._reticleProjVec.copy(this._reticleAimVec);
+    this._reticleProjVec.project(this.camera);
+
+    // Le point doit être dans le demi-espace avant de la caméra
+    if (this._reticleProjVec.z < 1.0) {
+      const targetScreenX = (this._reticleProjVec.x * 0.5 + 0.5) * window.innerWidth;
+      const targetScreenY = (-this._reticleProjVec.y * 0.5 + 0.5) * window.innerHeight;
+
+      // Roulis dynamique pour épouser l'inclinaison des ailes
+      const targetRoll = this.player.avatar ? -this.player.avatar.rotation.z * 0.45 : 0;
+
+      // 3. Lissage cinématique fluide
+      if (!this._reticleScreenPos) {
+        this._reticleScreenPos = { x: targetScreenX, y: targetScreenY, roll: targetRoll };
+      } else {
+        const factor = Math.min(1.0, 26.0 * dt);
+        this._reticleScreenPos.x += (targetScreenX - this._reticleScreenPos.x) * factor;
+        this._reticleScreenPos.y += (targetScreenY - this._reticleScreenPos.y) * factor;
+        this._reticleScreenPos.roll += (targetRoll - this._reticleScreenPos.roll) * factor;
+      }
+
+      // Confinement aux marges de sécurité de l'écran
+      const marginX = isPortrait ? 26 : 42;
+      const marginY = isPortrait ? 70 : 50;
+      const clampedX = Math.max(marginX, Math.min(window.innerWidth - marginX, this._reticleScreenPos.x));
+      const clampedY = Math.max(marginY, Math.min(window.innerHeight - marginY, this._reticleScreenPos.y));
+
+      this.ui.updateReticlePosition(clampedX, clampedY, this._reticleScreenPos.roll);
+    }
   }
 
   // Séquence de Climax du Cycle 8 : Rattrapage de Nity puis Feinte Cosmique (Recommencement en boucle)

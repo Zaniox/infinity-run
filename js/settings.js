@@ -18,6 +18,7 @@ export class SettingsManager {
       graphicsQuality: 'high',
       haptics: true,
       gyroControls: false,
+      showReticle: true,
       language: localStorage.getItem('soundrise_language') || 'fr'
     };
 
@@ -104,6 +105,10 @@ export class SettingsManager {
 
   setGyroControls(enabled) {
     this.set('gyroControls', !!enabled);
+  }
+
+  setShowReticle(enabled) {
+    this.set('showReticle', !!enabled);
   }
 }
 
