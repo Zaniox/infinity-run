@@ -125,9 +125,6 @@ export class UIManager {
     this.gameOverModal = document.getElementById('game-over-modal');
     this.deathReason = document.getElementById('death-reason');
     this.finalDistance = document.getElementById('final-distance');
-    this.finalSpeed = document.getElementById('final-speed');
-    this.finalHearts = document.getElementById('final-hearts');
-    this.finalDestroyed = document.getElementById('final-destroyed');
     this.finalScore = document.getElementById('final-score');
     this.finalRankBadge = document.getElementById('final-rank-badge');
     this.finalRankSub = document.getElementById('final-rank-sub');
