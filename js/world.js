@@ -4609,17 +4609,19 @@ export class World {
         }
       }
 
-      // Boîtes de collision
+      // Boîtes de collision précises en coordonnées monde temps réel
+      obs.mesh.updateMatrixWorld(true);
       if (obs.subBoxes) {
         for (const sub of obs.subBoxes) {
           sub.box.setFromObject(sub.mesh);
         }
       } else {
+        if (!obs.bbox) obs.bbox = new THREE.Box3();
         obs.bbox.setFromObject(obs.mesh);
       }
 
-      // Test de collision avec le joueur
-      if (onCollisionCheck && Math.abs(obs.mesh.position.z) < 8.0) {
+      // Test de collision avec le joueur (Portée élargie à 14m pour vitesse élevée)
+      if (onCollisionCheck && Math.abs(obs.mesh.position.z) < 14.0) {
         let hitResult = null;
         if (obs.subBoxes) {
           for (const sub of obs.subBoxes) {
@@ -4630,7 +4632,7 @@ export class World {
           hitResult = onCollisionCheck(obs.bbox, obs, i);
         }
 
-        if (hitResult === 'destroy' || hitResult === 'smash') {
+        if (hitResult === 'destroy' || hitResult === 'smash' || hitResult === 'crash') {
           this.destroyObstacle(i, hitResult === 'smash');
           continue;
         }

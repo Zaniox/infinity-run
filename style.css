@@ -706,6 +706,7 @@ html, body {
 }
 
 /* 3. DOCK INFÉRIEUR DE NAVIGATION RAPIDE */
+.menu-aa-bottombar,
 .menu-aa-bottom-dock {
   display: flex;
   justify-content: space-between;
@@ -713,58 +714,77 @@ html, body {
   width: 100%;
   padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 16px;
+  flex-wrap: wrap;
 }
+.quick-nav-pills,
 .dock-actions-row {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
 }
+.btn-aa-dock,
 .btn-dock-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(18, 10, 32, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  padding: 8px 16px;
-  color: #e2e8f0;
-  font-size: 0.75rem;
+  background: rgba(18, 10, 32, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  padding: 10px 18px;
+  color: #f1f5f9;
+  font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  user-select: none;
 }
+.btn-aa-dock:hover,
 .btn-dock-pill:hover {
-  background: rgba(30, 16, 52, 0.9);
+  background: rgba(36, 16, 68, 0.95);
   border-color: #00f0ff;
   color: #ffffff;
   transform: translateY(-2px);
-  box-shadow: 0 0 18px rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.35);
 }
-.dock-badge-pulse {
-  font-size: 0.55rem;
-  font-weight: 900;
-  background: #ef4444;
-  color: #ffffff;
-  padding: 1px 6px;
-  border-radius: 999px;
-  margin-left: 2px;
+.btn-aa-dock:active,
+.btn-dock-pill:active {
+  transform: translateY(0);
 }
-.dock-credits-info {
+.dock-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.dock-label {
+  display: inline-block;
+}
+.btn-founder-dock {
+  border-color: rgba(234, 179, 8, 0.4);
+}
+.btn-founder-dock:hover {
+  border-color: #facc15;
+  box-shadow: 0 0 20px rgba(234, 179, 8, 0.4);
+}
+
+.menu-footer-controls-hint {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-.credits-tag {
-  font-size: 0.65rem;
-  letter-spacing: 0.12em;
-  color: #64748b;
+  font-size: 0.72rem;
   font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   ÉCRAN DE CHARGEMENT CINÉMATOGRAPHIQUE AVEC RÉACTEUR (#loading-screen)
+   ÉCRAN DE CHARGEMENT CINÉMATOGRAPHIQUE AA ÉPURÉ (#loading-screen)
    ═══════════════════════════════════════════════════════════════════════════ */
 .loading-screen-overlay {
   position: fixed;
@@ -776,8 +796,8 @@ html, body {
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 50% 50%, #0d041e 0%, #030108 90%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   opacity: 1;
   visibility: visible;
   transition: opacity 0.4s ease, visibility 0.4s ease;
@@ -788,21 +808,35 @@ html, body {
   pointer-events: none !important;
 }
 
+.loading-screen-backdrop {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.loading-screen-content,
 .loading-content-box {
   width: 90%;
-  max-width: 580px;
+  max-width: 540px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 22px;
+  gap: 28px;
+  position: relative;
+  z-index: 2;
 }
 
 /* Animation Réacteur Quantique */
+.loading-reactor,
 .reactor-pulse-visual {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 110px;
+  height: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -813,33 +847,43 @@ html, body {
   border-style: solid;
 }
 .ring-outer {
-  width: 110px;
-  height: 110px;
+  width: 105px;
+  height: 105px;
   border-width: 2px;
-  border-color: rgba(0, 240, 255, 0.7) transparent rgba(0, 240, 255, 0.7) transparent;
-  animation: spin-cw 3.5s linear infinite;
+  border-color: rgba(0, 240, 255, 0.75) transparent rgba(0, 240, 255, 0.75) transparent;
+  animation: spin-cw 3.2s linear infinite;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
 }
 .ring-middle {
-  width: 82px;
-  height: 82px;
+  width: 78px;
+  height: 78px;
   border-width: 2px;
-  border-color: transparent rgba(168, 85, 247, 0.85) transparent rgba(168, 85, 247, 0.85);
-  animation: spin-ccw 2.2s linear infinite;
+  border-color: transparent rgba(168, 85, 247, 0.9) transparent rgba(168, 85, 247, 0.9);
+  animation: spin-ccw 2.0s linear infinite;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
 }
 .ring-inner {
-  width: 56px;
-  height: 56px;
-  border-width: 1px;
-  border-color: rgba(255, 255, 255, 0.9) rgba(0, 240, 255, 0.5) transparent transparent;
-  animation: spin-cw 1.4s linear infinite;
+  width: 52px;
+  height: 52px;
+  border-width: 1.5px;
+  border-color: rgba(255, 255, 255, 0.95) rgba(0, 240, 255, 0.6) transparent transparent;
+  animation: spin-cw 1.2s linear infinite;
 }
 .reactor-core {
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: radial-gradient(circle, #ffffff 10%, #00f0ff 60%, #a855f7 100%);
-  box-shadow: 0 0 24px #00f0ff, 0 0 45px #a855f7;
+  background: radial-gradient(circle, #ffffff 15%, #00f0ff 65%, #a855f7 100%);
+  box-shadow: 0 0 28px #00f0ff, 0 0 50px #a855f7;
   animation: core-throb 1.2s ease-in-out infinite alternate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.reactor-ship-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px #ffffff);
 }
 @keyframes spin-cw {
   from { transform: rotate(0deg); }
@@ -850,53 +894,59 @@ html, body {
   to { transform: rotate(0deg); }
 }
 @keyframes core-throb {
-  0% { transform: scale(0.85); filter: drop-shadow(0 0 10px #00f0ff); }
-  100% { transform: scale(1.18); filter: drop-shadow(0 0 28px #00f0ff); }
+  0% { transform: scale(0.9); filter: drop-shadow(0 0 12px #00f0ff); }
+  100% { transform: scale(1.15); filter: drop-shadow(0 0 32px #00f0ff); }
 }
 
-.loading-header {
+.loading-info-box {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 12px;
 }
 .loading-badge {
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   letter-spacing: 0.28em;
   color: #00f0ff;
   font-weight: 800;
+  text-transform: uppercase;
 }
 .loading-title {
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-weight: 900;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   color: #ffffff;
-  text-shadow: 0 0 16px rgba(0, 240, 255, 0.6);
+  text-shadow: 0 0 20px rgba(0, 240, 255, 0.7);
+  margin: 0;
+}
+.loading-step {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  letter-spacing: 0.06em;
+  min-height: 22px;
 }
 
 /* Jauge de progression */
-.loading-status-bar {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 .loading-bar-track {
   width: 100%;
-  height: 12px;
-  background: rgba(12, 4, 22, 0.85);
-  border: 1px solid rgba(0, 240, 255, 0.4);
+  height: 10px;
+  background: rgba(12, 4, 22, 0.9);
+  border: 1px solid rgba(0, 240, 255, 0.5);
   border-radius: 999px;
   overflow: hidden;
   position: relative;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.9), 0 0 14px rgba(0, 240, 255, 0.2);
 }
 .loading-bar-fill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #7928ca 0%, #00f0ff 60%, #ffffff 100%);
+  background: linear-gradient(90deg, #7928ca 0%, #00f0ff 65%, #ffffff 100%);
   border-radius: 999px;
-  box-shadow: 0 0 20px #00f0ff;
+  box-shadow: 0 0 22px #00f0ff;
   transition: width 0.12s ease-out;
+  position: relative;
 }
 .loading-scanline {
   position: absolute;
@@ -904,61 +954,33 @@ html, body {
   left: -40%;
   width: 35%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
-  animation: scan-bar 1.8s infinite linear;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+  animation: scan-bar 1.6s infinite linear;
 }
 @keyframes scan-bar {
   from { left: -40%; }
   to { left: 140%; }
 }
-.loading-labels-row {
+.loading-meta-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.72rem;
+  width: 100%;
+  font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+  padding: 0 2px;
 }
-.loading-step-txt {
-  color: #cbd5e1;
+.loading-build-tag {
+  color: #64748b;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
 }
-.loading-pct-txt {
+.loading-percent {
   color: #00f0ff;
   font-family: monospace;
-  font-size: 0.88rem;
-  text-shadow: 0 0 8px #00f0ff;
-}
-
-/* Fiche astuce de vol rotative */
-.loading-tips-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(168, 85, 247, 0.25);
-  border-radius: 12px;
-  padding: 12px 18px;
-  text-align: left;
-}
-.tips-icon {
-  font-size: 1.5rem;
-}
-.tips-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.tips-tag {
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  color: #a855f7;
-}
-.tips-desc {
-  font-size: 0.74rem;
-  line-height: 1.4;
-  color: #e2e8f0;
+  font-size: 0.95rem;
+  text-shadow: 0 0 10px #00f0ff;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

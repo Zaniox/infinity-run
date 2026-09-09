@@ -494,22 +494,24 @@ export class Player {
     this.heartLight.visible = false;
     if (this.founderTrailPoints) this.founderTrailPoints.visible = false;
     if (this.flightTrailPoints) this.flightTrailPoints.visible = false;
+    this.disParticles.visible = true;
+    this.disMat.size = 0.95;
     this.disMat.opacity = 1.0;
 
     const p = this.group.position;
     const pos = this.disParticles.geometry.attributes.position.array;
 
     for (let i = 0; i < this.particleCount; i++) {
-      pos[i * 3] = p.x + (Math.random() - 0.5) * 1.4;
-      pos[i * 3 + 1] = p.y + (Math.random() - 0.5) * 1.4;
-      pos[i * 3 + 2] = p.z + (Math.random() - 0.5) * 1.4;
+      pos[i * 3] = p.x + (Math.random() - 0.5) * 1.8;
+      pos[i * 3 + 1] = p.y + (Math.random() - 0.5) * 1.8;
+      pos[i * 3 + 2] = p.z + (Math.random() - 0.5) * 1.8;
 
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
-      const spd = 12 + Math.random() * 28;
+      const spd = 16 + Math.random() * 32;
 
       this.disVel[i * 3] = Math.sin(phi) * Math.cos(theta) * spd;
-      this.disVel[i * 3 + 1] = Math.cos(phi) * spd + 4.0;
+      this.disVel[i * 3 + 1] = Math.cos(phi) * spd + 5.0;
       this.disVel[i * 3 + 2] = Math.sin(phi) * Math.sin(theta) * spd;
     }
     this.disParticles.geometry.attributes.position.needsUpdate = true;
@@ -1310,8 +1312,8 @@ export class Player {
     this.updateFounderTrail(dt);
     this.updateFlightTrail(dt);
 
-    // 13. Échec si énergie à zéro au sol
-    if (this.energy <= 0 && p.y <= this.minAltitude + 0.05) {
+    // 13. Échec critique si énergie à zéro
+    if (this.energy <= 0) {
       this.triggerCrash();
     }
   }
@@ -1330,6 +1332,7 @@ export class Player {
     this.group.position.set(0, 3.5, 0);
     this.boundingSphere.center.copy(this.group.position);
     this.disMat.opacity = 0;
+    if (this.disParticles) this.disParticles.visible = false;
 
     // Reset Armure & Bouclier
     this.hasShield = false;

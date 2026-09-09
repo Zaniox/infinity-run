@@ -66,9 +66,15 @@ export class UIManager {
     // Écran de Chargement Cinématique (#loading-screen)
     this.loadingScreen = document.getElementById('loading-screen');
     this.loadingBarFill = document.getElementById('loading-bar-fill');
-    this.loadingProgressVal = document.getElementById('loading-progress-val');
-    this.loadingStepText = document.getElementById('loading-step-text');
+    this.loadingProgressVal = document.getElementById('loading-progress-val') || document.getElementById('loading-percent');
+    this.loadingStepText = document.getElementById('loading-step-text') || document.getElementById('loading-status-text');
     this.loadingTipText = document.getElementById('loading-tip-text');
+    this.userRankBadge = document.getElementById('user-rank-badge');
+    try {
+      this.isEasterEggUnlocked = localStorage.getItem('soundrise_easter_egg_much_love') === 'true';
+    } catch (e) {
+      this.isEasterEggUnlocked = false;
+    }
 
     // Profil joueur & Session
     this.authUnlogged = document.getElementById('auth-unlogged');
@@ -452,11 +458,29 @@ export class UIManager {
       });
     }
 
-    // 2. Bouton Modification du Pseudo
+    // 2. Bouton Modification du Pseudo & Easter Egg Rank Badge
     if (this.btnEditPseudo) {
       this.btnEditPseudo.addEventListener('click', (e) => {
         e.preventDefault();
         this.openPseudoModal();
+      });
+    }
+    if (this.userRankBadge) {
+      let badgeClicks = 0;
+      let lastBadgeClick = 0;
+      this.userRankBadge.addEventListener('click', (e) => {
+        e.preventDefault();
+        const now = Date.now();
+        if (now - lastBadgeClick < 650) {
+          badgeClicks++;
+        } else {
+          badgeClicks = 1;
+        }
+        lastBadgeClick = now;
+        if (badgeClicks >= 4) {
+          this.unlockMuchLoveEasterEgg();
+          badgeClicks = 0;
+        }
       });
     }
 
@@ -1216,8 +1240,17 @@ export class UIManager {
       });
     }
 
-    // 15. Raccourcis clavier (Espace / Entrée / Échap)
+    // 15. Raccourcis clavier (Espace / Entrée / Échap) & Easter Egg "MUCH LOVE LES HATERS"
     window.addEventListener('keydown', (e) => {
+      // Détection de frappe secrète Easter Egg ("haters" ou "muchlove")
+      if (e.key && e.key.length === 1 && !this.isPseudoModalVisible() && !this.isAccountModalVisible()) {
+        this._easterEggBuffer = ((this._easterEggBuffer || '') + e.key.toLowerCase()).slice(-10);
+        if (this._easterEggBuffer.includes('haters') || this._easterEggBuffer.includes('muchlove')) {
+          this.unlockMuchLoveEasterEgg();
+          this._easterEggBuffer = '';
+        }
+      }
+
       if (e.code === 'Escape') {
         if (this.isFounderModalVisible()) this.closeFounderPanel();
         if (this.isLeaderboardVisible()) this.closeLeaderboardModal();
@@ -1564,6 +1597,18 @@ export class UIManager {
     }
     if (this.lbMyPseudo) this.lbMyPseudo.textContent = user.pseudo ? `@${user.pseudo}` : user.name;
     if (this.lbMyAvatar) this.lbMyAvatar.src = user.picture;
+
+    // Mise à jour dynamique du badge de rang du joueur
+    if (this.userRankBadge) {
+      if (this.isEasterEggUnlocked) {
+        this.userRankBadge.textContent = 'MUCH LOVE LES HATERS';
+        this.userRankBadge.classList.add('badge-much-love');
+      } else {
+        const rankInfo = this.computeRank(best ? best.score : 0);
+        this.userRankBadge.textContent = `RANG ${rankInfo.rank}`;
+        this.userRankBadge.style.color = rankInfo.color;
+      }
+    }
   }
 
   // --- MODAL DE CHOIX DU PSEUDO ---
@@ -1933,52 +1978,105 @@ export class UIManager {
   }
 
   computeRank(score) {
-    if (score >= 160000) {
+    if (this.isEasterEggUnlocked || score >= 400000) {
       return {
-        rank: 'MUCH LOVE',
-        title: 'RANG SUPRÊME • LÉGENDE COSMIQUE',
-        desc: t('rank_much_love_desc', 'L\'amour absolu transcende l\'abysse et la folie de l\'espace-temps !'),
-        color: '#ff2e93',
-        glow: 'rgba(255, 46, 147, 0.95)',
+        rank: 'MUCH LOVE LES HATERS',
+        title: 'EASTER EGG SUPRÊME • LÉGENDE COSMIQUE',
+        desc: 'Dédicace spéciale @zanioxx_off : L\'amour transcende tous les haters !',
+        color: '#ff2ea6',
+        glow: 'rgba(255, 46, 166, 1.0)',
         isSupreme: true
       };
-    } else if (score >= 110000) {
+    } else if (score >= 280000) {
+      return {
+        rank: 'INFINITY',
+        title: 'RANG TRANSCENDANT • SINGULARITÉ',
+        desc: 'Traversée divine absolue au cœur du Trou Noir !',
+        color: '#00f0ff',
+        glow: 'rgba(0, 240, 255, 0.95)',
+        isSupreme: false
+      };
+    } else if (score >= 200000) {
       return {
         rank: 'SUBA Y SU',
-        title: 'LÉGENDAIRE / EXCEPTIONNEL',
-        desc: t('rank_suba_y_su_desc', 'Traversée divine au-delà de l\'horizon des événements !'),
-        color: '#fef08a',
-        glow: 'rgba(254, 240, 138, 0.9)',
+        title: 'RANG LÉGENDAIRE • HÉROS DIMENSIONNEL',
+        desc: 'Exploit monumental au-delà de l\'horizon des événements !',
+        color: '#facc15',
+        glow: 'rgba(250, 204, 21, 0.9)',
         isSupreme: false
       };
-    } else if (score >= 70000) {
+    } else if (score >= 140000) {
       return {
-        rank: 'SUBA Y',
-        title: 'TRÈS BON SCORE • PILOTE D\'ÉLITE',
-        desc: t('rank_suba_y_desc', 'Maîtrise transcendante de l\'ascension et du tir tactique !'),
-        color: '#00f0ff',
-        glow: 'rgba(0, 240, 255, 0.8)',
+        rank: 'suba y su',
+        title: 'RANG MAÎTRE • PILOTE SUPÉRIEUR',
+        desc: 'Symbiose musicale et réflexes quantiques d\'élite.',
+        color: '#f97316',
+        glow: 'rgba(249, 115, 22, 0.85)',
         isSupreme: false
       };
-    } else if (score >= 35000) {
+    } else if (score >= 90000) {
       return {
-        rank: 'SUBA',
-        title: 'BON SCORE • CONFIRMÉ',
-        desc: t('rank_suba_desc', 'Belle endurance dans l\'abysse gravitationnel.'),
+        rank: 'suba y',
+        title: 'RANG VÉTÉRAN • AS DU MANCHE',
+        desc: 'Maîtrise impressionnante de la vitesse et de la pulvérisation au blaster.',
         color: '#a855f7',
-        glow: 'rgba(168, 85, 247, 0.7)',
+        glow: 'rgba(168, 85, 247, 0.8)',
+        isSupreme: false
+      };
+    } else if (score >= 50000) {
+      return {
+        rank: 'suba',
+        title: 'RANG CONFIRMÉ • PILOTE AGILE',
+        desc: 'Belle endurance dans l\'abysse gravitationnel.',
+        color: '#38bdf8',
+        glow: 'rgba(56, 189, 248, 0.75)',
+        isSupreme: false
+      };
+    } else if (score >= 20000) {
+      return {
+        rank: 'petit suba',
+        title: 'RANG INITIÉ • CADET',
+        desc: 'Bonne cadence d\'esquive, le voyage commence !',
+        color: '#4ade80',
+        glow: 'rgba(74, 222, 128, 0.7)',
         isSupreme: false
       };
     } else {
       return {
-        rank: 'SU',
-        title: 'SCORE STANDARD • APPRENTI',
-        desc: t('rank_su_desc', 'Premier contact avec le sillage de Nity. Visez 35 000 PTS pour débloquer SUBA !'),
+        rank: 'su',
+        title: 'RANG APPRENTI • PREMIER VOL',
+        desc: 'Premier contact avec le sillage d\'Infi. Atteignez 20 000 PTS pour passer petit suba !',
         color: '#94a3b8',
         glow: 'rgba(148, 163, 184, 0.5)',
         isSupreme: false
       };
     }
+  }
+
+  showDeathFlash() {
+    if (this.deathVignette) {
+      this.deathVignette.classList.remove('hidden');
+      this.deathVignette.classList.add('flash-death');
+      setTimeout(() => {
+        if (this.deathVignette) this.deathVignette.classList.remove('flash-death');
+      }, 1200);
+    }
+  }
+
+  unlockMuchLoveEasterEgg() {
+    this.isEasterEggUnlocked = true;
+    try {
+      localStorage.setItem('soundrise_easter_egg_much_love', 'true');
+    } catch (e) {}
+    if (this.userRankBadge) {
+      this.userRankBadge.textContent = 'MUCH LOVE LES HATERS';
+      this.userRankBadge.classList.add('badge-much-love');
+    }
+    if (this.audio && typeof this.audio.playSaiyanSmash === 'function') {
+      this.audio.playSaiyanSmash();
+    }
+    this.showClimaxAlert('💖 EASTER EGG DÉBLOQUÉ : RANG "MUCH LOVE LES HATERS" !', true);
+    setTimeout(() => { this.hideClimaxAlert(); }, 4200);
   }
 
   // --- GAME OVER & ANIMATION CINÉMATIQUE DE MORT ---

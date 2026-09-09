@@ -327,7 +327,7 @@ class GameApp {
     }
   }
 
-  // Séquence de chargement cinématique avec réacteur quantique et astuces de vol rotatives
+  // Séquence de chargement cinématique AA épurée avec réacteur quantique
   launchGameWithLoading(startCycleIndex = null, isMultiplayer = false) {
     if (this.isLoadingActive) return;
     this.isLoadingActive = true;
@@ -337,32 +337,27 @@ class GameApp {
       this.ui.showLoadingScreen();
     }
 
-    const tips = [
-      "ESQUIVE & LASER : Pressez [ESPACE] ou le bouton Blaster pour pulvériser les monolithes avant l'impact !",
-      "CŒURS D'ÉNERGIE : Récupérez les orbes lumineux pour restaurer instantanément la santé du vaisseau.",
-      "SYNCHRONISATION AUDIO : Les obstacles apparaissent en symbiose parfaite avec le tempo musical (BPM).",
-      "PORTAIL DIMENSIONNEL : Franchissez le portail à l'horizon pour basculer vers le cycle élémentaire suivant.",
-      "MULTIJOUEUR ÉQUITABLE : En arène multijoueur, tous les pilotes foncent à la même vitesse unifiée (306 km/h) !",
-      "FEINTE DU CLIMAX : Rapprochez-vous de Nity au Cycle 8 pour défier la singularité du trou noir."
-    ];
-
-    let currentTipIdx = Math.floor(Math.random() * tips.length);
-    if (this.ui) this.ui.updateLoadingTip(tips[currentTipIdx]);
-
-    const tipInterval = setInterval(() => {
-      currentTipIdx = (currentTipIdx + 1) % tips.length;
-      if (this.ui) this.ui.updateLoadingTip(tips[currentTipIdx]);
-    }, 600);
+    // Titre dynamique du cycle ou arène
+    const cycleTitleEl = document.getElementById('loading-cycle-title');
+    if (cycleTitleEl) {
+      if (isMultiplayer) {
+        cycleTitleEl.textContent = 'ARÈNE MULTIJOUEUR EN DIRECT';
+      } else {
+        const cIdx = startCycleIndex !== null ? startCycleIndex : (this.world ? this.world.currentCycleIndex : 0);
+        const cycleName = (this.world && this.world.cycle) ? this.world.cycle.name : `CYCLE ${cIdx + 1}`;
+        cycleTitleEl.textContent = `EXPÉDITION : ${cycleName.toUpperCase()}`;
+      }
+    }
 
     const stepTexts = [
-      "Initialisation du noyau quantique Infi...",
-      "Calibrage des propulseurs antimatière & synchronisation audio...",
-      "Génération procédurale des monolithes dimensionnels...",
-      "Vecteur de saut verrouillé ! Paré au décollage !"
+      "Synchronisation du flux quantique Infi...",
+      "Calibrage des propulseurs & acoustique dimensionnelle...",
+      "Génération procédurale du canyon...",
+      "Vecteur de vol verrouillé ! Paré au décollage !"
     ];
 
     const startTime = performance.now();
-    const duration = 1250; // Séquence rythmée et dynamique de 1.25s
+    const duration = 1100; // Séquence rythmée et fluide de 1.1s
 
     const updateLoading = (now) => {
       const elapsed = now - startTime;
@@ -380,7 +375,6 @@ class GameApp {
       if (progress < 100) {
         requestAnimationFrame(updateLoading);
       } else {
-        clearInterval(tipInterval);
         setTimeout(() => {
           if (this.ui) this.ui.hideLoadingScreen();
           this.isLoadingActive = false;
@@ -393,7 +387,7 @@ class GameApp {
             }
             this.startGame();
           }
-        }, 250);
+        }, 220);
       }
     };
 
@@ -1043,8 +1037,10 @@ class GameApp {
             if (this.ui) this.ui.updateDuelLives(0, this.multiplayer.opponentData.lives);
           }
         } else {
+          this.player.triggerCrash();
           this.state = this.STATE_DYING;
           this.audio.playCrash();
+          if (this.ui) this.ui.showDeathFlash();
         }
       }
 
@@ -1152,6 +1148,7 @@ class GameApp {
           this.audio.playCrash();
           this.triggerHaptic([60, 40, 100]);
           this.state = this.STATE_DYING;
+          if (this.ui) this.ui.showDeathFlash();
           return 'crash';
         }
         return false;
@@ -1403,6 +1400,14 @@ class GameApp {
     } else if (this.state === this.STATE_DYING) {
       // Dislocation d'Infi en particules
       this.player.update(dt, 0, 0, currentBpm, 0, this.audio);
+
+      // Ralenti cinématique, recul et secousses d'impact sur la caméra
+      const deathProgress = Math.min(1.0, this.player.dyingTimer / 1.3);
+      const camShake = Math.max(0, (1.0 - deathProgress)) * 0.32;
+      this.camera.position.x += (Math.random() - 0.5) * camShake;
+      this.camera.position.y += (Math.random() - 0.5) * camShake;
+      this.camera.position.z += 1.8 * dt;
+      this.camera.lookAt(this.player.group.position.x, this.player.group.position.y + 0.6, this.player.group.position.z);
 
       // Notification multijoueur immédiate en cas d'élimination
       if (this.isMultiplayerDuel && this.multiplayer && this.multiplayer.isDuelActive) {
