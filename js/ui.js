@@ -34,6 +34,7 @@ export class UIManager {
     if (this.auth) {
       this.updateAuthState(this.auth.getUser());
     }
+    this.applyLanguage();
   }
 
   cacheDOMElements() {
@@ -1046,12 +1047,15 @@ export class UIManager {
         this.hudDuelLivesBar.appendChild(this.duelLeadTag);
       }
       const d = Math.round(leadDelta);
-      if (d >= 0) {
+      if (d > 0) {
         this.duelLeadTag.className = 'duel-life-lead-tag lead';
-        this.duelLeadTag.textContent = `▲ +${d}M (EN TÊTE)`;
-      } else {
+        this.duelLeadTag.textContent = `▲ +${d}M (${t('rival_behind', 'VOUS MENEZ')})`;
+      } else if (d < 0) {
         this.duelLeadTag.className = 'duel-life-lead-tag behind';
-        this.duelLeadTag.textContent = `▼ ${d}M (RETARD)`;
+        this.duelLeadTag.textContent = `▼ ${d}M (${t('rival_leads', 'LE RIVAL MÈNE')})`;
+      } else {
+        this.duelLeadTag.className = 'duel-life-lead-tag lead';
+        this.duelLeadTag.textContent = `= 0M (${t('rival_tied', 'ÉGALITÉ PARFAITE')})`;
       }
     }
   }
@@ -1068,16 +1072,60 @@ export class UIManager {
 
   // Application dynamique de la langue active
   applyLanguage() {
-    // Bouton de lancement
-    if (this.btnPlayText && (!this.auth || this.auth.isGuest())) {
-      this.btnPlayText.textContent = t('start_flight') || 'DÉCOLLER';
+    // 1. Appliquer toutes les traductions statiques via le DOM (data-i18n)
+    i18n.applyToDOM();
+
+    // 2. Mettre à jour l'état actif des boutons drapeaux dans les paramètres
+    const currentLang = i18n.getLanguage();
+    if (this.langFlagButtons) {
+      this.langFlagButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === currentLang);
+      });
     }
-    const sensLabel = document.querySelector('label[for="slider-sensitivity"]');
-    if (sensLabel) sensLabel.textContent = t('sensitivity') || 'SENSIBILITÉ DE PILOTAGE';
-    const shakeLabel = document.querySelector('.settings-toggle-group .settings-label');
-    if (shakeLabel) shakeLabel.textContent = t('screen_shake') || 'SECOUSSES CAMÉRA (SCREEN SHAKE)';
-    const qualLabel = document.querySelector('.quality-selector-row')?.previousElementSibling;
-    if (qualLabel) qualLabel.textContent = t('graphics_quality') || 'QUALITÉ GRAPHIQUE';
+
+    // 3. Mettre à jour le bouton de lancement principal selon le statut du joueur
+    if (this.auth) {
+      const user = this.auth.getUser();
+      this.updateAuthState(user);
+    } else {
+      if (this.btnPlayText) this.btnPlayText.textContent = t('play_takeoff', 'DÉCOLLER');
+      if (this.btnPlaySub) this.btnPlaySub.textContent = t('menu_click_to_play', '[ VOL SOLO IMMÉDIAT • ESPACE OU CLIC ]');
+    }
+
+    // 4. Mettre à jour les cycles dans le menu et le HUD
+    if (this.currentCycle) {
+      this.updateMenuCycle(this.currentCycle);
+      this.updateCycleBadge(this.currentCycle);
+    }
+
+    // 5. Mettre à jour les options du sélecteur de cycle en multijoueur
+    if (this.selectRoomCycle && this.selectRoomCycle.options) {
+      for (let i = 0; i < this.selectRoomCycle.options.length; i++) {
+        const opt = this.selectRoomCycle.options[i];
+        const cycleIdx = parseInt(opt.value, 10);
+        const cycleId = cycleIdx + 1;
+        const cName = t(`cycle_${cycleId}_name`, `Cycle ${cycleId}`);
+        const cElem = t(`cycle_${cycleId}_element`, '');
+        const cColor = t(`cycle_${cycleId}_color`, '');
+        opt.textContent = `Cycle ${cycleId} • ${cName} (${cElem} / ${cColor})`;
+      }
+    }
+
+    // 6. Mettre à jour l'état audio dans le HUD
+    if (this.btnAudioToggle) {
+      this.setAudioState(this.btnAudioToggle.classList.contains('active'));
+    }
+
+    // 7. Mettre à jour l'état du blaster au repos
+    if (this.blasterHeatLabel && !this.isBlasterOverheated) {
+      this.blasterHeatLabel.textContent = t('blaster_ready', 'BLASTER PRÊT');
+    }
+
+    // 8. Mettre à jour les étiquettes de maintenance
+    if (this.system && this.maintenanceStatusLabel) {
+      const state = this.system.getMaintenanceState ? this.system.getMaintenanceState() : null;
+      this.updateMaintenanceLabel(state ? !!state.active : false);
+    }
   }
 
   // --- MISE À JOUR DE L'ÉTAT D'AUTHENTIFICATION & PROFIL ---
@@ -1107,17 +1155,17 @@ export class UIManager {
           this.btnPlayGame.classList.remove('locked', 'guest-mode');
         }
         if (this.btnPlayIcon) this.btnPlayIcon.textContent = '▶';
-        if (this.btnPlayText) this.btnPlayText.textContent = 'DÉCOLLER';
-        if (this.btnPlaySub) this.btnPlaySub.textContent = `[ CLASSEMENT ACTIF • @${pseudo} ]`;
+        if (this.btnPlayText) this.btnPlayText.textContent = t('play_takeoff', 'DÉCOLLER');
+        if (this.btnPlaySub) this.btnPlaySub.textContent = `[ ${t('menu_click_to_play', 'CLASSEMENT ACTIF')} • @${pseudo} ]`;
       } else {
-        if (this.userPseudoDisplay) this.userPseudoDisplay.textContent = 'Non défini';
+        if (this.userPseudoDisplay) this.userPseudoDisplay.textContent = t('pseudo_undefined', 'Non défini');
         if (this.btnPlayGame) {
           this.btnPlayGame.classList.add('locked');
           this.btnPlayGame.classList.remove('guest-mode');
         }
         if (this.btnPlayIcon) this.btnPlayIcon.textContent = '✍️';
-        if (this.btnPlayText) this.btnPlayText.textContent = 'CHOISIR MON PSEUDO';
-        if (this.btnPlaySub) this.btnPlaySub.textContent = '[ PSEUDO REQUIS POUR LE CLASSEMENT ]';
+        if (this.btnPlayText) this.btnPlayText.textContent = t('pseudo_btn_choose', 'CHOISIR MON PSEUDO');
+        if (this.btnPlaySub) this.btnPlaySub.textContent = t('pseudo_req_hint', '[ PSEUDO REQUIS POUR LE CLASSEMENT ]');
       }
 
       // Mettre à jour le résumé des scores personnels
@@ -1134,8 +1182,8 @@ export class UIManager {
         this.btnPlayGame.classList.add('guest-mode');
       }
       if (this.btnPlayIcon) this.btnPlayIcon.textContent = '▶';
-      if (this.btnPlayText) this.btnPlayText.textContent = 'DÉCOLLER';
-      if (this.btnPlaySub) this.btnPlaySub.textContent = '[ VOL SOLO IMMÉDIAT • ESPACE OU CLIC ]';
+      if (this.btnPlayText) this.btnPlayText.textContent = t('play_takeoff', 'DÉCOLLER');
+      if (this.btnPlaySub) this.btnPlaySub.textContent = t('menu_click_to_play', '[ VOL SOLO IMMÉDIAT • ESPACE OU CLIC ]');
     }
   }
 
@@ -1188,7 +1236,7 @@ export class UIManager {
     if (this.leaderboardModal) this.leaderboardModal.classList.remove('hidden');
 
     if (this.lbTableBody) {
-      this.lbTableBody.innerHTML = '<div class="lb-loading">Connexion au serveur cloud mondial en cours...</div>';
+      this.lbTableBody.innerHTML = `<div class="lb-loading">${t('lb_loading', 'Connexion au serveur cloud mondial en cours...')}</div>`;
     }
 
     await this.refreshLeaderboard();
@@ -1219,7 +1267,7 @@ export class UIManager {
     if (!this.lbTableBody) return;
 
     if (!scores || scores.length === 0) {
-      this.lbTableBody.innerHTML = '<div class="lb-loading">Aucun score enregistré pour l\'instant. Soyez le premier !</div>';
+      this.lbTableBody.innerHTML = `<div class="lb-loading">${t('lb_empty', 'Aucun score enregistré pour l\'instant. Soyez le premier !')}</div>`;
       return;
     }
 
@@ -1235,7 +1283,7 @@ export class UIManager {
 
       const isMyRow = user && (((user.googleUid || user.email) && (user.googleUid === entry.googleUid || user.email === entry.googleUid)) || user.pseudo === entry.pseudo);
       const rowClass = isMyRow ? 'lb-row my-row' : 'lb-row';
-      const youBadge = isMyRow ? ' <span style="color:#00f0ff;font-size:0.65rem;font-weight:900;">(VOUS)</span>' : '';
+      const youBadge = isMyRow ? ` <span style="color:#00f0ff;font-size:0.65rem;font-weight:900;">(${t('duel_you', 'VOUS')})</span>` : '';
 
       html += `
         <div class="${rowClass}">
@@ -1262,11 +1310,11 @@ export class UIManager {
       if (active) {
         this.btnAudioToggle.classList.add('active');
         if (this.audioIcon) this.audioIcon.textContent = '🔊';
-        if (this.audioLabel) this.audioLabel.textContent = 'SON ACTIVÉ';
+        if (this.audioLabel) this.audioLabel.textContent = t('audio_on', 'SON ACTIVÉ');
       } else {
         this.btnAudioToggle.classList.remove('active');
         if (this.audioIcon) this.audioIcon.textContent = '🔇';
-        if (this.audioLabel) this.audioLabel.textContent = 'SON COUPÉ';
+        if (this.audioLabel) this.audioLabel.textContent = t('audio_off', 'SON COUPÉ');
       }
     }
   }
@@ -1302,11 +1350,12 @@ export class UIManager {
     const pct = Math.max(0, Math.min(100, (heatRatio || 0) * 100));
     this.blasterHeatFill.style.width = `${pct}%`;
 
+    this.isBlasterOverheated = isOverheated;
     if (isOverheated) {
       this.blasterHeatFill.style.background = '#ef4444';
       this.blasterHeatFill.style.boxShadow = '0 0 12px #ef4444';
       if (this.blasterHeatLabel) {
-        this.blasterHeatLabel.textContent = '⚠️ SURCHAUFFE !';
+        this.blasterHeatLabel.textContent = `⚠️ ${t('blaster_overheat', 'SURCHAUFFE !')}`;
         this.blasterHeatLabel.style.color = '#ef4444';
         this.blasterHeatLabel.classList.add('pulse-alert');
       }
@@ -1322,7 +1371,7 @@ export class UIManager {
         this.blasterHeatFill.style.background = '#f59e0b';
         this.blasterHeatFill.style.boxShadow = '0 0 8px #f59e0b';
         if (this.blasterHeatLabel) {
-          this.blasterHeatLabel.textContent = 'TEMP ÉLEVÉE';
+          this.blasterHeatLabel.textContent = t('blaster_high_temp', 'TEMP ÉLEVÉE');
           this.blasterHeatLabel.style.color = '#f59e0b';
           this.blasterHeatLabel.classList.remove('pulse-alert');
         }
@@ -1336,7 +1385,7 @@ export class UIManager {
         this.blasterHeatFill.style.background = '#38bdf8';
         this.blasterHeatFill.style.boxShadow = '0 0 6px #38bdf8';
         if (this.blasterHeatLabel) {
-          this.blasterHeatLabel.textContent = 'CADENCE BLASTER';
+          this.blasterHeatLabel.textContent = t('blaster_cadence', 'CADENCE BLASTER');
           this.blasterHeatLabel.style.color = '#38bdf8';
           this.blasterHeatLabel.classList.remove('pulse-alert');
         }
@@ -1347,7 +1396,7 @@ export class UIManager {
         this.blasterHeatFill.style.background = '#00f0ff';
         this.blasterHeatFill.style.boxShadow = '0 0 6px #00f0ff';
         if (this.blasterHeatLabel) {
-          this.blasterHeatLabel.textContent = 'BLASTER PRÊT';
+          this.blasterHeatLabel.textContent = t('blaster_ready', 'BLASTER PRÊT');
           this.blasterHeatLabel.style.color = '#94a3b8';
           this.blasterHeatLabel.classList.remove('pulse-alert');
         }
@@ -1404,11 +1453,11 @@ export class UIManager {
   updateShield(hasShield, armorCount = 0) {
     if (this.hudShield) {
       if (hasShield) {
-        this.hudShield.textContent = `🛡️ ACTIF (${armorCount})`;
+        this.hudShield.textContent = `🛡️ ${t('hud_shield_active', 'ACTIF')} (${armorCount})`;
         this.hudShield.style.color = '#00f0ff';
         this.hudShield.style.textShadow = '0 0 12px rgba(0, 240, 255, 0.8)';
       } else {
-        this.hudShield.textContent = 'INACTIF';
+        this.hudShield.textContent = t('hud_shield_inactive', 'INACTIF');
         this.hudShield.style.color = '#64748b';
         this.hudShield.style.textShadow = 'none';
       }
@@ -1428,8 +1477,10 @@ export class UIManager {
   }
 
   updateCycleBadge(cycle) {
-    if (this.hudCycleName) {
-      this.hudCycleName.textContent = `CYCLE ${cycle.id} • ${cycle.name.toUpperCase()}`;
+    if (this.hudCycleName && cycle) {
+      this.currentCycle = cycle;
+      const cycleName = t(`cycle_${cycle.id}_name`, cycle.name).toUpperCase();
+      this.hudCycleName.textContent = `${t('cycle_badge', 'CYCLE {id}', { id: cycle.id })} • ${cycleName}`;
       const hex = `#${cycle.primary.toString(16).padStart(6, '0')}`;
       this.hudCycleName.style.borderColor = hex;
       this.hudCycleName.style.color = hex;
@@ -1437,14 +1488,17 @@ export class UIManager {
   }
 
   showCycleToast(cycle) {
-    if (!this.cycleToast) return;
+    if (!this.cycleToast || !cycle) return;
+    this.currentCycle = cycle;
 
+    const cycleName = t(`cycle_${cycle.id}_name`, cycle.name).toUpperCase();
+    const cycleSub = t(`cycle_${cycle.id}_sub`, cycle.subtitle || '');
     if (this.cycleToastTitle) {
-      this.cycleToastTitle.textContent = `CYCLE ${cycle.id} • ${cycle.name.toUpperCase()}`;
+      this.cycleToastTitle.textContent = `${t('cycle_badge', 'CYCLE {id}', { id: cycle.id })} • ${cycleName}`;
       this.cycleToastTitle.style.color = `#${cycle.primary.toString(16).padStart(6, '0')}`;
     }
     if (this.cycleToastDesc) {
-      this.cycleToastDesc.textContent = `${cycle.subtitle} — ${cycle.troll}`;
+      this.cycleToastDesc.textContent = `${cycleSub} — ${cycle.troll || ''}`;
     }
 
     const hex = `#${cycle.primary.toString(16).padStart(6, '0')}`;
@@ -1493,7 +1547,7 @@ export class UIManager {
       return {
         rank: 'MUCH LOVE',
         title: 'RANG SUPRÊME • LÉGENDE COSMIQUE',
-        desc: 'L\'amour absolu transcende l\'abysse et la folie de l\'espace-temps !',
+        desc: t('rank_much_love_desc', 'L\'amour absolu transcende l\'abysse et la folie de l\'espace-temps !'),
         color: '#ff2e93',
         glow: 'rgba(255, 46, 147, 0.95)',
         isSupreme: true
@@ -1502,7 +1556,7 @@ export class UIManager {
       return {
         rank: 'SUBA Y SU',
         title: 'LÉGENDAIRE / EXCEPTIONNEL',
-        desc: 'Traversée divine au-delà de l\'horizon des événements !',
+        desc: t('rank_suba_y_su_desc', 'Traversée divine au-delà de l\'horizon des événements !'),
         color: '#fef08a',
         glow: 'rgba(254, 240, 138, 0.9)',
         isSupreme: false
@@ -1511,7 +1565,7 @@ export class UIManager {
       return {
         rank: 'SUBA Y',
         title: 'TRÈS BON SCORE • PILOTE D\'ÉLITE',
-        desc: 'Maîtrise transcendante de l\'ascension et du tir tactique !',
+        desc: t('rank_suba_y_desc', 'Maîtrise transcendante de l\'ascension et du tir tactique !'),
         color: '#00f0ff',
         glow: 'rgba(0, 240, 255, 0.8)',
         isSupreme: false
@@ -1520,7 +1574,7 @@ export class UIManager {
       return {
         rank: 'SUBA',
         title: 'BON SCORE • CONFIRMÉ',
-        desc: 'Belle endurance dans l\'abysse gravitationnel.',
+        desc: t('rank_suba_desc', 'Belle endurance dans l\'abysse gravitationnel.'),
         color: '#a855f7',
         glow: 'rgba(168, 85, 247, 0.7)',
         isSupreme: false
@@ -1529,7 +1583,7 @@ export class UIManager {
       return {
         rank: 'SU',
         title: 'SCORE STANDARD • APPRENTI',
-        desc: 'Premier contact avec le sillage de Nity. Visez 35 000 PTS pour débloquer SUBA !',
+        desc: t('rank_su_desc', 'Premier contact avec le sillage de Nity. Visez 35 000 PTS pour débloquer SUBA !'),
         color: '#94a3b8',
         glow: 'rgba(148, 163, 184, 0.5)',
         isSupreme: false
@@ -1554,9 +1608,13 @@ export class UIManager {
     }
 
     if (this.deathReason) {
-      this.deathReason.textContent = reason === 'energy'
-        ? 'ÉNERGIE DU CŒUR ÉPUISÉE • SIGNAL ÉTEINT'
-        : 'IMPACT CRITIQUE • STRUCTURE DÉSINTÉGRÉE';
+      if (reason === 'energy') {
+        this.deathReason.textContent = t('death_energy', 'ÉNERGIE DU CŒUR ÉPUISÉE • SIGNAL ÉTEINT');
+      } else if (reason === 'abyss') {
+        this.deathReason.textContent = t('death_abyss', 'CHUTE DANS L\'ABYSSE GRAVITATIONNEL');
+      } else {
+        this.deathReason.textContent = t('death_collision', 'IMPACT CRITIQUE • STRUCTURE DÉSINTÉGRÉE');
+      }
     }
 
     // 2. Défilement odomètre dynamique pour les statistiques épurées (Distance & Score uniquement)
@@ -1586,8 +1644,8 @@ export class UIManager {
     if (worldRankResult) {
       this.updateGameOverWorldRank(worldRankResult);
     } else {
-      if (this.gameoverWorldStatus) this.gameoverWorldStatus.textContent = 'ENREGISTREMENT AU CLASSEMENT MONDIAL...';
-      if (this.gameoverWorldRankText) this.gameoverWorldRankText.textContent = 'Connexion au serveur cloud synchronisé...';
+      if (this.gameoverWorldStatus) this.gameoverWorldStatus.textContent = t('gw_saving', 'ENREGISTREMENT AU CLASSEMENT MONDIAL...');
+      if (this.gameoverWorldRankText) this.gameoverWorldRankText.textContent = t('gw_connecting', 'Connexion au serveur cloud synchronisé...');
     }
 
     if (this.gameOverModal) {
@@ -1620,11 +1678,11 @@ export class UIManager {
     if (result && result.rank) {
       if (this.gameoverWorldStatus) {
         this.gameoverWorldStatus.textContent = result.isNewRecord
-          ? '🏆 NOUVEAU RECORD PERSONNEL ENREGISTRÉ !'
-          : '✓ SCORE ENREGISTRÉ AU CLASSEMENT MONDIAL !';
+          ? t('gw_new_record', '🏆 NOUVEAU RECORD PERSONNEL ENREGISTRÉ !')
+          : t('gw_saved', '✓ SCORE ENREGISTRÉ AU CLASSEMENT MONDIAL !');
       }
       if (this.gameoverWorldRankText) {
-        this.gameoverWorldRankText.textContent = `Votre rang mondial : #${result.rank} sur ${result.totalPlayers || '--'} pilotes`;
+        this.gameoverWorldRankText.textContent = t('gw_saved_rank', 'Record cloud synchronisé ! Rang : #{rank}', { rank: result.rank });
       }
     }
   }
@@ -1671,13 +1729,15 @@ export class UIManager {
   }
 
   updateMenuCycle(cycle) {
+    if (!cycle) return;
+    this.currentCycle = cycle;
     const CYCLE_ICONS = {
       1: '🌊', 2: '🌍', 3: '🔥', 4: '⚡',
       5: '✨', 6: '🌑', 7: '🌪️', 8: '🌌'
     };
 
     if (this.menuCycleBadge) {
-      this.menuCycleBadge.textContent = `CYCLE ${cycle.id}`;
+      this.menuCycleBadge.textContent = t('cycle_badge', 'CYCLE {id}', { id: cycle.id });
       const hex = `#${cycle.primary.toString(16).padStart(6, '0')}`;
       this.menuCycleBadge.style.borderColor = hex;
       this.menuCycleBadge.style.color = hex;
@@ -1687,7 +1747,10 @@ export class UIManager {
       this.menuCycleIcon.textContent = CYCLE_ICONS[cycle.id] || '✨';
     }
     if (this.menuCycleTitle) {
-      this.menuCycleTitle.textContent = `${cycle.name.toUpperCase()} • ${cycle.colorName.toUpperCase()} (${cycle.element.toUpperCase()})`;
+      const cName = t(`cycle_${cycle.id}_name`, cycle.name).toUpperCase();
+      const cColor = t(`cycle_${cycle.id}_color`, cycle.colorName || '').toUpperCase();
+      const cElem = t(`cycle_${cycle.id}_element`, cycle.element || '').toUpperCase();
+      this.menuCycleTitle.textContent = `${cName} • ${cColor} (${cElem})`;
     }
   }
 
@@ -1812,7 +1875,7 @@ export class UIManager {
       this.mpRoomsList.innerHTML = `
         <div class="mp-empty-state">
           <span class="live-dot" style="display:inline-block;margin-right:6px;"></span>
-          Recherche des salons mondiaux en direct sur le cloud...
+          ${t('mp_searching_rooms', 'Recherche des salons mondiaux en direct sur le cloud...')}
         </div>
       `;
     }
@@ -1834,8 +1897,8 @@ export class UIManager {
     if (available.length === 0) {
       this.mpRoomsList.innerHTML = `
         <div class="mp-empty-state">
-          Aucun salon public disponible pour le moment.<br>
-          Créez le vôtre dans l'onglet « CRÉER UN SALON » ou partagez un code privé !
+          ${t('mp_no_rooms', 'Aucun salon public disponible pour le moment.')}<br>
+          ${t('mp_no_rooms_sub', 'Créez le vôtre dans l\'onglet « CRÉER UN SALON » ou partagez un code privé !')}
         </div>
       `;
       return;
@@ -1852,11 +1915,11 @@ export class UIManager {
           <img class="room-host-avatar" src="${avatarSrc}" alt="${r.host.pseudo}" />
           <div class="room-texts">
             <span class="room-name">${r.name}</span>
-            <span class="room-meta">Hôte: <strong>@${r.host.pseudo}</strong> &bull; Départ: ${cycleName}</span>
+            <span class="room-meta">${t('mp_role_host', 'Hôte')}: <strong>@${r.host.pseudo}</strong> &bull; ${t('mp_stat_start', 'Départ')}: ${cycleName}</span>
           </div>
         </div>
         <button class="btn-join-room" type="button" data-room-id="${r.roomId}">
-          REJOINDRE LE DUEL
+          ${t('mp_btn_join', 'REJOINDRE LE DUEL')}
         </button>
       `;
 
@@ -1912,10 +1975,10 @@ export class UIManager {
     }
     if (this.lobbyHostReady) {
       if (room.hostReady) {
-        this.lobbyHostReady.textContent = 'PRÊT !';
+        this.lobbyHostReady.textContent = t('mp_status_ready', 'PRÊT !');
         this.lobbyHostReady.className = 'lobby-ready-tag ready';
       } else {
-        this.lobbyHostReady.textContent = 'EN ATTENTE';
+        this.lobbyHostReady.textContent = t('mp_status_waiting', 'EN ATTENTE');
         this.lobbyHostReady.className = 'lobby-ready-tag not-ready';
       }
     }
@@ -1928,31 +1991,31 @@ export class UIManager {
       }
       if (this.lobbyGuestReady) {
         if (room.guestReady) {
-          this.lobbyGuestReady.textContent = 'PRÊT !';
+          this.lobbyGuestReady.textContent = t('mp_status_ready', 'PRÊT !');
           this.lobbyGuestReady.className = 'lobby-ready-tag ready';
         } else {
-          this.lobbyGuestReady.textContent = 'EN PRÉPARATION';
+          this.lobbyGuestReady.textContent = t('mp_status_waiting', 'EN PRÉPARATION');
           this.lobbyGuestReady.className = 'lobby-ready-tag not-ready';
         }
       }
       if (this.lobbyStatusText) {
         if (room.hostReady && room.guestReady) {
-          this.lobbyStatusText.textContent = 'Les 2 pilotes sont prêts ! Lancement du duel imminent !';
+          this.lobbyStatusText.textContent = t('mp_ready_imminent', 'Les 2 pilotes sont prêts ! Lancement du duel imminent !');
           this.lobbyStatusText.style.color = '#4ade80';
         } else {
-          this.lobbyStatusText.textContent = 'Adversaire connecté ! Cliquez sur « SE DÉCLARER PRÊT »';
+          this.lobbyStatusText.textContent = t('mp_peer_connected_ready_prompt', 'Adversaire connecté ! Cliquez sur « SE DÉCLARER PRÊT »');
           this.lobbyStatusText.style.color = '#facc15';
         }
       }
     } else {
-      if (this.lobbyGuestPseudo) this.lobbyGuestPseudo.textContent = 'En attente...';
+      if (this.lobbyGuestPseudo) this.lobbyGuestPseudo.textContent = t('mp_waiting_dots', 'En attente...');
       if (this.lobbyGuestAvatar) this.lobbyGuestAvatar.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=waiting&backgroundColor=020617';
       if (this.lobbyGuestReady) {
-        this.lobbyGuestReady.textContent = 'NON CONNECTÉ';
+        this.lobbyGuestReady.textContent = t('mp_status_disconnected', 'NON CONNECTÉ');
         this.lobbyGuestReady.className = 'lobby-ready-tag not-ready';
       }
       if (this.lobbyStatusText) {
-        this.lobbyStatusText.textContent = `Partagez le code [ ${room.roomId} ] pour inviter un ami ou attendez un joueur public.`;
+        this.lobbyStatusText.textContent = t('mp_share_code_hint', 'Partagez le code [ {code} ] pour inviter un ami ou attendez un joueur public.', { code: room.roomId });
         this.lobbyStatusText.style.color = '#94a3b8';
       }
     }
@@ -2020,18 +2083,18 @@ export class UIManager {
     }
 
     if (this.duelResultTitle) {
-      this.duelResultTitle.textContent = isWinner ? '🏆 VICTOIRE ÉCLATANTE !' : '💀 DÉFAITE HONORABLE !';
+      this.duelResultTitle.textContent = isWinner ? t('duel_victory', '🏆 VICTOIRE ÉCLATANTE !') : t('duel_defeat', '💀 DÉFAITE HONORABLE !');
       this.duelResultTitle.style.color = isWinner ? '#4ade80' : '#f87171';
     }
     if (this.duelResultReason) {
-      this.duelResultReason.textContent = result.reason || (isWinner ? 'Vous avez survécu le plus loin !' : 'Votre vaisseau a été neutralisé.');
+      this.duelResultReason.textContent = result.reason || (isWinner ? t('duel_reason_win', 'Vous avez survécu le plus loin !') : t('duel_reason_lose', 'Votre vaisseau a été neutralisé.'));
     }
 
     const myUser = this.auth ? this.auth.getUser() : null;
     const rivalUser = this.multiplayer ? this.multiplayer.opponentUser : null;
 
-    if (this.duelMyPseudo) this.duelMyPseudo.textContent = myUser ? `@${myUser.pseudo}` : '@VOUS';
-    if (this.duelRivalPseudo) this.duelRivalPseudo.textContent = rivalUser ? `@${rivalUser.pseudo}` : '@RIVAL';
+    if (this.duelMyPseudo) this.duelMyPseudo.textContent = myUser ? `@${myUser.pseudo}` : `@${t('duel_you', 'VOUS')}`;
+    if (this.duelRivalPseudo) this.duelRivalPseudo.textContent = rivalUser ? `@${rivalUser.pseudo}` : `@${t('duel_rival', 'RIVAL')}`;
 
     const myDist = window.gameApp ? Math.round(window.gameApp.distance) : 0;
     const myCycle = window.gameApp && window.gameApp.world ? window.gameApp.world.cycle.name : 'Cycle 1';
@@ -2110,10 +2173,10 @@ export class UIManager {
   updateMaintenanceLabel(active) {
     if (this.maintenanceStatusLabel) {
       if (active) {
-        this.maintenanceStatusLabel.textContent = '🔴 ACTIVÉ (EN COURS)';
+        this.maintenanceStatusLabel.textContent = t('founder_status_on', '🔴 ACTIVÉ');
         this.maintenanceStatusLabel.className = 'maintenance-status-on';
       } else {
-        this.maintenanceStatusLabel.textContent = '⚫ DÉSACTIVÉ';
+        this.maintenanceStatusLabel.textContent = t('founder_status_off', '⚫ DÉSACTIVÉ');
         this.maintenanceStatusLabel.className = 'maintenance-status-off';
       }
     }
@@ -2216,11 +2279,11 @@ export class UIManager {
     try {
       const accounts = this.auth.getRegisteredAccounts(user);
       if (this.founderUsersCount) {
-        this.founderUsersCount.textContent = `${accounts.length} compte${accounts.length > 1 ? 's' : ''} enregistré${accounts.length > 1 ? 's' : ''}`;
+        this.founderUsersCount.textContent = t('founder_users_count', '{count} compte(s) enregistré(s)', { count: accounts.length });
       }
 
       if (accounts.length === 0) {
-        this.founderUsersBody.innerHTML = '<div class="founder-empty">Aucun pilote enregistré pour le moment.</div>';
+        this.founderUsersBody.innerHTML = `<div class="founder-empty">${t('founder_no_users', 'Aucun pilote enregistré pour le moment.')}</div>`;
         return;
       }
 
@@ -2228,7 +2291,7 @@ export class UIManager {
       accounts.forEach((acc, idx) => {
         const isF = acc.role === 'FONDATEUR' || acc.isFounder || acc.email === 'maximenax05@gmail.com' || acc.pseudo === 'zanioxx_off';
         const roleClass = isF ? 'user-role-founder' : 'user-role-player';
-        const roleText = isF ? '👑 FONDATEUR' : 'Pilote';
+        const roleText = isF ? `👑 ${t('founder_role_founder', 'FONDATEUR')}` : t('founder_role_pilot', 'Pilote');
         const dateStr = acc.createdAt ? new Date(acc.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '--';
 
         html += `
@@ -2253,11 +2316,11 @@ export class UIManager {
     const logs = this.system.getLogs();
 
     if (this.founderLogsCount) {
-      this.founderLogsCount.textContent = `${logs.length} entrée${logs.length > 1 ? 's' : ''}`;
+      this.founderLogsCount.textContent = t('founder_logs_count', '{count} entrée(s)', { count: logs.length });
     }
 
     if (logs.length === 0) {
-      this.founderLogsConsole.innerHTML = '<div class="founder-empty">Aucun événement dans le journal système.</div>';
+      this.founderLogsConsole.innerHTML = `<div class="founder-empty">${t('founder_no_events', 'Aucun événement dans le journal système.')}</div>`;
       return;
     }
 

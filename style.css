@@ -4462,3 +4462,42 @@ html, body {
   letter-spacing: 1px;
   backdrop-filter: blur(8px);
 }
+
+/* ============================================================
+   SUPPORT RTL POUR LA LANGUE ARABE (dir="rtl")
+   ============================================================ */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .modal-close-corner {
+  right: auto;
+  left: 20px;
+}
+
+[dir="rtl"] .top-hud-strip {
+  direction: ltr;
+}
+
+[dir="rtl"] .speedometer-val,
+[dir="rtl"] .score-val,
+[dir="rtl"] .distance-val {
+  direction: ltr;
+  display: inline-block;
+}
+
+[dir="rtl"] .form-field input,
+[dir="rtl"] .form-group input {
+  text-align: right;
+}
+
+[dir="rtl"] .btn-play-icon {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .lb-medal-gold,
+[dir="rtl"] .lb-medal-silver,
+[dir="rtl"] .lb-medal-bronze {
+  display: inline-block;
+}
+

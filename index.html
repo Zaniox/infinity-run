@@ -59,15 +59,15 @@
       <div class="start-menu-card minimalist">
         <!-- Barre supérieure discrète : Marque & Statut Pilote -->
         <header class="menu-top-bar">
-          <div class="menu-brand-tag">// SOUNDRISE &bull; by zanioxx_off</div>
+          <div class="menu-brand-tag" data-i18n="brand">// SOUNDRISE &bull; by zanioxx_off</div>
           
           <!-- Pilule de profil / Authentification compacte -->
           <div id="menu-auth-section" class="menu-profile-pill">
             <!-- Non connecté (Mode Invité par défaut) -->
             <div id="auth-unlogged" class="profile-pill-content">
-              <span class="pill-status"><span class="guest-dot"></span> Invité</span>
-              <button id="btn-open-account-modal" class="btn-account-pill" type="button" title="Créer un compte ou se connecter">
-                <span>👤</span> <span>Compte</span>
+              <span class="pill-status"><span class="guest-dot"></span> <span data-i18n="guest">Invité</span></span>
+              <button id="btn-open-account-modal" class="btn-account-pill" type="button" data-i18n-title="account_btn">
+                <span>👤</span> <span data-i18n="account_btn">Compte</span>
               </button>
             </div>
 
@@ -80,9 +80,9 @@
                 <span id="user-name-display" class="hidden"></span>
                 <span id="user-best-stats" class="hidden"><span id="user-best-score"></span><span id="user-best-rank"></span></span>
               </div>
-              <button id="btn-open-account-profile" class="btn-pill-icon" type="button" title="Mon Compte Soundrise">👤</button>
-              <button id="btn-edit-pseudo" class="btn-pill-icon" type="button" title="Modifier le pseudo">✏️</button>
-              <button id="btn-logout" class="btn-pill-icon btn-pill-exit" type="button" title="Déconnexion">🚪</button>
+              <button id="btn-open-account-profile" class="btn-pill-icon" type="button" data-i18n-title="account_title">👤</button>
+              <button id="btn-edit-pseudo" class="btn-pill-icon" type="button" data-i18n-title="edit_pseudo_title">✏️</button>
+              <button id="btn-logout" class="btn-pill-icon btn-pill-exit" type="button" data-i18n-title="logout">🚪</button>
             </div>
           </div>
         </header>
@@ -90,51 +90,51 @@
         <!-- Titre & univers -->
         <div class="menu-hero">
           <h1 class="menu-title">INFINITY <span class="neon-title">RUN</span></h1>
-          <p class="menu-subtitle">ODYSSÉE GLIDER 3D &bull; 8 CYCLES ÉLÉMENTAIRES</p>
+          <p class="menu-subtitle" data-i18n="tagline">ODYSSÉE GLIDER 3D &bull; 8 CYCLES ÉLÉMENTAIRES</p>
         </div>
 
         <!-- Sélecteur de Cycle compact -->
         <div class="menu-cycle-bar">
-          <button id="menu-btn-prev" class="btn-cycle-nav" title="Cycle précédent">◄</button>
+          <button id="menu-btn-prev" class="btn-cycle-nav" data-i18n-title="prev_cycle">◄</button>
           <div id="menu-cycle-display" class="menu-cycle-tag">
             <span id="menu-cycle-icon" class="menu-cycle-emoji">🌊</span>
             <span id="menu-cycle-badge" class="cycle-pill">CYCLE 1</span>
             <span id="menu-cycle-title">CHUTE (EAU)</span>
           </div>
-          <button id="menu-btn-next" class="btn-cycle-nav" title="Cycle suivant">►</button>
+          <button id="menu-btn-next" class="btn-cycle-nav" data-i18n-title="next_cycle">►</button>
         </div>
 
         <!-- Bouton Principal DÉCOLLER (Solo direct en 1 clic) -->
         <button id="btn-play-game" class="btn-play-giant guest-mode" type="button">
           <div class="btn-shimmer"></div>
           <span id="btn-play-icon" class="btn-play-icon">▶</span>
-          <span id="btn-play-text" class="btn-play-text">DÉCOLLER</span>
-          <span id="btn-play-sub" class="btn-play-sub">[ VOL SOLO IMMÉDIAT &bull; ESPACE OU CLIC ]</span>
+          <span id="btn-play-text" class="btn-play-text" data-i18n="play_takeoff">DÉCOLLER</span>
+          <span id="btn-play-sub" class="btn-play-sub" data-i18n="play_sub_guest">[ VOL SOLO IMMÉDIAT &bull; ESPACE OU CLIC ]</span>
         </button>
 
         <!-- Barre des Actions Secondaires (Classement & Multijoueur 1v1) -->
         <div class="menu-secondary-row">
           <button id="btn-open-leaderboard" class="btn-secondary-pill" type="button">
             <span class="pill-btn-icon">🏆</span>
-            <span id="btn-lb-text">Classement Mondial</span>
+            <span id="btn-lb-text" data-i18n="menu_leaderboard">Classement Mondial</span>
           </button>
           <button id="btn-open-settings" class="btn-secondary-pill" type="button">
             <span class="pill-btn-icon">⚙️</span>
-            <span id="btn-settings-text">Paramètres</span>
+            <span id="btn-settings-text" data-i18n="menu_settings">Paramètres</span>
           </button>
           <button id="btn-open-multiplayer" class="btn-secondary-pill" type="button">
             <span class="pill-btn-icon">⚔️</span>
-            <span id="btn-mp-text">Duel 1 vs 1</span>
+            <span id="btn-mp-text" data-i18n="menu_multiplayer">Duel 1 vs 1</span>
           </button>
-          <button id="btn-open-founder-panel" class="btn-secondary-pill btn-founder-pill hidden" type="button" title="Panel Fondateur Officiel">
+          <button id="btn-open-founder-panel" class="btn-secondary-pill btn-founder-pill hidden" type="button" data-i18n-title="founder_official">
             <span class="pill-btn-icon">👑</span>
-            <span>Panel Fondateur</span>
+            <span data-i18n="founder_panel_btn">Panel Fondateur</span>
           </button>
         </div>
 
         <!-- Ligne d'aide au pilotage discrète -->
         <footer class="menu-footer-hint">
-          <span><strong>Q / D</strong> Virage &bull; <strong>Z / S</strong> Piquer/Cabrer &bull; <strong>ESPACE</strong> Blaster &bull; <strong>♥</strong> Cœurs</span>
+          <span data-i18n="menu_controls_hint"><strong>Q / D</strong> Virage &bull; <strong>Z / S</strong> Piquer/Cabrer &bull; <strong>ESPACE</strong> Blaster &bull; <strong>♥</strong> Cœurs</span>
         </footer>
       </div>
     </div>
@@ -143,15 +143,15 @@
     <div id="hud-overlay" class="hud-overlay hidden">
       <!-- Notification d'accueil temporaire -->
       <div id="intro-hint" class="intro-hint">
-        <span class="intro-title">// NITY EST DANS LE TROU NOIR &bull; PLONGEZ DANS L'HORIZON</span>
-        <span class="intro-sub">VOL GLIDER &bull; [ESPACE] POUR TIRER AU BLASTER &bull; CŒURS VITAUX</span>
+        <span class="intro-title" data-i18n="intro_title">// NITY EST DANS LE TROU NOIR &bull; PLONGEZ DANS L'HORIZON</span>
+        <span class="intro-sub" data-i18n="intro_sub">VOL GLIDER &bull; [ESPACE] POUR TIRER AU BLASTER &bull; CŒURS VITAUX</span>
       </div>
 
       
         <!-- Affichage 1v1 à 3 Vies -->
         <div id="hud-duel-lives-bar" class="hud-duel-lives-bar hidden">
           <div class="duel-life-pill my-lives">
-            <span class="duel-life-label">VOS VIES</span>
+            <span class="duel-life-label" data-i18n="hud_your_lives">VOS VIES</span>
             <span id="my-lives-display" class="duel-life-hearts">❤️❤️❤️</span>
           </div>
           <div class="duel-life-pill rival-lives">
@@ -175,7 +175,7 @@
           <div class="blaster-heat-track">
             <div id="blaster-heat-fill" class="blaster-heat-fill"></div>
           </div>
-          <span id="blaster-heat-label" class="blaster-heat-label">BLASTER PRÊT</span>
+          <span id="blaster-heat-label" class="blaster-heat-label" data-i18n="blaster_ready">BLASTER PRÊT</span>
         </div>
       </div>
 
@@ -184,9 +184,9 @@
           <h1 class="hud-title">// SOUNDRISE <span class="neon-title">: INFINITY RUN</span></h1>
           <!-- Sélecteur des 8 Cycles d'OodaïSound -->
           <div class="hud-cycle-selector">
-            <button id="btn-prev-cycle" class="btn-cycle-nav" title="Cycle précédent">◄</button>
+            <button id="btn-prev-cycle" class="btn-cycle-nav" data-i18n-title="prev_cycle">◄</button>
             <div id="hud-cycle-name" class="cycle-tag">CYCLE 1 &bull; CHUTE</div>
-            <button id="btn-next-cycle" class="btn-cycle-nav" title="Cycle suivant">►</button>
+            <button id="btn-next-cycle" class="btn-cycle-nav" data-i18n-title="next_cycle">►</button>
           </div>
         </div>
 
@@ -194,13 +194,13 @@
           <!-- Contrôle Audio -->
           <button id="btn-audio-toggle" class="btn-audio">
             <span id="audio-icon">🔊</span>
-            <span id="audio-label">SON ACTIVÉ</span>
+            <span id="audio-label" data-i18n="audio_on">SON ACTIVÉ</span>
           </button>
 
           <!-- Jauge d'Énergie Vitale du Cœur -->
           <div class="hud-heart-gauge">
             <div class="gauge-label">
-              <span class="heart-icon">♥</span> ÉNERGIE VITALE
+              <span class="heart-icon">♥</span> <span data-i18n="hud_vital_energy">ÉNERGIE VITALE</span>
             </div>
             <div class="gauge-bar">
               <div id="heart-energy-fill" class="gauge-fill"></div>
@@ -211,8 +211,8 @@
 
       <!-- Bannière & Compte à Rebours SAYANFINITY (Super Saiyan 20s) -->
       <div id="sayanfinity-banner" class="sayanfinity-banner hidden">
-        <div class="sayan-badge">⚡ MODE PURITY ACTIVÉ &bull; INVULNÉRABILITÉ</div>
-        <div class="sayan-title">PURITY EN COURS !</div>
+        <div class="sayan-badge" data-i18n="purity_active_badge">⚡ MODE PURITY ACTIVÉ &bull; INVULNÉRABILITÉ</div>
+        <div class="sayan-title" data-i18n="purity_active_title">PURITY EN COURS !</div>
         <div class="sayan-timer-box">
           <div id="sayan-timer-bar" class="sayan-timer-fill"></div>
         </div>
@@ -221,15 +221,15 @@
 
       <!-- Toast / Bannière de Transition de Cycle (Glide) -->
       <div id="cycle-toast" class="cycle-toast hidden">
-        <div class="cycle-toast-header">PROGRESSION DE L'ALBUM &bull; GLIDE FLUIDE</div>
+        <div class="cycle-toast-header" data-i18n="cycle_progress">PROGRESSION DE L'ALBUM &bull; GLIDE FLUIDE</div>
         <h2 id="cycle-toast-title" class="cycle-toast-title">CYCLE 1 &bull; CHUTE</h2>
         <p id="cycle-toast-desc" class="cycle-toast-desc">Gravité / Abysse</p>
       </div>
 
       <!-- Alerte Climax Cycle 8 & Feinte Cosmique -->
       <div id="climax-alert" class="climax-alert hidden">
-        <div class="climax-badge">// DISTORSION DE L'HORIZON</div>
-        <div id="climax-title" class="climax-title">RATTRAPAGE DE NITY EN COURS...</div>
+        <div class="climax-badge" data-i18n="climax_badge">// DISTORSION DE L'HORIZON</div>
+        <div id="climax-title" class="climax-title" data-i18n="climax_title">RATTRAPAGE DE NITY EN COURS...</div>
       </div>
 
       <!-- Barre de Vies Duel 1v1 (3 vies par pilote) -->
@@ -239,7 +239,7 @@
           <span id="my-lives-display" class="duel-life-hearts">❤️❤️❤️</span>
         </div>
         <div class="duel-life-pill rival-lives">
-          <span class="duel-life-label" id="rival-lives-label">RIVAL</span>
+          <span class="duel-life-label" id="rival-lives-label" data-i18n="hud_rival_lives">RIVAL</span>
           <span id="rival-lives-display" class="duel-life-hearts">❤️❤️❤️</span>
         </div>
       </div>
@@ -247,36 +247,36 @@
       <!-- Télémétrie de vol -->
       <aside class="hud-telemetry">
         <div class="telemetry-item">
-          <span class="telemetry-tag">BOUCLE TEMPORELLE</span>
+          <span class="telemetry-tag" data-i18n="hud_time_loop">BOUCLE TEMPORELLE</span>
           <span id="hud-loop" class="telemetry-value highlight-loop">∞ 1</span>
         </div>
         <div class="telemetry-item">
-          <span class="telemetry-tag">DISTANCE</span>
+          <span class="telemetry-tag" data-i18n="hud_distance">DISTANCE</span>
           <span id="hud-distance" class="telemetry-value">0 M</span>
         </div>
         <div class="telemetry-item">
-          <span class="telemetry-tag">VITESSE</span>
+          <span class="telemetry-tag" data-i18n="hud_speed">VITESSE</span>
           <span id="hud-speed" class="telemetry-value">245 KM/H</span>
         </div>
         <div class="telemetry-item">
-          <span class="telemetry-tag">SCORE EN DIRECT</span>
+          <span class="telemetry-tag" data-i18n="hud_live_score">SCORE EN DIRECT</span>
           <span id="hud-score" class="telemetry-value highlight-score">0 PTS</span>
         </div>
         <div class="telemetry-item">
-          <span class="telemetry-tag">OBSTACLES BROYÉS</span>
+          <span class="telemetry-tag" data-i18n="hud_destroyed">OBSTACLES BROYÉS</span>
           <span id="hud-destroyed" class="telemetry-value highlight-destroyed">💥 0</span>
         </div>
         <div class="telemetry-item">
-          <span class="telemetry-tag">BOUCLIER ARMURE</span>
+          <span class="telemetry-tag" data-i18n="hud_shield">BOUCLIER ARMURE</span>
           <span id="hud-shield" class="telemetry-value highlight-shield">INACTIF</span>
         </div>
         <div class="telemetry-item">
-          <span class="telemetry-tag">CŒURS</span>
+          <span class="telemetry-tag" data-i18n="hud_hearts">CŒURS</span>
           <span id="hud-hearts" class="telemetry-value highlight-heart">♥ 0</span>
         </div>
         <div class="telemetry-item">
-          <span class="telemetry-tag">CIBLE HORIZON</span>
-          <span class="telemetry-target">NITY &bull; TROU NOIR</span>
+          <span class="telemetry-tag" data-i18n="hud_target">CIBLE HORIZON</span>
+          <span class="telemetry-target" data-i18n="hud_target_val">NITY &bull; TROU NOIR</span>
         </div>
       </aside>
 
@@ -298,7 +298,7 @@
       </div>
 
       <footer class="hud-footer">
-        <div class="hud-controls-hint">
+        <div class="hud-controls-hint" data-i18n="hud_controls_hint">
           [Q] [D] Virage &bull; [Z] [S] Cabrer/Piquer &bull; <strong>[ESPACE] / [CLIC] Tir Laser Star Fox</strong> &bull; 🛡️ Armure &bull; ⚡ Purity &bull; 🧲 <strong>Objets Magnétiques</strong>
         </div>
       </footer>
@@ -308,24 +308,24 @@
     <div id="game-over-modal" class="modal-overlay hidden">
       <div class="modal-card game-over-card">
         <div class="modal-top-bar"></div>
-        <div class="modal-badge">// SIGNAL ROMPU</div>
-        <h2 class="modal-title">HORIZON DES ÉVÉNEMENTS</h2>
-        <div id="death-reason" class="modal-reason">IMPACT CRITIQUE &bull; STRUCTURE DÉSINTÉGRÉE</div>
+        <div class="modal-badge" data-i18n="gameover_badge">// SIGNAL ROMPU</div>
+        <h2 class="modal-title" data-i18n="gameover_title">HORIZON DES ÉVÉNEMENTS</h2>
+        <div id="death-reason" class="modal-reason" data-i18n="death_collision">IMPACT CRITIQUE &bull; STRUCTURE DÉSINTÉGRÉE</div>
 
         <div class="modal-stats-hero">
           <div class="stat-hero-col">
-            <span class="stat-label">DISTANCE</span>
+            <span class="stat-label" data-i18n="stat_distance">DISTANCE</span>
             <span id="final-distance" class="stat-hero-val">0 M</span>
           </div>
           <div class="stat-hero-col">
-            <span class="stat-label">SCORE TOTAL</span>
+            <span class="stat-label" data-i18n="stat_total_score">SCORE TOTAL</span>
             <span id="final-score" class="stat-hero-val highlight-score">0 PTS</span>
           </div>
         </div>
 
         <!-- Système de Rangs Officiel SUBA -->
         <div class="modal-rank-container">
-          <span class="rank-label">RANG OFFICIEL ATTEINT</span>
+          <span class="rank-label" data-i18n="stat_official_rank">RANG OFFICIEL ATTEINT</span>
           <div id="final-rank-badge" class="rank-badge">SUBA</div>
           <div id="final-score" class="rank-score">0 PTS</div>
           <div id="final-rank-sub" class="rank-sub">BON SCORE — Belle endurance dans l'abysse gravitationnel.</div>
@@ -336,18 +336,18 @@
           <div class="gw-status">
             <span class="gw-icon">🌐</span>
             <div class="gw-text">
-              <strong id="gameover-world-status">ENREGISTREMENT AU CLASSEMENT MONDIAL...</strong>
-              <span id="gameover-world-rank-text">Connexion au serveur cloud...</span>
+              <strong id="gameover-world-status" data-i18n="gw_saving">ENREGISTREMENT AU CLASSEMENT MONDIAL...</strong>
+              <span id="gameover-world-rank-text" data-i18n="gw_connecting">Connexion au serveur cloud...</span>
             </div>
           </div>
-          <button id="btn-gameover-leaderboard" class="btn-lb-mini" type="button">
+          <button id="btn-gameover-leaderboard" class="btn-lb-mini" type="button" data-i18n="gw_view_lb">
             🏆 VOIR LE CLASSEMENT MONDIAL
           </button>
         </div>
 
         <button id="btn-restart" class="btn-restart">
-          <span class="btn-restart-text">REPRENDRE LA TRAVERSÉE</span>
-          <span class="btn-restart-sub">[ ESPACE ou ENTRÉE ]</span>
+          <span class="btn-restart-text" data-i18n="btn_restart_game">REPRENDRE LA TRAVERSÉE</span>
+          <span class="btn-restart-sub" data-i18n="btn_restart_sub">[ ESPACE ou ENTRÉE ]</span>
         </button>
       </div>
     </div>
@@ -357,29 +357,29 @@
       <div class="modal-card pause-card">
         <div class="modal-top-bar"></div>
         <div class="modal-badge">// SOUNDRISE &bull; by zanioxx_off</div>
-        <h2 class="modal-title">MISSION EN PAUSE</h2>
-        <p class="modal-instruction">Traversée suspendue &bull; Respirez et reprenez la course quand vous le souhaitez.</p>
+        <h2 class="modal-title" data-i18n="pause_title">MISSION EN PAUSE</h2>
+        <p class="modal-instruction" data-i18n="pause_instruction">Traversée suspendue &bull; Respirez et reprenez la course quand vous le souhaitez.</p>
 
         <div class="pause-actions">
           <button id="btn-pause-resume" class="btn-play-giant btn-pause-resume" type="button">
             <div class="btn-shimmer"></div>
             <span class="btn-play-icon">▶</span>
-            <span class="btn-play-text">REPRENDRE</span>
-            <span class="btn-play-sub">[ ÉCHAP OU CLIC ]</span>
+            <span class="btn-play-text" data-i18n="pause_resume">REPRENDRE</span>
+            <span class="btn-play-sub" data-i18n="pause_sub">[ ÉCHAP OU CLIC ]</span>
           </button>
 
           <div class="pause-sub-buttons">
-            <button id="btn-pause-restart" class="btn-menu-action" type="button">
+            <button id="btn-pause-restart" class="btn-menu-action" type="button" data-i18n="pause_restart">
               🔄 Recommencer
             </button>
             <button id="btn-pause-settings" class="btn-menu-action" type="button">
               <span class="menu-action-icon">⚙️</span>
-              <span class="menu-action-text">PARAMÈTRES DU JEU</span>
+              <span class="menu-action-text" data-i18n="pause_settings">PARAMÈTRES DU JEU</span>
             </button>
-            <button id="btn-pause-audio" class="btn-menu-action" type="button">
+            <button id="btn-pause-audio" class="btn-menu-action" type="button" data-i18n="pause_audio_on">
               🔊 Son : Activé
             </button>
-            <button id="btn-pause-menu" class="btn-menu-action" type="button">
+            <button id="btn-pause-menu" class="btn-menu-action" type="button" data-i18n="pause_menu">
               🚪 Menu Principal
             </button>
           </div>
@@ -394,7 +394,7 @@
         <div id="touch-joystick-base" class="touch-joystick-base hidden">
           <div id="touch-joystick-knob" class="touch-joystick-knob"></div>
         </div>
-        <div class="touch-hint-pill">GLISSEZ POUR PILOTER &bull; DOUBLE-TOUCHER POUR BOOST</div>
+        <div class="touch-hint-pill" data-i18n="touch_hint">GLISSEZ POUR PILOTER &bull; DOUBLE-TOUCHER POUR BOOST</div>
       </div>
 
       <!-- Bouton Pause mobile en haut à droite -->
@@ -406,17 +406,17 @@
       <div class="mobile-action-buttons">
         <button id="btn-mobile-boost" class="btn-touch-action btn-touch-boost" type="button">
           ⚡
-          <span class="touch-action-label">BOOST</span>
+          <span class="touch-action-label" data-i18n="touch_boost">BOOST</span>
         </button>
         <button id="btn-mobile-fire" class="btn-touch-action btn-touch-fire" type="button">
           🔫
-          <span class="touch-action-label">BLASTER</span>
+          <span class="touch-action-label" data-i18n="touch_blaster">BLASTER</span>
         </button>
       </div>
 
       <!-- Bannière conseil rotation paysage sur mobile -->
       <div id="mobile-portrait-banner" class="mobile-portrait-banner hidden">
-        <span>🔄 Pivotez en paysage pour une vision panoramique</span>
+        <span data-i18n="mobile_portrait_tip">🔄 Pivotez en paysage pour une vision panoramique</span>
         <button id="btn-dismiss-portrait" class="btn-dismiss-portrait" type="button">✕</button>
       </div>
     </div>
@@ -425,9 +425,9 @@
     <div id="pseudo-modal" class="modal-overlay hidden">
       <div class="modal-card pseudo-card">
         <div class="modal-top-bar"></div>
-        <div class="modal-badge">// ENREGISTREMENT OFFICIEL PILOTE</div>
-        <h2 class="modal-title">CHOISIS TON PSEUDO</h2>
-        <p class="modal-instruction">
+        <div class="modal-badge" data-i18n="pseudo_badge">// ENREGISTREMENT OFFICIEL PILOTE</div>
+        <h2 class="modal-title" data-i18n="pseudo_title">CHOISIS TON PSEUDO</h2>
+        <p class="modal-instruction" data-i18n="pseudo_instruction">
           Ce pseudo sera inscrit en temps réel dans le <strong>Classement Mondial</strong>.
         </p>
 
@@ -442,14 +442,14 @@
         <form id="form-pseudo" class="form-pseudo" onsubmit="return false;">
           <div class="pseudo-input-group">
             <span class="pseudo-prefix">@</span>
-            <input id="input-player-pseudo" type="text" maxlength="18" placeholder="Ex: InfiMaster, NovaRunner..." autocomplete="off" />
+            <input id="input-player-pseudo" type="text" maxlength="18" placeholder="Ex: InfiMaster, NovaRunner..." data-i18n-placeholder="pseudo_ph" autocomplete="off" />
           </div>
           <div id="pseudo-error-msg" class="pseudo-error-msg hidden"></div>
 
           <button id="btn-confirm-pseudo" class="btn-play-giant btn-pseudo-confirm" type="submit">
             <div class="btn-shimmer"></div>
-            <span class="btn-play-text">VALIDER MON PSEUDO & DÉCOLLER</span>
-            <span class="btn-play-sub">[ ENREGISTREMENT AU CLASSEMENT MONDIAL ]</span>
+            <span class="btn-play-text" data-i18n="pseudo_btn_confirm">VALIDER MON PSEUDO & DÉCOLLER</span>
+            <span class="btn-play-sub" data-i18n="pseudo_btn_sub">[ ENREGISTREMENT AU CLASSEMENT MONDIAL ]</span>
           </button>
         </form>
       </div>
@@ -462,11 +462,11 @@
         <button id="btn-close-leaderboard" class="modal-close-corner" type="button" title="Fermer">✖</button>
 
         <div class="lb-header">
-          <div class="modal-badge">// SOUNDRISE WORLD CHAMPIONSHIP</div>
-          <h2 class="modal-title">🏆 CLASSEMENT MONDIAL</h2>
+          <div class="modal-badge" data-i18n="lb_badge">// SOUNDRISE WORLD CHAMPIONSHIP</div>
+          <h2 class="modal-title" data-i18n="lb_title">🏆 CLASSEMENT MONDIAL</h2>
           <div class="lb-live-status">
             <span class="live-dot"></span>
-            <span>SERVEUR CLOUD EN DIRECT &bull; SYNCHRONISÉ MONDIALEMENT</span>
+            <span data-i18n="lb_live_status">SERVEUR CLOUD EN DIRECT &bull; SYNCHRONISÉ MONDIALEMENT</span>
           </div>
         </div>
 
@@ -476,14 +476,14 @@
             <img id="lb-my-avatar" class="lb-my-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=pilot&backgroundColor=020617" alt="Avatar" />
           </div>
           <div class="lb-player-details">
-            <span class="lb-my-title">VOTRE RECORD PERSONNEL</span>
+            <span class="lb-my-title" data-i18n="lb_my_record">VOTRE RECORD PERSONNEL</span>
             <div class="lb-my-main-info">
               <strong id="lb-my-pseudo" class="lb-my-pseudo">--</strong>
               <span class="lb-my-rank-badge">RANG MONDIAL : <strong id="lb-my-rank">#--</strong></span>
             </div>
           </div>
           <div class="lb-my-score-box">
-            <span class="lb-score-label">MEILLEUR SCORE</span>
+            <span class="lb-score-label" data-i18n="lb_best_score">MEILLEUR SCORE</span>
             <strong id="lb-my-score" class="lb-score-num">0 PTS</strong>
           </div>
         </div>
@@ -491,25 +491,25 @@
         <!-- Tableau des scores mondiaux scrollable -->
         <div class="lb-table-container">
           <div class="lb-table-header">
-            <span class="col-rank">RANG</span>
-            <span class="col-pilot">PILOTE</span>
-            <span class="col-score">SCORE</span>
-            <span class="col-distance">DISTANCE</span>
-            <span class="col-speed">VITESSE</span>
-            <span class="col-cycle">CYCLE</span>
-            <span class="col-date">DATE</span>
+            <span class="col-rank" data-i18n="col_rank">RANG</span>
+            <span class="col-pilot" data-i18n="col_pilot">PILOTE</span>
+            <span class="col-score" data-i18n="col_score">SCORE</span>
+            <span class="col-distance" data-i18n="col_distance">DISTANCE</span>
+            <span class="col-speed" data-i18n="col_speed">VITESSE</span>
+            <span class="col-cycle" data-i18n="col_cycle">CYCLE</span>
+            <span class="col-date" data-i18n="col_date">DATE</span>
           </div>
           <div id="lb-table-body" class="lb-table-body">
-            <div class="lb-loading">Chargement des records mondiaux en cours...</div>
+            <div class="lb-loading" data-i18n="lb_loading">Chargement des records mondiaux en cours...</div>
           </div>
         </div>
 
         <!-- Pied du modal avec actions -->
         <div class="lb-footer">
           <button id="btn-refresh-leaderboard" class="btn-lb-action" type="button">
-            <span>🔄</span> <span>ACTUALISER EN DIRECT</span>
+            <span>🔄</span> <span data-i18n="lb_btn_refresh">ACTUALISER EN DIRECT</span>
           </button>
-          <button id="btn-dismiss-leaderboard" class="btn-lb-action btn-lb-close" type="button">
+          <button id="btn-dismiss-leaderboard" class="btn-lb-action btn-lb-close" type="button" data-i18n="btn_close">
             FERMER
           </button>
         </div>
@@ -521,23 +521,23 @@
       <div class="modal-card troll-card">
         <div class="modal-top-bar"></div>
         <div class="troll-emoji">😈 🌌 🕳️</div>
-        <h2 class="modal-title troll-title">TU CROYAIS ÉCHAPPER À INFINITY ?</h2>
-        <p class="troll-punchline">Nity a été aspirée par la singularité cosmique !</p>
+        <h2 class="modal-title troll-title" data-i18n="troll_title">TU CROYAIS ÉCHAPPER À INFINITY ?</h2>
+        <p class="troll-punchline" data-i18n="troll_punchline">Nity a été aspirée par la singularité cosmique !</p>
 
         <div class="troll-stats-grid">
           <div class="troll-pill">
-            <span class="troll-pill-label">PROCHAINE BOUCLE</span>
+            <span class="troll-pill-label" data-i18n="troll_next_loop">PROCHAINE BOUCLE</span>
             <span id="troll-loop-val" class="troll-pill-val highlight-loop">BOUCLE ∞ 2</span>
           </div>
           <div class="troll-pill">
-            <span class="troll-pill-label">MODIFICATEUR</span>
+            <span class="troll-pill-label" data-i18n="troll_modifier">MODIFICATEUR</span>
             <span class="troll-pill-val text-boost">⚡ VITESSE +20%</span>
           </div>
         </div>
 
         <button id="btn-troll-continue" class="btn-restart btn-troll-cta">
-          <span class="btn-restart-text">RECOMMENCER LA BOUCLE</span>
-          <span class="btn-restart-sub">[ ESPACE OU CLIC ]</span>
+          <span class="btn-restart-text" data-i18n="troll_btn_restart">RECOMMENCER LA BOUCLE</span>
+          <span class="btn-restart-sub" data-i18n="troll_btn_sub">[ ESPACE OU CLIC ]</span>
         </button>
       </div>
     </div>
@@ -549,28 +549,28 @@
         <button id="btn-close-multiplayer" class="modal-close-corner" type="button" title="Fermer">✖</button>
 
         <div class="mp-header">
-          <div class="modal-badge">// SOUNDRISE ARENA &bull; DUEL 1V1 SYNCHRONISÉ</div>
-          <h2 class="modal-title">⚔️ DUEL MULTIJOUEUR EN DIRECT</h2>
-          <p class="modal-instruction">
+          <div class="modal-badge" data-i18n="mp_badge">// SOUNDRISE ARENA &bull; DUEL 1V1 SYNCHRONISÉ</div>
+          <h2 class="modal-title" data-i18n="mp_title">⚔️ DUEL MULTIJOUEUR EN DIRECT</h2>
+          <p class="modal-instruction" data-i18n="mp_instruction">
             Affrontez un autre pilote en temps réel sur le même circuit et à la même vitesse : celui qui survit le plus loin et franchit le plus de cycles l'emporte !
           </p>
         </div>
 
         <!-- Navigation par Onglets (visible hors lobby) -->
         <div id="mp-tabs-nav" class="mp-tabs-nav">
-          <button id="tab-btn-rooms" class="mp-tab-btn active" type="button">🌐 SALONS PUBLICS</button>
-          <button id="tab-btn-create" class="mp-tab-btn" type="button">➕ CRÉER UN SALON</button>
-          <button id="tab-btn-code" class="mp-tab-btn" type="button">🔑 REJOINDRE PAR CODE</button>
+          <button id="tab-btn-rooms" class="mp-tab-btn active" type="button" data-i18n="mp_tab_rooms">🌐 SALONS PUBLICS</button>
+          <button id="tab-btn-create" class="mp-tab-btn" type="button" data-i18n="mp_tab_create">➕ CRÉER UN SALON</button>
+          <button id="tab-btn-code" class="mp-tab-btn" type="button" data-i18n="mp_tab_code">🔑 REJOINDRE PAR CODE</button>
         </div>
 
         <!-- Onglet 1 : Salons Publics -->
         <div id="mp-view-rooms" class="mp-tab-view">
           <div class="mp-rooms-toolbar">
-            <span class="mp-rooms-count">SALONS DISPONIBLES EN DIRECT</span>
-            <button id="btn-refresh-rooms" class="btn-mp-mini" type="button">🔄 ACTUALISER</button>
+            <span class="mp-rooms-count" data-i18n="mp_rooms_count">SALONS DISPONIBLES EN DIRECT</span>
+            <button id="btn-refresh-rooms" class="btn-mp-mini" type="button" data-i18n="mp_btn_refresh">🔄 ACTUALISER</button>
           </div>
           <div id="mp-rooms-list" class="mp-rooms-list">
-            <div class="mp-empty-state">Recherche des salons en cours...</div>
+            <div class="mp-empty-state" data-i18n="mp_searching_rooms">Recherche des salons en cours...</div>
           </div>
         </div>
 
@@ -578,11 +578,11 @@
         <div id="mp-view-create" class="mp-tab-view hidden">
           <form id="form-create-room" class="form-create-room" onsubmit="return false;">
             <div class="form-field">
-              <label for="input-room-name">NOM DU SALON</label>
+              <label for="input-room-name" data-i18n="mp_label_room_name">NOM DU SALON</label>
               <input id="input-room-name" type="text" maxlength="24" placeholder="Ex: Duel de l'Abysse, Course SSJ..." />
             </div>
             <div class="form-field">
-              <label for="select-room-cycle">CYCLE DE DÉPART DU DUEL</label>
+              <label for="select-room-cycle" data-i18n="mp_label_cycle">CYCLE DE DÉPART DU DUEL</label>
               <select id="select-room-cycle" class="mp-select">
                 <option value="0">Cycle 1 • Chute (Eau / Noir)</option>
                 <option value="1">Cycle 2 • Résilience (Terre / Vert & Marron)</option>
@@ -597,11 +597,11 @@
             <div class="form-field checkbox-field">
               <label class="checkbox-label">
                 <input id="checkbox-room-private" type="checkbox" />
-                <span>Salon Privé (accessible uniquement avec le code secret)</span>
+                <span data-i18n="mp_label_private">Salon Privé (accessible uniquement avec le code secret)</span>
               </label>
             </div>
             <button id="btn-submit-create-room" class="btn-play-giant btn-mp-submit" type="submit">
-              <span class="btn-play-text">CRÉER LE SALON & ATTENDRE L'ADVERSAIRE</span>
+              <span class="btn-play-text" data-i18n="mp_btn_create">CRÉER LE SALON & ATTENDRE L'ADVERSAIRE</span>
             </button>
           </form>
         </div>
@@ -610,12 +610,12 @@
         <div id="mp-view-code" class="mp-tab-view hidden">
           <form id="form-join-code" class="form-join-code" onsubmit="return false;">
             <div class="form-field">
-              <label for="input-join-code">CODE DU SALON (EX: INFI-XXXX)</label>
+              <label for="input-join-code" data-i18n="mp_label_code">CODE DU SALON (EX: INFI-XXXX)</label>
               <input id="input-join-code" type="text" maxlength="12" placeholder="INFI-...." uppercase style="text-transform:uppercase;letter-spacing:2px;" />
             </div>
             <div id="join-code-error" class="pseudo-error-msg hidden"></div>
             <button id="btn-submit-join-code" class="btn-play-giant btn-mp-submit" type="submit">
-              <span class="btn-play-text">REJOINDRE LA SALLE DUEL</span>
+              <span class="btn-play-text" data-i18n="mp_btn_join">REJOINDRE LA SALLE DUEL</span>
             </button>
           </form>
         </div>
@@ -624,11 +624,11 @@
         <div id="mp-lobby-view" class="mp-lobby-view hidden">
           <div class="lobby-room-info">
             <div class="lobby-room-title-box">
-              <span class="lobby-label">SALON DUEL 1V1</span>
+              <span class="lobby-label" data-i18n="lobby_label">SALON DUEL 1V1</span>
               <h3 id="lobby-room-name" class="lobby-room-name">Nom du Salon</h3>
             </div>
             <div class="lobby-code-box">
-              <span class="lobby-code-label">CODE PRIVÉ :</span>
+              <span class="lobby-code-label" data-i18n="lobby_code_label">CODE PRIVÉ :</span>
               <strong id="lobby-room-code" class="lobby-code-badge">INFI-XXXX</strong>
             </div>
           </div>
@@ -637,10 +637,10 @@
           <div class="lobby-arena">
             <!-- Carte Hôte -->
             <div id="lobby-card-host" class="lobby-player-card">
-              <div class="lobby-card-badge">HÔTE</div>
+              <div class="lobby-card-badge" data-i18n="mp_role_host">HÔTE</div>
               <img id="lobby-host-avatar" class="lobby-avatar" src="" alt="Hôte" />
               <strong id="lobby-host-pseudo" class="lobby-pseudo">@HOTE</strong>
-              <div id="lobby-host-ready" class="lobby-ready-tag not-ready">EN ATTENTE</div>
+              <div id="lobby-host-ready" class="lobby-ready-tag not-ready" data-i18n="mp_status_waiting">EN ATTENTE</div>
             </div>
 
             <div class="lobby-vs-divider">
@@ -649,25 +649,25 @@
 
             <!-- Carte Invité (Challenger) -->
             <div id="lobby-card-guest" class="lobby-player-card">
-              <div class="lobby-card-badge">CHALLENGER</div>
+              <div class="lobby-card-badge" data-i18n="mp_role_challenger">CHALLENGER</div>
               <img id="lobby-guest-avatar" class="lobby-avatar" src="" alt="Challenger" />
-              <strong id="lobby-guest-pseudo" class="lobby-pseudo">En attente...</strong>
-              <div id="lobby-guest-ready" class="lobby-ready-tag not-ready">NON CONNECTÉ</div>
+              <strong id="lobby-guest-pseudo" class="lobby-pseudo" data-i18n="mp_waiting_dots">En attente...</strong>
+              <div id="lobby-guest-ready" class="lobby-ready-tag not-ready" data-i18n="mp_status_disconnected">NON CONNECTÉ</div>
             </div>
           </div>
 
-          <div id="lobby-status-text" class="lobby-status-text">
+          <div id="lobby-status-text" class="lobby-status-text" data-i18n="mp_waiting_peer">
             En attente de connexion d'un adversaire...
           </div>
 
           <div class="lobby-actions">
             <button id="btn-lobby-toggle-ready" class="btn-lb-action btn-ready-toggle" type="button">
-              <span>✅</span> <span>SE DÉCLARER PRÊT</span>
+              <span>✅</span> <span data-i18n="lobby_btn_ready">SE DÉCLARER PRÊT</span>
             </button>
             <button id="btn-lobby-start-race" class="btn-play-giant btn-start-duel locked" type="button">
-              <span class="btn-play-text">LANCER LE DUEL (DÉCOLLAGE)</span>
+              <span class="btn-play-text" data-i18n="lobby_btn_launch">LANCER LE DUEL (DÉCOLLAGE)</span>
             </button>
-            <button id="btn-lobby-leave" class="btn-lb-action btn-lobby-exit" type="button">
+            <button id="btn-lobby-leave" class="btn-lb-action btn-lobby-exit" type="button" data-i18n="lobby_btn_leave">
               QUITTER LE SALON
             </button>
           </div>
@@ -679,34 +679,34 @@
     <div id="duel-result-modal" class="modal-overlay hidden">
       <div class="modal-card duel-card">
         <div class="modal-top-bar"></div>
-        <div id="duel-result-badge" class="modal-badge">// FIN DU DUEL 1V1</div>
-        <h2 id="duel-result-title" class="modal-title duel-title">🏆 VICTOIRE ÉCLATANTE !</h2>
-        <div id="duel-result-reason" class="modal-reason">L'adversaire a percuté un obstacle !</div>
+        <div id="duel-result-badge" class="modal-badge" data-i18n="duel_badge">// FIN DU DUEL 1V1</div>
+        <h2 id="duel-result-title" class="modal-title duel-title" data-i18n="duel_victory">🏆 VICTOIRE ÉCLATANTE !</h2>
+        <div id="duel-result-reason" class="modal-reason" data-i18n="mp_rival_crashed">L'adversaire a percuté un obstacle !</div>
 
         <!-- Comparaison des deux pilotes -->
         <div class="duel-comparison-grid">
           <div class="duel-pilot-col you">
-            <span class="pilot-header">VOUS</span>
+            <span class="pilot-header" data-i18n="duel_you">VOUS</span>
             <strong id="duel-my-pseudo" class="pilot-name">@PILOTE</strong>
-            <div class="duel-stat-line"><span>Distance:</span> <strong id="duel-my-dist">0 M</strong></div>
-            <div class="duel-stat-line"><span>Cycle:</span> <strong id="duel-my-cycle">Cycle 1</strong></div>
+            <div class="duel-stat-line"><span data-i18n="mp_stat_dist">Distance:</span> <strong id="duel-my-dist">0 M</strong></div>
+            <div class="duel-stat-line"><span data-i18n="mp_stat_cycle">Cycle:</span> <strong id="duel-my-cycle">Cycle 1</strong></div>
           </div>
 
           <div class="duel-vs-bar">VS</div>
 
           <div class="duel-pilot-col rival">
-            <span class="pilot-header">ADVERSAIRE</span>
+            <span class="pilot-header" data-i18n="duel_rival">ADVERSAIRE</span>
             <strong id="duel-rival-pseudo" class="pilot-name">@RIVAL</strong>
-            <div class="duel-stat-line"><span>Distance:</span> <strong id="duel-rival-dist">0 M</strong></div>
-            <div class="duel-stat-line"><span>Cycle:</span> <strong id="duel-rival-cycle">Cycle 1</strong></div>
+            <div class="duel-stat-line"><span data-i18n="mp_stat_dist">Distance:</span> <strong id="duel-rival-dist">0 M</strong></div>
+            <div class="duel-stat-line"><span data-i18n="mp_stat_cycle">Cycle:</span> <strong id="duel-rival-cycle">Cycle 1</strong></div>
           </div>
         </div>
 
         <div class="duel-modal-actions">
           <button id="btn-duel-rematch" class="btn-play-giant btn-rematch" type="button">
-            <span class="btn-play-text">⚔️ REVANCHE IMMÉDIATE</span>
+            <span class="btn-play-text" data-i18n="duel_btn_rematch">⚔️ REVANCHE IMMÉDIATE</span>
           </button>
-          <button id="btn-duel-quit" class="btn-lb-action" type="button">
+          <button id="btn-duel-quit" class="btn-lb-action" type="button" data-i18n="duel_btn_quit">
             RETOURNER AU MENU
           </button>
         </div>
@@ -719,12 +719,12 @@
       <div class="modal-card settings-card">
         <div class="modal-top-bar"></div>
         <button id="btn-close-settings" class="modal-close-corner" type="button" title="Fermer">✕</button>
-        <div class="modal-badge">// CONFIGURATION & ACCESSIBILITÉ</div>
-        <h2 class="modal-title">⚙️ PARAMÈTRES DU JEU</h2>
+        <div class="modal-badge" data-i18n="settings_badge">// CONFIGURATION & ACCESSIBILITÉ</div>
+        <h2 class="modal-title" data-i18n="settings_title">⚙️ PARAMÈTRES DU JEU</h2>
 
         <!-- Sélecteur Strict des 8 Langues les Plus Parlées au Monde -->
         <div class="settings-group">
-          <label class="settings-label">LANGUE / LANGUAGE (8 MONDIALES)</label>
+          <label class="settings-label" data-i18n="settings_lang">LANGUE / LANGUAGE (8 MONDIALES)</label>
           <div id="lang-selector-grid" class="lang-selector-grid">
             <button class="btn-lang-flag active" data-lang="fr" type="button"><span class="lang-flag">🇫🇷</span><span class="lang-name">Français</span></button>
             <button class="btn-lang-flag" data-lang="en" type="button"><span class="lang-flag">🇬🇧</span><span class="lang-name">English</span></button>
@@ -740,7 +740,7 @@
         <!-- Volume Musique -->
         <div class="settings-group">
           <div class="settings-row-label">
-            <label class="settings-label">VOLUME MUSIQUE</label>
+            <label class="settings-label" data-i18n="settings_music_vol">VOLUME MUSIQUE</label>
             <span id="music-vol-val" class="settings-val">75%</span>
           </div>
           <input id="slider-music-vol" type="range" min="0" max="100" value="75" class="settings-slider" />
@@ -749,7 +749,7 @@
         <!-- Volume SFX -->
         <div class="settings-group">
           <div class="settings-row-label">
-            <label class="settings-label">VOLUME BRUITAGES / SFX</label>
+            <label class="settings-label" data-i18n="settings_sfx_vol">VOLUME BRUITAGES / SFX</label>
             <span id="sfx-vol-val" class="settings-val">85%</span>
           </div>
           <input id="slider-sfx-vol" type="range" min="0" max="100" value="85" class="settings-slider" />
@@ -758,7 +758,7 @@
         <!-- Sensibilité de pilotage -->
         <div class="settings-group">
           <div class="settings-row-label">
-            <label class="settings-label">SENSIBILITÉ DE PILOTAGE</label>
+            <label class="settings-label" data-i18n="settings_sensitivity">SENSIBILITÉ DE PILOTAGE</label>
             <span id="sens-val" class="settings-val">100%</span>
           </div>
           <input id="slider-sensitivity" type="range" min="50" max="150" value="100" class="settings-slider" />
@@ -766,7 +766,7 @@
 
         <!-- Secousses écran -->
         <div class="settings-group settings-toggle-group">
-          <label class="settings-label">SECOUSSES CAMÉRA (SCREEN SHAKE)</label>
+          <label class="settings-label" data-i18n="settings_screen_shake">SECOUSSES CAMÉRA (SCREEN SHAKE)</label>
           <label class="toggle-switch">
             <input id="toggle-screen-shake" type="checkbox" checked />
             <span class="toggle-slider"></span>
@@ -775,7 +775,7 @@
 
         <!-- Vibrations haptiques mobile -->
         <div class="settings-group settings-toggle-group">
-          <label class="settings-label">VIBRATIONS HAPTIQUES (MOBILE)</label>
+          <label class="settings-label" data-i18n="settings_haptics">VIBRATIONS HAPTIQUES (MOBILE)</label>
           <label class="toggle-switch">
             <input id="toggle-haptics" type="checkbox" checked />
             <span class="toggle-slider"></span>
@@ -784,7 +784,7 @@
 
         <!-- Pilotage Gyroscope / Inclinaison -->
         <div class="settings-group settings-toggle-group">
-          <label class="settings-label">PILOTAGE PAR INCLINAISON (GYROSCOPE)</label>
+          <label class="settings-label" data-i18n="settings_gyro">PILOTAGE PAR INCLINAISON (GYROSCOPE)</label>
           <label class="toggle-switch">
             <input id="toggle-gyro" type="checkbox" />
             <span class="toggle-slider"></span>
@@ -793,11 +793,11 @@
 
         <!-- Qualité graphique -->
         <div class="settings-group">
-          <label class="settings-label">QUALITÉ GRAPHIQUE</label>
+          <label class="settings-label" data-i18n="settings_graphics">QUALITÉ GRAPHIQUE</label>
           <div class="quality-selector-row">
-            <button class="btn-quality-opt" data-quality="eco" type="button">ÉCO</button>
-            <button class="btn-quality-opt active" data-quality="high" type="button">ÉLEVÉE</button>
-            <button class="btn-quality-opt" data-quality="ultra" type="button">ULTRA</button>
+            <button class="btn-quality-opt" data-quality="eco" type="button" data-i18n="quality_eco">ÉCO</button>
+            <button class="btn-quality-opt active" data-quality="high" type="button" data-i18n="quality_high">ÉLEVÉE</button>
+            <button class="btn-quality-opt" data-quality="ultra" type="button" data-i18n="quality_ultra">ULTRA</button>
           </div>
         </div>
       </div>
@@ -808,67 +808,67 @@
       <div class="modal-card account-card">
         <div class="modal-top-bar"></div>
         <button id="btn-close-account" class="modal-close-corner" type="button" title="Fermer">✕</button>
-        <div class="modal-badge">// PROFIL OFFICIEL DU PILOTE</div>
-        <h2 class="modal-title">👤 COMPTE SOUNDRISE</h2>
+        <div class="modal-badge" data-i18n="account_badge">// PROFIL OFFICIEL DU PILOTE</div>
+        <h2 class="modal-title" data-i18n="account_modal_title">👤 COMPTE SOUNDRISE</h2>
 
         <!-- Vue Profil Connecté -->
         <div id="account-profile-view" class="account-profile-view hidden">
           <img id="account-avatar-large" class="account-avatar-large" src="" alt="Avatar" />
           <h3 id="account-pseudo-large" class="account-pseudo-large">--</h3>
-          <div id="account-founder-tag" class="badge-founder-tag hidden">👑 FONDATEUR OFFICIEL</div>
+          <div id="account-founder-tag" class="badge-founder-tag hidden" data-i18n="account_founder_badge">👑 FONDATEUR OFFICIEL</div>
           <span id="account-email-display" class="account-email-display">--</span>
           <div class="account-stats-grid">
             <div class="account-stat-box">
-              <span class="as-label">MEILLEUR SCORE</span>
+              <span class="as-label" data-i18n="account_stat_score">MEILLEUR SCORE</span>
               <span id="as-score" class="as-val">0 PTS</span>
             </div>
             <div class="account-stat-box">
-              <span class="as-label">DISTANCE RECORD</span>
+              <span class="as-label" data-i18n="account_stat_dist">DISTANCE RECORD</span>
               <span id="as-dist" class="as-val">0 M</span>
             </div>
             <div class="account-stat-box">
-              <span class="as-label">RANG SUPRÊME</span>
+              <span class="as-label" data-i18n="account_stat_rank">RANG SUPRÊME</span>
               <span id="as-rank" class="as-val">SU</span>
             </div>
           </div>
-          <button id="btn-account-logout" class="btn-account-danger" type="button">SE DÉCONNECTER</button>
+          <button id="btn-account-logout" class="btn-account-danger" type="button" data-i18n="account_btn_logout">SE DÉCONNECTER</button>
         </div>
 
         <!-- Vue Inscription & Connexion -->
         <div id="account-forms-view" class="account-forms-view">
           <div class="account-tabs">
-            <button id="tab-btn-register" class="account-tab active" type="button">Créer un compte</button>
-            <button id="tab-btn-login" class="account-tab" type="button">Se connecter</button>
+            <button id="tab-btn-register" class="account-tab active" type="button" data-i18n="account_tab_register">Créer un compte</button>
+            <button id="tab-btn-login" class="account-tab" type="button" data-i18n="account_tab_login">Se connecter</button>
           </div>
 
           <form id="form-register" class="account-form">
             <div class="form-group">
-              <label>ADRESSE EMAIL</label>
+              <label data-i18n="account_label_email">ADRESSE EMAIL</label>
               <input id="reg-email" type="email" placeholder="pilote@example.com" required autocomplete="email" />
             </div>
             <div class="form-group">
-              <label>PSEUDO DE PILOTE</label>
+              <label data-i18n="account_label_pseudo">PSEUDO DE PILOTE</label>
               <input id="reg-pseudo" type="text" placeholder="Ex: zanioxx_off" required autocomplete="username" />
             </div>
             <div class="form-group">
-              <label>MOT DE PASSE</label>
+              <label data-i18n="account_label_password">MOT DE PASSE</label>
               <input id="reg-password" type="password" placeholder="••••••••" required autocomplete="new-password" />
             </div>
             <div id="reg-error" class="account-error hidden"></div>
-            <button type="submit" class="btn-account-submit">CRÉER MON COMPTE & SAUVEGARDER</button>
+            <button type="submit" class="btn-account-submit" data-i18n="account_btn_register">CRÉER MON COMPTE & SAUVEGARDER</button>
           </form>
 
           <form id="form-login" class="account-form hidden">
             <div class="form-group">
-              <label>ADRESSE EMAIL</label>
+              <label data-i18n="account_label_email">ADRESSE EMAIL</label>
               <input id="log-email" type="email" placeholder="pilote@example.com" required autocomplete="email" />
             </div>
             <div class="form-group">
-              <label>MOT DE PASSE</label>
+              <label data-i18n="account_label_password">MOT DE PASSE</label>
               <input id="log-password" type="password" placeholder="••••••••" required autocomplete="current-password" />
             </div>
             <div id="log-error" class="account-error hidden"></div>
-            <button type="submit" class="btn-account-submit">SE CONNECTER</button>
+            <button type="submit" class="btn-account-submit" data-i18n="account_btn_login">SE CONNECTER</button>
           </form>
         </div>
       </div>
@@ -879,32 +879,32 @@
       <div class="modal-card founder-card">
         <div class="modal-top-bar"></div>
         <button id="btn-close-founder" class="modal-close-corner" type="button" title="Fermer">✕</button>
-        <div class="modal-badge">// PANEL FONDATEUR OFFICIEL</div>
-        <h2 class="modal-title">👑 CONSOLE D'ADMINISTRATION</h2>
+        <div class="modal-badge" data-i18n="founder_badge_label">// PANEL FONDATEUR OFFICIEL</div>
+        <h2 class="modal-title" data-i18n="founder_title">👑 CONSOLE D'ADMINISTRATION</h2>
 
         <!-- Onglets du Panel -->
         <div class="founder-tabs-nav">
-          <button id="ftab-btn-maintenance" class="founder-tab-btn active" type="button">🔧 Maintenance</button>
-          <button id="ftab-btn-leaderboard" class="founder-tab-btn" type="button">🏆 Classement</button>
-          <button id="ftab-btn-users" class="founder-tab-btn" type="button">👤 Utilisateurs</button>
-          <button id="ftab-btn-logs" class="founder-tab-btn" type="button">📋 Logs Système</button>
+          <button id="ftab-btn-maintenance" class="founder-tab-btn active" type="button" data-i18n="founder_tab_maint">🔧 Maintenance</button>
+          <button id="ftab-btn-leaderboard" class="founder-tab-btn" type="button" data-i18n="founder_tab_lb">🏆 Classement</button>
+          <button id="ftab-btn-users" class="founder-tab-btn" type="button" data-i18n="founder_tab_users">👤 Utilisateurs</button>
+          <button id="ftab-btn-logs" class="founder-tab-btn" type="button" data-i18n="founder_tab_logs">📋 Logs Système</button>
         </div>
 
         <!-- Onglet 1 : Mode Maintenance Globale -->
         <div id="ftab-maintenance" class="founder-tab-view">
           <div class="founder-section">
-            <h3 class="founder-section-title">MODE MAINTENANCE GLOBALE</h3>
-            <p class="founder-section-desc">Active un écran holographique de maintenance visible par TOUS les joueurs en temps réel. Seul le fondateur peut continuer à jouer.</p>
+            <h3 class="founder-section-title" data-i18n="founder_sec_maint">MODE MAINTENANCE GLOBALE</h3>
+            <p class="founder-section-desc" data-i18n="founder_desc_maint">Active un écran holographique de maintenance visible par TOUS les joueurs en temps réel. Seul le fondateur peut continuer à jouer.</p>
             <div class="maintenance-toggle-row">
-              <span id="maintenance-status-label" class="maintenance-status-off">⚫ DÉSACTIVÉ</span>
+              <span id="maintenance-status-label" class="maintenance-status-off" data-i18n="founder_status_off">⚫ DÉSACTIVÉ</span>
               <label class="toggle-switch toggle-big">
                 <input id="toggle-maintenance-mode" type="checkbox" />
                 <span class="toggle-slider"></span>
               </label>
             </div>
             <div class="form-field" style="margin-top:16px;">
-              <label for="input-maintenance-reason">MESSAGE DE MAINTENANCE (AFFICHÉ EN DIRECT AUX JOUEURS)</label>
-              <input id="input-maintenance-reason" type="text" maxlength="120" placeholder="Ex: Mise à niveau des serveurs quantiques & réacteurs..." value="Mise à niveau des serveurs quantiques & maintenance des réacteurs" />
+              <label for="input-maintenance-reason" data-i18n="founder_label_reason">MESSAGE DE MAINTENANCE (AFFICHÉ EN DIRECT AUX JOUEURS)</label>
+              <input id="input-maintenance-reason" type="text" maxlength="120" placeholder="Ex: Mise à niveau des serveurs quantiques & réacteurs..." data-i18n-placeholder="founder_ph_reason" value="Mise à niveau des serveurs quantiques & maintenance des réacteurs" />
             </div>
           </div>
         </div>
@@ -912,19 +912,19 @@
         <!-- Onglet 2 : Réinitialisation du Classement Mondial -->
         <div id="ftab-leaderboard" class="founder-tab-view hidden">
           <div class="founder-section">
-            <h3 class="founder-section-title">RÉINITIALISATION DU CLASSEMENT MONDIAL</h3>
-            <p class="founder-section-desc">Purge intégrale de tous les records mondiaux sur le serveur. Action irréversible synchronisée mondialement.</p>
+            <h3 class="founder-section-title" data-i18n="founder_sec_lb">RÉINITIALISATION DU CLASSEMENT MONDIAL</h3>
+            <p class="founder-section-desc" data-i18n="founder_desc_lb">Purge intégrale de tous les records mondiaux sur le serveur. Action irréversible synchronisée mondialement.</p>
             <div class="founder-danger-zone">
               <span class="danger-icon">⚠️</span>
-              <span>ATTENTION — Cette action efface immédiatement l'intégralité du leaderboard mondial.</span>
+              <span data-i18n="founder_warn_lb">ATTENTION — Cette action efface immédiatement l'intégralité du leaderboard mondial.</span>
             </div>
-            <button id="btn-founder-reset-lb" class="btn-founder-danger" type="button">
+            <button id="btn-founder-reset-lb" class="btn-founder-danger" type="button" data-i18n="founder_btn_reset_lb">
               🗑️ RÉINITIALISER LE CLASSEMENT MONDIAL
             </button>
             <div id="founder-reset-confirm" class="founder-confirm-box hidden">
-              <p>Tapez <strong>PURGE</strong> en majuscules pour valider l'effacement :</p>
+              <p data-i18n="founder_purge_prompt">Tapez PURGE en majuscules pour valider l'effacement :</p>
               <input id="input-reset-confirm" type="text" placeholder="PURGE" maxlength="8" autocomplete="off" />
-              <button id="btn-confirm-reset-lb" class="btn-founder-danger-confirm" type="button">CONFIRMER LA PURGE MONDIALE</button>
+              <button id="btn-confirm-reset-lb" class="btn-founder-danger-confirm" type="button" data-i18n="founder_btn_confirm_purge">CONFIRMER LA PURGE MONDIALE</button>
             </div>
           </div>
         </div>
@@ -932,21 +932,21 @@
         <!-- Onglet 3 : Registre des Utilisateurs Inscrits -->
         <div id="ftab-users" class="founder-tab-view hidden">
           <div class="founder-section">
-            <h3 class="founder-section-title">REGISTRE DES PILOTES INSCRITS</h3>
+            <h3 class="founder-section-title" data-i18n="founder_sec_users">REGISTRE DES PILOTES INSCRITS</h3>
             <div class="founder-users-toolbar">
-              <span id="founder-users-count">0 compte(s) enregistré(s)</span>
-              <button id="btn-refresh-users" class="btn-mp-mini" type="button">🔄 Actualiser</button>
+              <span id="founder-users-count" data-i18n="founder_no_users">0 compte(s) enregistré(s)</span>
+              <button id="btn-refresh-users" class="btn-mp-mini" type="button" data-i18n="founder_btn_refresh">🔄 Actualiser</button>
             </div>
             <div id="founder-users-table" class="founder-users-table">
               <div class="founder-table-header">
-                <span class="col-fu-id">N°</span>
-                <span class="col-fu-pseudo">PSEUDO</span>
-                <span class="col-fu-email">ADRESSE EMAIL</span>
-                <span class="col-fu-role">RÔLE</span>
-                <span class="col-fu-date">INSCRIPTION</span>
+                <span class="col-fu-id" data-i18n="col_fu_id">N°</span>
+                <span class="col-fu-pseudo" data-i18n="col_fu_pseudo">PSEUDO</span>
+                <span class="col-fu-email" data-i18n="col_fu_email">ADRESSE EMAIL</span>
+                <span class="col-fu-role" data-i18n="col_fu_role">RÔLE</span>
+                <span class="col-fu-date" data-i18n="col_fu_date">INSCRIPTION</span>
               </div>
               <div id="founder-users-body" class="founder-users-body">
-                <div class="founder-empty">Chargement du registre des pilotes...</div>
+                <div class="founder-empty" data-i18n="founder_loading_users">Chargement du registre des pilotes...</div>
               </div>
             </div>
           </div>
@@ -955,13 +955,13 @@
         <!-- Onglet 4 : Journal d'Audit et Logs Système -->
         <div id="ftab-logs" class="founder-tab-view hidden">
           <div class="founder-section">
-            <h3 class="founder-section-title">JOURNAL D'AUDIT SYSTÈME</h3>
+            <h3 class="founder-section-title" data-i18n="founder_sec_logs">JOURNAL D'AUDIT SYSTÈME</h3>
             <div class="founder-logs-toolbar">
               <span id="founder-logs-count">0 entrée(s)</span>
-              <button id="btn-clear-logs" class="btn-mp-mini" type="button">🗑️ Vider le journal</button>
+              <button id="btn-clear-logs" class="btn-mp-mini" type="button" data-i18n="founder_btn_clear_logs">🗑️ Vider le journal</button>
             </div>
             <div id="founder-logs-console" class="founder-logs-console">
-              <div class="founder-empty">Aucun événement enregistré.</div>
+              <div class="founder-empty" data-i18n="founder_no_events">Aucun événement enregistré.</div>
             </div>
           </div>
         </div>
@@ -977,11 +977,11 @@
           <div class="holo-ring ring-3"></div>
           <div class="holo-core-icon">🔧</div>
         </div>
-        <div class="maintenance-glitch-text" data-text="MAINTENANCE EN COURS">MAINTENANCE EN COURS</div>
-        <p id="maintenance-reason-display" class="maintenance-reason">Mise à niveau des serveurs quantiques & maintenance des réacteurs</p>
+        <div class="maintenance-glitch-text" data-text="MAINTENANCE EN COURS" data-i18n="maint_glitch">MAINTENANCE EN COURS</div>
+        <p id="maintenance-reason-display" class="maintenance-reason" data-i18n="maint_desc_default">Mise à niveau des serveurs quantiques & maintenance des réacteurs</p>
         <div class="maintenance-info-bar">
           <span class="maintenance-dot-pulse"></span>
-          <span>SOUNDRISE : INFINITY RUN sera de retour très bientôt</span>
+          <span data-i18n="maint_soon">SOUNDRISE : INFINITY RUN sera de retour très bientôt</span>
         </div>
         <p class="maintenance-founder-credit">// Système géré par @<span id="maintenance-by-display">zanioxx_off</span></p>
       </div>
