@@ -992,10 +992,11 @@ export class Player {
       }
     }
 
+    const px = this.group.position.x;
     for (let i = this.lasers.length - 1; i >= 0; i--) {
       const l = this.lasers[i];
       l.mesh.position.z -= l.speed * dt;
-      if (l.vx && Math.abs(l.mesh.position.x - p.x) > 0.2) {
+      if (l.vx && Math.abs(l.mesh.position.x - px) > 0.2) {
         l.mesh.position.x += l.vx * dt;
       }
       l.bbox.setFromObject(l.mesh);

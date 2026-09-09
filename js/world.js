@@ -998,7 +998,7 @@ export class World {
     // Le terrain est centré à z = -180 pour couvrir de +50 (derrière la caméra) jusqu'à -410 (fond du brouillard)
     this.terrainMesh = new THREE.Mesh(geo, this.waterMaterial);
     this.terrainMesh.rotation.x = -Math.PI / 2;
-    this.terrainMesh.position.set(0, 0, -180);
+    this.terrainMesh.position.set(0, -0.7, -180);
     this.terrainMesh.receiveShadow = true;
     this.scene.add(this.terrainMesh);
 
@@ -1047,8 +1047,8 @@ export class World {
 
             // Houle liquide 3D majestueuse et fluide se propageant physiquement (apaisée, naturelle)
             const wavePhase = (worldZ - flowZ);
-            const wave1 = Math.sin(x * 0.07 + time * 1.2) * Math.cos(wavePhase * 0.035 + time * 0.85) * (0.75 * bassSwell);
-            const wave2 = Math.sin(x * 0.035 + wavePhase * 0.02 + time * 0.6) * 0.35;
+            const wave1 = Math.sin(x * 0.06 + time * 1.0) * Math.cos(wavePhase * 0.03 + time * 0.75) * (0.24 * bassSwell);
+            const wave2 = Math.sin(x * 0.03 + wavePhase * 0.018 + time * 0.5) * 0.10;
 
             // Amortissement fluide vers les falaises rocheuses latérales pour raccord sans faille
             const absX = Math.abs(x);
@@ -1096,16 +1096,17 @@ export class World {
     }
     this.sideProps = [];
 
-    // Densité et profondeur accrues pour border tout le canyon (14 paires = 28 décors majeurs)
-    const count = 14;
-    const spacing = 30;
-    const startZ = 30;
+    // Densité et profondeur accrues pour border tout le canyon (16 paires = 32 décors majeurs)
+    const count = 16;
+    const spacing = 28;
+    const startZ = 25;
 
     for (let i = 0; i < count; i++) {
       const z = startZ - i * spacing;
       for (const side of [-1, 1]) {
-        // Positionnés sur les crêtes de canyon (|x| = 38 à 50)
-        const x = side * (38 + ((i * 7) % 12));
+        // Positionnés immédiatement sur les bords du chenal de vol (|x| = 22 à 28)
+        // 100% visibles à l'écran en mode portrait comme en paysage !
+        const x = side * (22 + ((i * 3) % 7));
         const propMesh = this.buildSidePropMesh(cycleIndex, side, i);
         propMesh.position.set(x, 0, z);
         this.sidePropsGroup.add(propMesh);
@@ -1549,7 +1550,7 @@ export class World {
       const prop = this.sideProps[i];
       prop.mesh.position.z += deltaZ;
       if (prop.mesh.position.z > 30) {
-        prop.mesh.position.z -= 420;
+        prop.mesh.position.z -= 448;
 
         // Transition continue à l'horizon : si le cycle a changé, reconstruire ce décor
         if (prop.cycleIndex !== this.currentCycleIndex) {
@@ -1558,7 +1559,8 @@ export class World {
             if (child.geometry) child.geometry.dispose();
           });
           const newMesh = this.buildSidePropMesh(this.currentCycleIndex, prop.side, prop.index);
-          newMesh.position.set(prop.mesh.position.x, 0, prop.mesh.position.z);
+          const targetX = prop.side * (22 + ((prop.index * 3) % 7));
+          newMesh.position.set(targetX, 0, prop.mesh.position.z);
           this.sidePropsGroup.add(newMesh);
           prop.mesh = newMesh;
           prop.cycleIndex = this.currentCycleIndex;
@@ -2585,36 +2587,67 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Troll 3 (Obsession) : Arche de magma tourbillonnante en rotation sur l'axe Z (Rouge / Feu)
+  // Troll 3 (Obsession) : Vortex de flammes et anneau solaire magmatique en vrille
   spawnSpiralArch(gapX) {
     const group = new THREE.Group();
-    const size = 26.0;
+    const subBoxes = [];
 
-    const fireMat = new THREE.MeshStandardMaterial({
-      color: 0xef4444,
-      emissive: 0xdd1a00,
-      emissiveIntensity: 0.95,
-      roughness: 0.4,
-      metalness: 0.25
+    const flameCoreMat = new THREE.MeshStandardMaterial({
+      color: 0xff3b00,
+      emissive: 0xff2200,
+      emissiveIntensity: 2.2,
+      roughness: 0.2,
+      metalness: 0.3
+    });
+    const flameTongueMat = new THREE.MeshStandardMaterial({
+      color: 0xffaa00,
+      emissive: 0xff6600,
+      emissiveIntensity: 2.6,
+      roughness: 0.15
+    });
+    const darkBasalt = new THREE.MeshStandardMaterial({
+      color: 0x140505,
+      roughness: 0.85,
+      metalness: 0.2
     });
 
-    const topGeo = new THREE.BoxGeometry(size, 4.0, 4.0);
-    const top = new THREE.Mesh(topGeo, fireMat);
-    top.position.y = 12;
-    group.add(top);
+    // Anneau de magma circulaire principal (trou central de 12m pour voler à travers)
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(8.0, 1.4, 12, 32), flameCoreMat);
+    group.add(ring);
 
-    const botGeo = new THREE.BoxGeometry(size, 4.0, 4.0);
-    const bot = new THREE.Mesh(botGeo, fireMat);
-    bot.position.y = -12;
-    group.add(bot);
+    // 8 langues de flammes incandescentes rayonnant vers l'extérieur
+    for (let f = 0; f < 8; f++) {
+      const angle = (f / 8) * Math.PI * 2;
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(1.6, 5.5, 5), flameTongueMat);
+      flame.position.set(Math.cos(angle) * 9.2, Math.sin(angle) * 9.2, 0);
+      flame.rotation.z = angle - Math.PI / 2;
+      group.add(flame);
+    }
 
-    const subBoxes = [
-      { mesh: top, box: new THREE.Box3() },
-      { mesh: bot, box: new THREE.Box3() }
-    ];
+    // Éperons de basalte magmatiques en haut et en bas
+    const topCap = new THREE.Mesh(new THREE.DodecahedronGeometry(2.8, 0), darkBasalt);
+    topCap.position.set(0, 9.8, 0);
+    group.add(topCap);
 
-    group.position.set(gapX, 10, this.spawnDistance);
-    const obj = { mesh: group, subBoxes, type: 'spiral', rotSpeed: (Math.random() < 0.5 ? 1 : -1) * 1.6 };
+    const botCap = new THREE.Mesh(new THREE.DodecahedronGeometry(2.8, 0), darkBasalt);
+    botCap.position.set(0, -9.8, 0);
+    group.add(botCap);
+
+    // Boîtes de collision couvrant le haut et le bas (laissant le passage central ouvert)
+    const boxTop = new THREE.Mesh(new THREE.BoxGeometry(18.0, 4.5, 3.5), flameCoreMat);
+    boxTop.position.set(0, 8.0, 0);
+    boxTop.visible = false;
+    group.add(boxTop);
+    subBoxes.push({ mesh: boxTop, box: new THREE.Box3() });
+
+    const boxBot = new THREE.Mesh(new THREE.BoxGeometry(18.0, 4.5, 3.5), flameCoreMat);
+    boxBot.position.set(0, -8.0, 0);
+    boxBot.visible = false;
+    group.add(boxBot);
+    subBoxes.push({ mesh: boxBot, box: new THREE.Box3() });
+
+    group.position.set(gapX, 7.5, this.spawnDistance);
+    const obj = { mesh: group, subBoxes, type: 'spiral', rotSpeed: (Math.random() < 0.5 ? 1 : -1) * 1.8 };
 
     this.scene.add(group);
     this.obstacles.push(obj);
@@ -2983,24 +3016,62 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Cycle 3 (Feu) : Spire volcanique incandescente
+  // Cycle 3 (Feu / Obsession) : Cheminée volcanique éruptive à panache de flammes incandescentes
   spawnVolcanoSpire(x) {
-    const h = 30.0;
-    const geo = new THREE.ConeGeometry(3.2, h, 5);
-    const mat = new THREE.MeshStandardMaterial({
-      color: 0x3d0606,
-      emissive: 0xef4444,
-      emissiveIntensity: 1.35,
-      roughness: 0.35,
-      metalness: 0.3
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, h / 2, this.spawnDistance);
-    mesh.castShadow = true;
+    const group = new THREE.Group();
+    const subBoxes = [];
+    const h = 22.0;
 
-    const bbox = new THREE.Box3().setFromObject(mesh);
-    const obj = { mesh, bbox, type: 'standard' };
-    this.scene.add(mesh);
+    const basaltMat = new THREE.MeshStandardMaterial({
+      color: 0x140505,
+      roughness: 0.88,
+      metalness: 0.25,
+      flatShading: true
+    });
+    const magmaMat = new THREE.MeshStandardMaterial({
+      color: 0xff3b00,
+      emissive: 0xff2200,
+      emissiveIntensity: 2.0,
+      roughness: 0.2
+    });
+    const flameMat = new THREE.MeshStandardMaterial({
+      color: 0xffaa00,
+      emissive: 0xff6600,
+      emissiveIntensity: 2.8,
+      roughness: 0.1
+    });
+
+    // Tour de basalte volcanique hexagonale
+    const spire = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 4.8, h, 6), basaltMat);
+    spire.position.y = h / 2;
+    spire.castShadow = true;
+    group.add(spire);
+    subBoxes.push({ mesh: spire, box: new THREE.Box3() });
+
+    // Cratère béant rempli de magma incandescent
+    const crater = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 1.2, 2.5, 6), magmaMat);
+    crater.position.y = h + 0.8;
+    group.add(crater);
+
+    // Panache de flammes incandescent jaillissant du volcan vers le ciel
+    const flameCone = new THREE.Mesh(new THREE.ConeGeometry(3.2, 12.0, 7), flameMat);
+    flameCone.position.y = h + 7.5;
+    group.add(flameCone);
+
+    // Langues de flammes latérales
+    for (let f = 0; f < 3; f++) {
+      const ang = (f / 3) * Math.PI * 2;
+      const fSpire = new THREE.Mesh(new THREE.ConeGeometry(1.0, 6.5, 4), magmaMat);
+      fSpire.position.set(Math.cos(ang) * 2.2, h + 3.0, Math.sin(ang) * 2.2);
+      fSpire.rotation.z = (Math.random() - 0.5) * 0.3;
+      group.add(fSpire);
+    }
+
+    group.position.set(x, 0, this.spawnDistance);
+    const bbox = new THREE.Box3().setFromObject(group);
+    const obj = { mesh: group, subBoxes, bbox, type: 'standard' };
+
+    this.scene.add(group);
     this.obstacles.push(obj);
   }
 
@@ -3304,28 +3375,92 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Cycle 3 (Feu) : Rideau de lave incandescent vertical avec passage
+  // Cycle 3 (Feu / Obsession) : Portail de lave en fusion flanqué de piliers basaltiques et crêtes de flammes
   spawnLavaWall(gapX) {
     const group = new THREE.Group();
     const subBoxes = [];
+
+    const basaltMat = new THREE.MeshStandardMaterial({
+      color: 0x140505,
+      roughness: 0.9,
+      metalness: 0.2,
+      flatShading: true
+    });
     const lavaMat = new THREE.MeshStandardMaterial({
       color: 0xff3700,
       emissive: 0xff2200,
-      emissiveIntensity: 1.6,
+      emissiveIntensity: 2.2,
       roughness: 0.25,
       metalness: 0.4
     });
+    const flameMat = new THREE.MeshStandardMaterial({
+      color: 0xffaa00,
+      emissive: 0xff6600,
+      emissiveIntensity: 2.8,
+      roughness: 0.1
+    });
 
     const w = 15.0, h = 22.0;
-    const wallL = new THREE.Mesh(new THREE.BoxGeometry(w, h, 2.5), lavaMat);
-    wallL.position.set(-w / 2 - 5.5, h / 2, 0);
-    group.add(wallL);
-    subBoxes.push({ mesh: wallL, box: new THREE.Box3() });
 
-    const wallR = new THREE.Mesh(new THREE.BoxGeometry(w, h, 2.5), lavaMat);
-    wallR.position.set(w / 2 + 5.5, h / 2, 0);
+    // --- Côté Gauche ---
+    const pylonL = new THREE.Mesh(new THREE.BoxGeometry(4.0, h + 2, 4.0), basaltMat);
+    pylonL.position.set(-6.0, (h + 2) / 2, 0);
+    pylonL.castShadow = true;
+    group.add(pylonL);
+
+    const wallL = new THREE.Mesh(new THREE.BoxGeometry(w - 3, h, 2.5), lavaMat);
+    wallL.position.set(-w / 2 - 6.5, h / 2, 0);
+    group.add(wallL);
+
+    for (let s = 0; s < 3; s++) {
+      const drop = new THREE.Mesh(new THREE.ConeGeometry(1.0, 3.5, 4), flameMat);
+      drop.position.set(-6.0 - s * 3.5, h - 1.5, 0);
+      drop.rotation.z = Math.PI;
+      group.add(drop);
+    }
+
+    for (let f = 0; f < 4; f++) {
+      const fl = new THREE.Mesh(new THREE.ConeGeometry(1.3, 5.0, 5), flameMat);
+      fl.position.set(-5.5 - f * 3.2, h + 2.5, 0);
+      fl.rotation.z = (Math.random() - 0.5) * 0.3;
+      group.add(fl);
+    }
+
+    const colBoxL = new THREE.Mesh(new THREE.BoxGeometry(w + 3, h + 2, 4.0), basaltMat);
+    colBoxL.position.set(-w / 2 - 5.5, (h + 2) / 2, 0);
+    colBoxL.visible = false;
+    group.add(colBoxL);
+    subBoxes.push({ mesh: colBoxL, box: new THREE.Box3() });
+
+    // --- Côté Droit ---
+    const pylonR = new THREE.Mesh(new THREE.BoxGeometry(4.0, h + 2, 4.0), basaltMat);
+    pylonR.position.set(6.0, (h + 2) / 2, 0);
+    pylonR.castShadow = true;
+    group.add(pylonR);
+
+    const wallR = new THREE.Mesh(new THREE.BoxGeometry(w - 3, h, 2.5), lavaMat);
+    wallR.position.set(w / 2 + 6.5, h / 2, 0);
     group.add(wallR);
-    subBoxes.push({ mesh: wallR, box: new THREE.Box3() });
+
+    for (let s = 0; s < 3; s++) {
+      const drop = new THREE.Mesh(new THREE.ConeGeometry(1.0, 3.5, 4), flameMat);
+      drop.position.set(6.0 + s * 3.5, h - 1.5, 0);
+      drop.rotation.z = Math.PI;
+      group.add(drop);
+    }
+
+    for (let f = 0; f < 4; f++) {
+      const fl = new THREE.Mesh(new THREE.ConeGeometry(1.3, 5.0, 5), flameMat);
+      fl.position.set(5.5 + f * 3.2, h + 2.5, 0);
+      fl.rotation.z = (Math.random() - 0.5) * 0.3;
+      group.add(fl);
+    }
+
+    const colBoxR = new THREE.Mesh(new THREE.BoxGeometry(w + 3, h + 2, 4.0), basaltMat);
+    colBoxR.position.set(w / 2 + 5.5, (h + 2) / 2, 0);
+    colBoxR.visible = false;
+    group.add(colBoxR);
+    subBoxes.push({ mesh: colBoxR, box: new THREE.Box3() });
 
     group.position.set(gapX, 0, this.spawnDistance);
     const obj = { mesh: group, subBoxes, type: 'standard' };
@@ -3333,25 +3468,83 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Cycle 3 (Feu) : Météorite en fusion calcinée avec cratère
+  // Cycle 3 (Feu / Obsession) : Météore céleste incandescent en fusion avec couronne de flammes tourbillonnantes
   spawnMeteorImpact(x) {
     const group = new THREE.Group();
     const subBoxes = [];
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0x1a0606, roughness: 0.85, flatShading: true });
-    const coreMat = new THREE.MeshBasicMaterial({ color: 0xff5500 });
 
-    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(3.8, 0), rockMat);
-    rock.position.y = 4.5;
-    group.add(rock);
-    subBoxes.push({ mesh: rock, box: new THREE.Box3() });
+    const basaltMat = new THREE.MeshStandardMaterial({
+      color: 0x140505,
+      roughness: 0.9,
+      metalness: 0.2,
+      flatShading: true
+    });
+    const magmaMat = new THREE.MeshStandardMaterial({
+      color: 0xff3b00,
+      emissive: 0xff2200,
+      emissiveIntensity: 2.4,
+      roughness: 0.2
+    });
+    const flameMat = new THREE.MeshStandardMaterial({
+      color: 0xffaa00,
+      emissive: 0xff6600,
+      emissiveIntensity: 2.8,
+      roughness: 0.15
+    });
 
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(5.2, 0.45, 8, 20), coreMat);
-    ring.position.y = 4.5;
-    ring.rotation.x = Math.PI / 2.2;
-    group.add(ring);
+    // Cœur de magma en fusion
+    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(3.6, 1), magmaMat);
+    core.position.y = 5.5;
+    group.add(core);
+
+    // Fragments de croûte de basalte craquelée autour du cœur
+    for (let c = 0; c < 4; c++) {
+      const ang = (c / 4) * Math.PI * 2;
+      const crust = new THREE.Mesh(new THREE.DodecahedronGeometry(1.8, 0), basaltMat);
+      crust.position.set(Math.cos(ang) * 2.8, 5.5 + (Math.random() - 0.5) * 1.5, Math.sin(ang) * 2.8);
+      crust.rotation.set(Math.random() * 2, Math.random() * 2, 0);
+      group.add(crust);
+    }
+
+    // Couronne solaire 1 : anneau de feu orbital en rotation
+    const ring1 = new THREE.Mesh(new THREE.TorusGeometry(5.6, 0.6, 8, 24), flameMat);
+    ring1.position.y = 5.5;
+    ring1.rotation.x = Math.PI / 2.2;
+    group.add(ring1);
+
+    // Couronne solaire 2 : second anneau de feu croisé
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(5.0, 0.45, 8, 24), magmaMat);
+    ring2.position.y = 5.5;
+    ring2.rotation.set(Math.PI / 3, 0, Math.PI / 4);
+    group.add(ring2);
+
+    // 6 langues de flammes stellaires rayonnant du météore
+    for (let f = 0; f < 6; f++) {
+      const a = (f / 6) * Math.PI * 2;
+      const flare = new THREE.Mesh(new THREE.ConeGeometry(1.2, 5.0, 5), flameMat);
+      flare.position.set(Math.cos(a) * 4.5, 5.5 + Math.sin(a) * 2.0, Math.sin(a) * 4.5);
+      flare.rotation.set(Math.sin(a), 0, -Math.cos(a));
+      group.add(flare);
+    }
+
+    // Cratère d'impact incandescent au sol
+    const craterRim = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 6.0, 0.6, 12), basaltMat);
+    craterRim.position.y = 0.3;
+    group.add(craterRim);
+
+    const craterMagma = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 3.8, 0.7, 12), magmaMat);
+    craterMagma.position.y = 0.35;
+    group.add(craterMagma);
+
+    // Boîte de collision principale
+    const colBox = new THREE.Mesh(new THREE.BoxGeometry(8.5, 10.0, 8.5), basaltMat);
+    colBox.position.y = 5.2;
+    colBox.visible = false;
+    group.add(colBox);
+    subBoxes.push({ mesh: colBox, box: new THREE.Box3() });
 
     group.position.set(x, 0, this.spawnDistance);
-    const obj = { mesh: group, subBoxes, type: 'spiral', rotSpeed: 1.2 };
+    const obj = { mesh: group, subBoxes, type: 'spiral', rotSpeed: 1.4 };
     this.scene.add(group);
     this.obstacles.push(obj);
   }
@@ -3718,10 +3911,11 @@ export class World {
 
     // Animation 3D physique des vagues d'eau et du relief synchronisée sur la musique
     this.updateTerrainMesh(time, audioPulse);
-    // Pente descendante réelle pour le Cycle 1 (Chute océanique vers le bas)
+    // Le terrain reste parfaitement horizontal (zéro inclinaison déformante) et s'abaisse doucement pour l'eau
     if (this.terrainMesh) {
-      const targetSlope = (this.currentCycleIndex === 0) ? (-Math.PI / 2 - 0.075) : (-Math.PI / 2);
-      this.terrainMesh.rotation.x += (targetSlope - this.terrainMesh.rotation.x) * 2.0 * dt;
+      this.terrainMesh.rotation.x = -Math.PI / 2;
+      const targetY = (this.currentCycleIndex === 0) ? -0.7 : 0.0;
+      this.terrainMesh.position.y += (targetY - this.terrainMesh.position.y) * 4.0 * dt;
     }
 
     // Défilement continu et fluide des textures (UV Flow vivant)
