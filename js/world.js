@@ -4172,8 +4172,24 @@ export class World {
     this.obstacles.push(obj);
   }
 
+  // Mode veille pour le menu principal : désactive obstacles, collisions et calculs lourds
+  setIdleMode(isIdle) {
+    this.isIdleMode = !!isIdle;
+  }
+
   // Mise à jour fluide du monde avec synchronisation audio absolue (BPM, temps, mesure, kick)
   update(dt, speed, bpmOrAudioInfo, bassEnergy = 0, onCollisionCheck = null, onNearMiss = null, playerPos = null) {
+    if (this.isIdleMode) {
+      // Mode Veille Menu Principal : Économie drastique CPU / GPU (0% obstacle, 0% collision)
+      if (this.terrainMesh) {
+        this.terrainMesh.rotation.x = -Math.PI / 2;
+      }
+      if (this.groundMaterial && this.groundMaterial.map) {
+        this.groundMaterial.map.offset.y -= 12.0 * dt * 0.0018;
+      }
+      return;
+    }
+
     const deltaZ = speed * dt;
     const time = performance.now() * 0.001;
 

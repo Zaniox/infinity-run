@@ -98,26 +98,26 @@ export class MultiplayerManager {
     }
   }
 
-  // --- CRÉATION DE L'AVATAR 3D DE L'ADVERSAIRE (RIVAL) ---
-  initRivalAvatar() {
-    this.rivalGroup = new THREE.Group();
-    this.rivalGroup.visible = false;
-    this.scene.add(this.rivalGroup);
+  // Helper de création d'un vaisseau rival 3D distinct (avec couleur personnalisée)
+  createSingleRivalShip(colorHex, emissiveHex, nameTagText) {
+    const group = new THREE.Group();
+    group.visible = false;
+    this.scene.add(group);
 
-    // Coque du vaisseau rival (Fuselage Cyber-Intercepteur d'Élite)
+    // Coque du vaisseau rival (Fuselage Cyber-Intercepteur)
     const bodyGeo = new THREE.ConeGeometry(0.85, 3.4, 4);
     bodyGeo.scale(1.2, 0.45, 1.0);
     bodyGeo.rotateX(Math.PI / 2);
 
     const bodyMat = new THREE.MeshStandardMaterial({
       color: 0x101a14,
-      emissive: 0x22c55e, // Vert néon émeraude contrastant avec Infi (Cyan/Rose)
+      emissive: emissiveHex,
       emissiveIntensity: 0.85,
       roughness: 0.35,
       metalness: 0.75
     });
-    this.rivalMesh = new THREE.Mesh(bodyGeo, bodyMat);
-    this.rivalGroup.add(this.rivalMesh);
+    const mesh = new THREE.Mesh(bodyGeo, bodyMat);
+    group.add(mesh);
 
     // Ailes latérales inclinées
     const wingGeo = new THREE.BoxGeometry(3.6, 0.08, 1.2);
@@ -128,41 +128,41 @@ export class MultiplayerManager {
     });
     const wings = new THREE.Mesh(wingGeo, wingMat);
     wings.position.set(0, 0, -0.2);
-    this.rivalMesh.add(wings);
+    mesh.add(wings);
 
     // Réacteurs néon émissifs jumeaux
-    const engineMat = new THREE.MeshBasicMaterial({ color: 0x4ade80 });
+    const engineMat = new THREE.MeshBasicMaterial({ color: emissiveHex });
     const engL = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.6, 8), engineMat);
     engL.rotation.x = Math.PI / 2;
     engL.position.set(-0.7, 0, 1.4);
-    this.rivalMesh.add(engL);
+    mesh.add(engL);
 
     const engR = engL.clone();
     engR.position.x = 0.7;
-    this.rivalMesh.add(engR);
+    mesh.add(engR);
 
     // Lueur des propulseurs
-    const engineLight = new THREE.PointLight(0x22c55e, 1.8, 6.0);
+    const engineLight = new THREE.PointLight(emissiveHex, 1.8, 6.0);
     engineLight.position.set(0, 0, 1.6);
-    this.rivalMesh.add(engineLight);
+    mesh.add(engineLight);
 
-    // Bouclier holographique de l'adversaire (vert / turquoise)
+    // Bouclier holographique
     const shieldGeo = new THREE.SphereGeometry(2.2, 24, 24);
-    this.rivalShieldMat = new THREE.MeshBasicMaterial({
+    const shieldMat = new THREE.MeshBasicMaterial({
       map: getShieldHexTexture(),
-      color: 0x22c55e,
+      color: emissiveHex,
       transparent: true,
       opacity: 0.65,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide
     });
-    this.rivalShield = new THREE.Mesh(shieldGeo, this.rivalShieldMat);
-    this.rivalShield.visible = false;
-    this.rivalGroup.add(this.rivalShield);
+    const shield = new THREE.Mesh(shieldGeo, shieldMat);
+    shield.visible = false;
+    group.add(shield);
 
-    // Aura Super Saiyan de l'adversaire
+    // Aura Super Saiyan
     const saiyanGeo = new THREE.CylinderGeometry(0.8, 2.8, 5.8, 16, 4, true);
-    this.rivalSaiyanMat = new THREE.MeshBasicMaterial({
+    const saiyanMat = new THREE.MeshBasicMaterial({
       map: getSaiyanAuraTexture(),
       color: 0xffea00,
       transparent: true,
@@ -170,15 +170,33 @@ export class MultiplayerManager {
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide
     });
-    this.rivalSaiyan = new THREE.Mesh(saiyanGeo, this.rivalSaiyanMat);
-    this.rivalSaiyan.position.y = 0.6;
-    this.rivalSaiyan.visible = false;
-    this.rivalGroup.add(this.rivalSaiyan);
+    const saiyan = new THREE.Mesh(saiyanGeo, saiyanMat);
+    saiyan.position.y = 0.6;
+    saiyan.visible = false;
+    group.add(saiyan);
 
     // Étiquette 3D Canvas Billboard au-dessus de l'adversaire
-    this.rivalTag = this.createNameplateTag('@ADVERSAIRE');
-    this.rivalTag.position.set(0, 2.4, 0);
-    this.rivalGroup.add(this.rivalTag);
+    const tag = this.createNameplateTag(nameTagText);
+    tag.position.set(0, 2.4, 0);
+    group.add(tag);
+
+    return { group, mesh, shield, saiyan, tag, emissiveHex };
+  }
+
+  // --- CRÉATION DES AVATARS 3D DES ADVERSAIRES (MULTI-PILOTES 2 À 4) ---
+  initRivalAvatar() {
+    this.rivalShips = [
+      this.createSingleRivalShip(0xef4444, 0xef4444, '@PILOTE 2'),
+      this.createSingleRivalShip(0xf59e0b, 0xf59e0b, '@PILOTE 3'),
+      this.createSingleRivalShip(0xa855f7, 0xa855f7, '@PILOTE 4')
+    ];
+
+    // Alias pour rétro-compatibilité 1v1
+    this.rivalGroup = this.rivalShips[0].group;
+    this.rivalMesh = this.rivalShips[0].mesh;
+    this.rivalShield = this.rivalShips[0].shield;
+    this.rivalSaiyan = this.rivalShips[0].saiyan;
+    this.rivalTag = this.rivalShips[0].tag;
   }
 
   createNameplateTag(nameText) {
@@ -420,9 +438,10 @@ export class MultiplayerManager {
     }
   }
 
-  createRoom(roomName, isPrivate, startCycleIndex = 0) {
+  createRoom(roomName, isPrivate, startCycleIndex = 0, maxPlayers = 2) {
     const user = this.auth ? this.auth.getUser() : null;
     const pseudo = (user && user.pseudo) ? user.pseudo : 'Pilote';
+    const numMax = parseInt(maxPlayers, 10) || 2;
 
     const roomId = 'INFI-' + Math.random().toString(36).substring(2, 6).toUpperCase();
     const newRoom = {
@@ -430,6 +449,7 @@ export class MultiplayerManager {
       name: roomName || `Duel de ${pseudo}`,
       isPrivate: !!isPrivate,
       startCycleIndex: startCycleIndex || 0,
+      maxPlayers: numMax,
       host: {
         googleUid: user ? (user.googleUid || user.email || user.id) : 'guest_host_' + Date.now(),
         pseudo: pseudo,
@@ -437,6 +457,17 @@ export class MultiplayerManager {
         picture: user ? user.picture : ''
       },
       guest: null,
+      players: [
+        {
+          slot: 0,
+          role: 'host',
+          googleUid: user ? (user.googleUid || user.email || user.id) : 'guest_host_' + Date.now(),
+          pseudo: pseudo,
+          name: user ? user.name : pseudo,
+          picture: user ? user.picture : '',
+          ready: false
+        }
+      ],
       status: 'waiting',
       hostReady: false,
       guestReady: false,
@@ -539,11 +570,13 @@ export class MultiplayerManager {
       // Si la room n'est pas encore propagée, créer un conteneur d'attente
       room = {
         roomId: cleanCode,
-        name: `Duel ${cleanCode}`,
+        name: `Arène ${cleanCode}`,
         isPrivate: false,
         startCycleIndex: 0,
+        maxPlayers: 2,
         host: { pseudo: 'Hôte' },
         guest: null,
+        players: [],
         status: 'waiting',
         hostReady: false,
         guestReady: false,
@@ -551,17 +584,39 @@ export class MultiplayerManager {
       };
     }
 
-    room.guest = {
-      googleUid: user.googleUid || user.email || user.id,
+    if (!room.players) {
+      room.players = [];
+      if (room.host) room.players.push({ slot: 0, role: 'host', ...room.host, ready: !!room.hostReady });
+      if (room.guest) room.players.push({ slot: 1, role: 'guest', ...room.guest, ready: !!room.guestReady });
+    }
+
+    const maxP = room.maxPlayers || 2;
+    const currentUid = user.googleUid || user.email || user.id;
+    const existing = room.players.find(p => (p.pseudo && p.pseudo === user.pseudo) || (p.googleUid && p.googleUid === currentUid));
+    if (!existing && room.players.length >= maxP) {
+      throw new Error(`Ce salon est complet (${maxP}/${maxP} pilotes).`);
+    }
+
+    const mySlot = existing ? existing.slot : room.players.length;
+    const guestObj = {
+      slot: mySlot,
+      role: mySlot === 0 ? 'host' : 'guest',
+      googleUid: currentUid,
       pseudo: user.pseudo,
-      name: user.name,
-      picture: user.picture
+      name: user.name || user.pseudo,
+      picture: user.picture || '',
+      ready: false
     };
+
+    if (!existing) {
+      room.players.push(guestObj);
+    }
+    room.guest = guestObj;
     room.updatedAt = Date.now();
 
     this.currentRoom = room;
     this.opponentUser = room.host || null;
-    this.isHost = false;
+    this.isHost = (mySlot === 0);
     this.isInRoom = true;
     this.isReady = false;
     this.opponentReady = !!room.hostReady;
@@ -751,13 +806,25 @@ export class MultiplayerManager {
     this.isDuelActive = true;
     this.lives = 3;
     this.opponentData.lives = 3;
-    this.rivalGroup.visible = true;
     this.opponentData.isDead = false;
     this.opponentData.distance = 0;
     this.opponentData.x = 0;
     this.opponentData.y = 3.5;
     this.opponentData.z = -5.0;
-    this.rivalGroup.position.set(0, 3.5, -5.0);
+
+    const maxP = this.currentRoom?.maxPlayers || 2;
+    if (this.rivalShips) {
+      this.rivalShips.forEach((s, idx) => {
+        s.group.visible = (idx < maxP - 1);
+        if (s.group.visible) {
+          const offsetX = (idx === 0) ? 0 : (idx === 1 ? -4.5 : 4.5);
+          s.group.position.set(offsetX, 3.5, -5.0);
+        }
+      });
+    } else {
+      this.rivalGroup.visible = true;
+      this.rivalGroup.position.set(0, 3.5, -5.0);
+    }
 
     // Envoi de télémétrie fluide à 30 Hz
     if (this.telemetryInterval) clearInterval(this.telemetryInterval);
@@ -794,6 +861,9 @@ export class MultiplayerManager {
     if (this.peer) {
       try { this.peer.destroy(); } catch (e) {}
       this.peer = null;
+    }
+    if (this.p2pConn) {
+      try { this.p2pConn.close(); } catch (e) {}
       this.p2pConn = null;
     }
 
@@ -811,6 +881,9 @@ export class MultiplayerManager {
     this.isHost = false;
     this.currentRoom = null;
     this.isDuelActive = false;
+    if (this.rivalShips) {
+      this.rivalShips.forEach(s => { s.group.visible = false; });
+    }
     this.rivalGroup.visible = false;
     this.isReady = false;
     this.opponentReady = false;

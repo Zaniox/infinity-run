@@ -82,7 +82,7 @@ class GameApp {
     this.multiplayer = new MultiplayerManager(this.scene, this.auth);
 
     this.ui = new UIManager(
-      () => this.startGame(),
+      (cycleIdx, isMp) => this.launchGameWithLoading(cycleIdx, isMp),
       () => this.restartGame(),
       () => this.audio.toggleMute(),
       () => this.audio.prevTrack(),
@@ -327,6 +327,79 @@ class GameApp {
     }
   }
 
+  // Séquence de chargement cinématique avec réacteur quantique et astuces de vol rotatives
+  launchGameWithLoading(startCycleIndex = null, isMultiplayer = false) {
+    if (this.isLoadingActive) return;
+    this.isLoadingActive = true;
+
+    if (this.ui) {
+      this.ui.hideStartMenu();
+      this.ui.showLoadingScreen();
+    }
+
+    const tips = [
+      "ESQUIVE & LASER : Pressez [ESPACE] ou le bouton Blaster pour pulvériser les monolithes avant l'impact !",
+      "CŒURS D'ÉNERGIE : Récupérez les orbes lumineux pour restaurer instantanément la santé du vaisseau.",
+      "SYNCHRONISATION AUDIO : Les obstacles apparaissent en symbiose parfaite avec le tempo musical (BPM).",
+      "PORTAIL DIMENSIONNEL : Franchissez le portail à l'horizon pour basculer vers le cycle élémentaire suivant.",
+      "MULTIJOUEUR ÉQUITABLE : En arène multijoueur, tous les pilotes foncent à la même vitesse unifiée (306 km/h) !",
+      "FEINTE DU CLIMAX : Rapprochez-vous de Nity au Cycle 8 pour défier la singularité du trou noir."
+    ];
+
+    let currentTipIdx = Math.floor(Math.random() * tips.length);
+    if (this.ui) this.ui.updateLoadingTip(tips[currentTipIdx]);
+
+    const tipInterval = setInterval(() => {
+      currentTipIdx = (currentTipIdx + 1) % tips.length;
+      if (this.ui) this.ui.updateLoadingTip(tips[currentTipIdx]);
+    }, 600);
+
+    const stepTexts = [
+      "Initialisation du noyau quantique Infi...",
+      "Calibrage des propulseurs antimatière & synchronisation audio...",
+      "Génération procédurale des monolithes dimensionnels...",
+      "Vecteur de saut verrouillé ! Paré au décollage !"
+    ];
+
+    const startTime = performance.now();
+    const duration = 1250; // Séquence rythmée et dynamique de 1.25s
+
+    const updateLoading = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(100, Math.round((elapsed / duration) * 100));
+
+      let step = stepTexts[0];
+      if (progress > 25) step = stepTexts[1];
+      if (progress > 60) step = stepTexts[2];
+      if (progress > 88) step = stepTexts[3];
+
+      if (this.ui) {
+        this.ui.updateLoadingProgress(progress, step);
+      }
+
+      if (progress < 100) {
+        requestAnimationFrame(updateLoading);
+      } else {
+        clearInterval(tipInterval);
+        setTimeout(() => {
+          if (this.ui) this.ui.hideLoadingScreen();
+          this.isLoadingActive = false;
+
+          if (isMultiplayer) {
+            this.startMultiplayerGame(startCycleIndex !== null ? startCycleIndex : 0, false);
+          } else {
+            if (startCycleIndex !== null && this.audio) {
+              this.audio.currentTrackIndex = startCycleIndex;
+            }
+            this.startGame();
+          }
+        }, 250);
+      }
+    };
+
+    requestAnimationFrame(updateLoading);
+  }
+
   startGame() {
     // Contrôle du Mode Maintenance Globale (contournable par le Fondateur)
     if (this.system && this.system.isMaintenanceActive()) {
@@ -350,6 +423,9 @@ class GameApp {
     this.isPaused = false;
     this.isMultiplayerDuel = false;
     this.state = this.STATE_PLAYING;
+    if (this.world) {
+      this.world.setIdleMode(false);
+    }
     if (this.ui) {
       this.ui.hideStartMenu();
       this.ui.hidePauseMenu();
@@ -486,6 +562,9 @@ class GameApp {
     }
     this.target.reset();
     this.world.reset();
+    if (this.world) {
+      this.world.setIdleMode(false);
+    }
 
     // Initialisation des 3 vies par pilote pour le duel 1v1
     if (this.multiplayer) {
@@ -883,6 +962,8 @@ class GameApp {
     if (this.state === this.STATE_MENU) {
       if (this.ui) this.ui.setReticleVisible(false);
       this._reticleScreenPos = null;
+      // Mode veille éco pour le Menu Principal : 0% obstacle, 0% collision, CPU/GPU soulagés
+      if (this.world) this.world.setIdleMode(true);
       // Animation cinématique d'attente dans le Menu Principal
       this.player.updateIdle(dt, currentBpm, bass);
       this.world.updateElements(dt, 16.0, bass, time);

@@ -72,87 +72,244 @@
     <!-- Écran Flash Cosmique (Feinte du Cycle 8) -->
     <div id="cosmic-flash" class="cosmic-flash"></div>
 
-    <!-- MENU PRINCIPAL MINIMALISTE, ÉPURÉ & ÉLÉGANT -->
-    <div id="start-menu" class="start-menu-overlay">
-      <div class="start-menu-card minimalist">
-        <!-- Barre supérieure discrète : Marque & Statut Pilote -->
-        <header class="menu-top-bar">
-          <div class="menu-brand-tag" data-i18n="brand">// SOUNDRISE &bull; by zanioxx_off</div>
-          
-          <!-- Pilule de profil / Authentification compacte -->
-          <div id="menu-auth-section" class="menu-profile-pill">
-            <!-- Non connecté (Mode Invité par défaut) -->
-            <div id="auth-unlogged" class="profile-pill-content">
-              <span class="pill-status"><span class="guest-dot"></span> <span data-i18n="guest">Invité</span></span>
-              <button id="btn-open-account-modal" class="btn-account-pill" type="button" data-i18n-title="account_btn">
-                <span>👤</span> <span data-i18n="account_btn">Compte</span>
+    <!-- ÉCRAN DE CHARGEMENT ANIMÉ AA (LOADING SCREEN QUANTIQUE) -->
+    <div id="loading-screen" class="loading-screen-overlay hidden" aria-hidden="true">
+      <div class="loading-screen-backdrop"></div>
+      <div class="loading-screen-content">
+        <!-- Vaisseau Infi Holographique / Réacteur quantique -->
+        <div class="loading-reactor">
+          <div class="reactor-ring ring-outer"></div>
+          <div class="reactor-ring ring-mid"></div>
+          <div class="reactor-ring ring-inner"></div>
+          <div class="reactor-core">
+            <span class="reactor-ship-icon">🚀</span>
+          </div>
+        </div>
+
+        <div class="loading-info-box">
+          <div class="loading-badge">// INITIALISATION DU VOYAGE QUANTIQUE</div>
+          <h2 id="loading-cycle-title" class="loading-title">CHARGEMENT DU MONDE...</h2>
+          <div id="loading-status-text" class="loading-step">Préparation des réacteurs & synchronisation audio...</div>
+
+          <!-- Barre de chargement néon avec scanline -->
+          <div class="loading-bar-track">
+            <div id="loading-bar-fill" class="loading-bar-fill" style="width: 0%;">
+              <div class="loading-scanline"></div>
+            </div>
+          </div>
+          <div class="loading-meta-row">
+            <span class="loading-build-tag">SOUNDRISE ENGINE v2.5</span>
+            <strong id="loading-percent" class="loading-percent">0%</strong>
+          </div>
+        </div>
+
+        <!-- Carte Conseil de Vol (Lore & Astuces de Pilotage) -->
+        <div class="loading-tip-card">
+          <span class="tip-badge">💡 CONSEIL DE VOL</span>
+          <p id="loading-tip-text" class="tip-text">
+            Maintenir le tir blaster surchauffe l'arme au 3e tir consécutif. Tirez par salves courtes et précises pour détruire les obstacles !
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MENU PRINCIPAL CINÉMATIQUE PLEIN ÉCRAN (EXPÉRIENCE AA STUDIO) -->
+    <div id="start-menu" class="start-menu-overlay aa-screen">
+      <!-- Arrière-plan cinématique avec trame géométrique HUD -->
+      <div class="menu-aa-grid-bg" aria-hidden="true"></div>
+      <div class="menu-hud-corner corner-tl" aria-hidden="true"></div>
+      <div class="menu-hud-corner corner-tr" aria-hidden="true"></div>
+      <div class="menu-hud-corner corner-bl" aria-hidden="true"></div>
+      <div class="menu-hud-corner corner-br" aria-hidden="true"></div>
+
+      <div class="menu-aa-container">
+        <!-- 1. BARRE SUPÉRIEURE DE NAVIGATION & PROFIL PILOTE -->
+        <header class="menu-aa-topbar">
+          <div class="brand-cluster">
+            <div class="brand-logo-icon">💠</div>
+            <div class="brand-titles">
+              <span class="brand-main">SOUNDRISE</span>
+              <span class="brand-edition">INFINITY RUN • ÉDITION AA</span>
+            </div>
+            <span class="server-status-pill"><span class="status-live-dot"></span> SERVEURS MONDAUX EN DIRECT</span>
+          </div>
+
+          <!-- Section Profil Pilote / Authentification -->
+          <div id="menu-auth-section" class="pilot-auth-card">
+            <!-- Mode Invité -->
+            <div id="auth-unlogged" class="auth-card-unlogged">
+              <div class="pilot-avatar-frame guest-frame">
+                <span class="avatar-placeholder">👤</span>
+              </div>
+              <div class="pilot-info-col">
+                <span class="pilot-status-label"><span class="guest-dot"></span> Mode Invité</span>
+                <span class="pilot-name-strong">Pilote Anonyme</span>
+              </div>
+              <button id="btn-open-account-modal" class="btn-aa-compact" type="button">
+                <span>🔑</span> <span>Connexion / Inscription</span>
               </button>
             </div>
 
-            <!-- Connecté avec Compte Pilote -->
-            <div id="auth-logged" class="profile-pill-content hidden">
-              <img id="user-avatar-img" class="pill-avatar" src="" alt="Avatar" />
-              <div class="pill-user-info">
-                <span id="user-pseudo-display" class="pill-pseudo">--</span>
-                <span id="user-founder-badge" class="badge-founder-tag-mini hidden" title="Fondateur Officiel">👑</span>
+            <!-- Mode Connecté -->
+            <div id="auth-logged" class="auth-card-logged hidden">
+              <div class="pilot-avatar-frame logged-frame">
+                <img id="user-avatar-img" class="pilot-avatar-img" src="" alt="Avatar" />
+                <span id="user-founder-badge" class="badge-founder-crown hidden" title="Fondateur Officiel">👑</span>
+              </div>
+              <div class="pilot-info-col">
+                <div class="pilot-pseudo-row">
+                  <strong id="user-pseudo-display" class="pilot-pseudo-tag">@Pilote</strong>
+                  <span id="user-rank-badge" class="pilot-rank-pill">RANG SU</span>
+                </div>
+                <span class="pilot-auth-badge">COMPTE PILOTE CERTIFIÉ</span>
                 <span id="user-name-display" class="hidden"></span>
                 <span id="user-best-stats" class="hidden"><span id="user-best-score"></span><span id="user-best-rank"></span></span>
               </div>
-              <button id="btn-open-account-profile" class="btn-pill-icon" type="button" data-i18n-title="account_title">👤</button>
-              <button id="btn-edit-pseudo" class="btn-pill-icon" type="button" data-i18n-title="edit_pseudo_title">✏️</button>
-              <button id="btn-logout" class="btn-pill-icon btn-pill-exit" type="button" data-i18n-title="logout">🚪</button>
+              <div class="pilot-actions-group">
+                <button id="btn-open-account-profile" class="btn-aa-icon" type="button" title="Gérer le Profil">👤</button>
+                <button id="btn-edit-pseudo" class="btn-aa-icon" type="button" title="Changer de Pseudo">✏️</button>
+                <button id="btn-logout" class="btn-aa-icon btn-aa-exit" type="button" title="Se Déconnecter">🚪</button>
+              </div>
             </div>
           </div>
         </header>
 
-        <!-- Titre & univers -->
-        <div class="menu-hero">
-          <h1 class="menu-title">INFINITY <span class="neon-title">RUN</span></h1>
-          <p class="menu-subtitle" data-i18n="tagline">ODYSSÉE GLIDER 3D &bull; 8 CYCLES ÉLÉMENTAIRES</p>
-        </div>
+        <!-- 2. CORPS PRINCIPAL EN 2 VOLETS ASYMÉTRIQUES -->
+        <main class="menu-aa-main-grid">
+          <!-- VOLET GAUCHE : HERO, SÉLECTION DU MODE & ACTION MAJEURE -->
+          <section class="menu-aa-left-pane">
+            <div class="hero-brand-box">
+              <div class="hero-universe-tag">// SIMULATION SPATIALE AUDIO-RÉACTIVE &bull; 8 CYCLES</div>
+              <h1 class="hero-main-title">
+                <span class="title-infinity">INFINITY</span>
+                <span class="title-run">RUN</span>
+              </h1>
+              <p class="hero-description">
+                Prenez les commandes du vaisseau quantique Infi. Esquivez les monolithes élémentaires, pulvérisez les obstacles au blaster et synchronisez votre vol au rythme musical pour rattraper Nity dans le Trou Noir.
+              </p>
+            </div>
 
-        <!-- Sélecteur de Cycle compact -->
-        <div class="menu-cycle-bar">
-          <button id="menu-btn-prev" class="btn-cycle-nav" data-i18n-title="prev_cycle">◄</button>
-          <div id="menu-cycle-display" class="menu-cycle-tag">
-            <span id="menu-cycle-icon" class="menu-cycle-emoji">🌊</span>
-            <span id="menu-cycle-badge" class="cycle-pill">CYCLE 1</span>
-            <span id="menu-cycle-title">CHUTE (EAU)</span>
+            <!-- SÉLECTEUR DE MODE DE JEU -->
+            <div class="game-modes-grid">
+              <!-- Mode 1 : Solo Infini -->
+              <div class="game-mode-card active" data-mode="solo">
+                <div class="mode-card-header">
+                  <span class="mode-icon">🌌</span>
+                  <span class="mode-badge-pill">PRINCIPAL</span>
+                </div>
+                <h3 class="mode-title">EXPÉDITION SOLO</h3>
+                <p class="mode-desc">Traversez les 8 cycles élémentaires avec le système de portails dimensionnels et tentez d'atteindre le Climax final.</p>
+              </div>
+
+              <!-- Mode 2 : Arène Multijoueur -->
+              <div class="game-mode-card" data-mode="multiplayer" id="mode-card-multiplayer">
+                <div class="mode-card-header">
+                  <span class="mode-icon">⚔️</span>
+                  <span class="mode-badge-pill live-pulse">2 À 4 PILOTES</span>
+                </div>
+                <h3 class="mode-title">ARÈNE MULTIJOUEUR</h3>
+                <p class="mode-desc">Affrontez vos rivaux en direct sur le même circuit et à la même vitesse : 1v1, 1v1v1 ou 1v1v1v1 sans concession !</p>
+              </div>
+            </div>
+
+            <!-- GRAND BOUTON DÉCOLLER (CTA TITANESQUE) -->
+            <div class="hero-action-box">
+              <button id="btn-play-game" class="btn-play-aa" type="button">
+                <div class="btn-aa-ambient-glow"></div>
+                <div class="btn-aa-border-shimmer"></div>
+                <div class="btn-aa-inner">
+                  <span id="btn-play-icon" class="btn-aa-icon-play">▶</span>
+                  <div class="btn-aa-labels">
+                    <span id="btn-play-text" class="btn-aa-title" data-i18n="play_takeoff">DÉCOLLER</span>
+                    <span id="btn-play-sub" class="btn-aa-subtitle" data-i18n="play_sub_guest">[ LANCER LE VOL &bull; ESPACE OU CLIC ]</span>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </section>
+
+          <!-- VOLET DROIT : FICHE TACTIQUE DU CYCLE SÉLECTIONNÉ -->
+          <section class="menu-aa-right-pane">
+            <div class="cycle-tactical-card">
+              <div class="tactical-header">
+                <span class="tactical-badge">// ANALYSE DU CYCLE DE VOL</span>
+                <span id="menu-cycle-element-badge" class="element-tag-badge">ÉLÉMENT : EAU</span>
+              </div>
+
+              <!-- Carrousel Visuel du Cycle -->
+              <div class="cycle-visual-preview">
+                <div class="cycle-glow-backdrop" id="cycle-glow-backdrop"></div>
+                <div class="cycle-nav-wrapper">
+                  <button id="menu-btn-prev" class="btn-aa-cycle-nav" type="button" title="Cycle Précédent">◄</button>
+                  <div id="menu-cycle-display" class="cycle-center-display">
+                    <div id="menu-cycle-icon" class="cycle-huge-emoji">🌊</div>
+                    <span id="menu-cycle-badge" class="cycle-huge-badge">CYCLE 1</span>
+                    <h3 id="menu-cycle-title" class="cycle-huge-title">CHUTE • NOIR (EAU)</h3>
+                  </div>
+                  <button id="menu-btn-next" class="btn-aa-cycle-nav" type="button" title="Cycle Suivant">►</button>
+                </div>
+              </div>
+
+              <!-- Télémétrie & Données du Cycle -->
+              <div class="cycle-stats-table">
+                <div class="cycle-stat-box">
+                  <span class="stat-box-label">VITESSE DÉPART</span>
+                  <strong id="cycle-stat-speed" class="stat-box-val">44 M/S</strong>
+                </div>
+                <div class="cycle-stat-box">
+                  <span class="stat-box-label">CADENCE AUDIO</span>
+                  <strong id="cycle-stat-bpm" class="stat-box-val">128 BPM</strong>
+                </div>
+                <div class="cycle-stat-box">
+                  <span class="stat-box-label">TYPE D'OBSTACLES</span>
+                  <strong id="cycle-stat-danger" class="stat-box-val">Piliers & Arches</strong>
+                </div>
+                <div class="cycle-stat-box">
+                  <span class="stat-box-label">AMBIANCE LUMIÈRE</span>
+                  <strong id="cycle-stat-light" class="stat-box-val">Abysses Bleutés</strong>
+                </div>
+              </div>
+
+              <!-- Pagination 8 Cycles Indicator -->
+              <div class="cycle-dots-pagination" id="cycle-dots-pagination">
+                <span class="cycle-dot active" data-cycle="0"></span>
+                <span class="cycle-dot" data-cycle="1"></span>
+                <span class="cycle-dot" data-cycle="2"></span>
+                <span class="cycle-dot" data-cycle="3"></span>
+                <span class="cycle-dot" data-cycle="4"></span>
+                <span class="cycle-dot" data-cycle="5"></span>
+                <span class="cycle-dot" data-cycle="6"></span>
+                <span class="cycle-dot" data-cycle="7"></span>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <!-- 3. BARRE INFÉRIEURE : ACTIONS SECONDAIRES & RACCOURCIS -->
+        <footer class="menu-aa-bottombar">
+          <div class="quick-nav-pills">
+            <button id="btn-open-leaderboard" class="btn-aa-dock" type="button">
+              <span class="dock-icon">🏆</span>
+              <span class="dock-label" data-i18n="menu_leaderboard">Classement Mondial</span>
+            </button>
+            <button id="btn-open-multiplayer" class="btn-aa-dock" type="button">
+              <span class="dock-icon">⚔️</span>
+              <span class="dock-label" data-i18n="menu_multiplayer">Arène Multijoueur</span>
+            </button>
+            <button id="btn-open-settings" class="btn-aa-dock" type="button">
+              <span class="dock-icon">⚙️</span>
+              <span class="dock-label" data-i18n="menu_settings">Paramètres & Audio</span>
+            </button>
+            <button id="btn-open-founder-panel" class="btn-aa-dock btn-founder-dock hidden" type="button" data-i18n-title="founder_official">
+              <span class="dock-icon">👑</span>
+              <span class="dock-label" data-i18n="founder_panel_btn">Console Fondateur</span>
+            </button>
           </div>
-          <button id="menu-btn-next" class="btn-cycle-nav" data-i18n-title="next_cycle">►</button>
-        </div>
 
-        <!-- Bouton Principal DÉCOLLER (Solo direct en 1 clic) -->
-        <button id="btn-play-game" class="btn-play-giant guest-mode" type="button">
-          <div class="btn-shimmer"></div>
-          <span id="btn-play-icon" class="btn-play-icon">▶</span>
-          <span id="btn-play-text" class="btn-play-text" data-i18n="play_takeoff">DÉCOLLER</span>
-          <span id="btn-play-sub" class="btn-play-sub" data-i18n="play_sub_guest">[ VOL SOLO IMMÉDIAT &bull; ESPACE OU CLIC ]</span>
-        </button>
-
-        <!-- Barre des Actions Secondaires (Classement & Multijoueur 1v1) -->
-        <div class="menu-secondary-row">
-          <button id="btn-open-leaderboard" class="btn-secondary-pill" type="button">
-            <span class="pill-btn-icon">🏆</span>
-            <span id="btn-lb-text" data-i18n="menu_leaderboard">Classement Mondial</span>
-          </button>
-          <button id="btn-open-settings" class="btn-secondary-pill" type="button">
-            <span class="pill-btn-icon">⚙️</span>
-            <span id="btn-settings-text" data-i18n="menu_settings">Paramètres</span>
-          </button>
-          <button id="btn-open-multiplayer" class="btn-secondary-pill" type="button">
-            <span class="pill-btn-icon">⚔️</span>
-            <span id="btn-mp-text" data-i18n="menu_multiplayer">Duel 1 vs 1</span>
-          </button>
-          <button id="btn-open-founder-panel" class="btn-secondary-pill btn-founder-pill hidden" type="button" data-i18n-title="founder_official">
-            <span class="pill-btn-icon">👑</span>
-            <span data-i18n="founder_panel_btn">Panel Fondateur</span>
-          </button>
-        </div>
-
-        <!-- Ligne d'aide au pilotage discrète -->
-        <footer class="menu-footer-hint">
-          <span data-i18n="menu_controls_hint"><strong>Q / D</strong> Virage &bull; <strong>Z / S</strong> Piquer/Cabrer &bull; <strong>ESPACE</strong> Blaster &bull; <strong>♥</strong> Cœurs</span>
+          <!-- Hint de pilotage élégant -->
+          <div class="menu-footer-controls-hint">
+            <span>[Q] [D] Virage &bull; [Z] [S] Piquer/Cabrer &bull; [ESPACE] Blaster Laser &bull; [DOUBLE-TOUCH] Boost</span>
+          </div>
         </footer>
       </div>
     </div>
@@ -624,6 +781,14 @@
               <input id="input-room-name" type="text" maxlength="24" placeholder="Ex: Duel de l'Abysse, Course SSJ..." />
             </div>
             <div class="form-field">
+              <label for="select-room-max-players">FORMAT DU COMBAT MULTIJOUEUR</label>
+              <select id="select-room-max-players" class="mp-select">
+                <option value="2" selected>⚔️ 1 VS 1 &bull; Duel (2 Pilotes)</option>
+                <option value="3">⚡ 1 VS 1 VS 1 &bull; Triangle (3 Pilotes)</option>
+                <option value="4">💥 1 VS 1 VS 1 VS 1 &bull; Mêlée Cosmique (4 Pilotes)</option>
+              </select>
+            </div>
+            <div class="form-field">
               <label for="select-room-cycle" data-i18n="mp_label_cycle">CYCLE DE DÉPART DU DUEL</label>
               <select id="select-room-cycle" class="mp-select">
                 <option value="0">Cycle 1 • Chute (Eau / Noir)</option>
@@ -643,7 +808,7 @@
               </label>
             </div>
             <button id="btn-submit-create-room" class="btn-play-giant btn-mp-submit" type="submit">
-              <span class="btn-play-text" data-i18n="mp_btn_create">CRÉER LE SALON & ATTENDRE L'ADVERSAIRE</span>
+              <span class="btn-play-text" data-i18n="mp_btn_create">CRÉER LE SALON & ATTENDRE LES PILOTES</span>
             </button>
           </form>
         </div>
@@ -666,7 +831,7 @@
         <div id="mp-lobby-view" class="mp-lobby-view hidden">
           <div class="lobby-room-info">
             <div class="lobby-room-title-box">
-              <span class="lobby-label" data-i18n="lobby_label">SALON DUEL 1V1</span>
+              <div class="lobby-format-pill" id="lobby-room-format">FORMAT : 1 VS 1</div>
               <h3 id="lobby-room-name" class="lobby-room-name">Nom du Salon</h3>
             </div>
             <div class="lobby-code-box">
@@ -675,26 +840,50 @@
             </div>
           </div>
 
-          <!-- Arène des 2 Joueurs Face à Face -->
-          <div class="lobby-arena">
-            <!-- Carte Hôte -->
-            <div id="lobby-card-host" class="lobby-player-card">
-              <div class="lobby-card-badge" data-i18n="mp_role_host">HÔTE</div>
-              <img id="lobby-host-avatar" class="lobby-avatar" src="" alt="Hôte" />
+          <!-- Arène Multi-Pilotes 2 à 4 Emplacements -->
+          <div id="lobby-slots-grid" class="lobby-slots-grid format-2">
+            <!-- Emplacement 1 : Hôte (Slot 1) -->
+            <div id="lobby-card-host" class="lobby-player-card slot-host" data-slot="0">
+              <div class="lobby-card-badge" data-i18n="mp_role_host">👑 HÔTE (PILOTE 1)</div>
+              <div class="lobby-avatar-wrap">
+                <img id="lobby-host-avatar" class="lobby-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=host" alt="Hôte" />
+                <span class="slot-color-dot dot-cyan"></span>
+              </div>
               <strong id="lobby-host-pseudo" class="lobby-pseudo">@HOTE</strong>
               <div id="lobby-host-ready" class="lobby-ready-tag not-ready" data-i18n="mp_status_waiting">EN ATTENTE</div>
             </div>
 
-            <div class="lobby-vs-divider">
-              <span class="vs-glow">VS</span>
-            </div>
-
-            <!-- Carte Invité (Challenger) -->
-            <div id="lobby-card-guest" class="lobby-player-card">
-              <div class="lobby-card-badge" data-i18n="mp_role_challenger">CHALLENGER</div>
-              <img id="lobby-guest-avatar" class="lobby-avatar" src="" alt="Challenger" />
+            <!-- Emplacement 2 : Challenger 1 (Slot 2) -->
+            <div id="lobby-card-guest" class="lobby-player-card slot-challenger slot-2" data-slot="1">
+              <div class="lobby-card-badge" data-i18n="mp_role_challenger">⚔️ PILOTE 2</div>
+              <div class="lobby-avatar-wrap">
+                <img id="lobby-guest-avatar" class="lobby-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=challenger1" alt="Pilote 2" />
+                <span class="slot-color-dot dot-crimson"></span>
+              </div>
               <strong id="lobby-guest-pseudo" class="lobby-pseudo" data-i18n="mp_waiting_dots">En attente...</strong>
               <div id="lobby-guest-ready" class="lobby-ready-tag not-ready" data-i18n="mp_status_disconnected">NON CONNECTÉ</div>
+            </div>
+
+            <!-- Emplacement 3 : Challenger 2 (Slot 3) -->
+            <div id="lobby-card-slot-3" class="lobby-player-card slot-challenger slot-3 hidden" data-slot="2">
+              <div class="lobby-card-badge">⚡ PILOTE 3</div>
+              <div class="lobby-avatar-wrap">
+                <img id="lobby-slot3-avatar" class="lobby-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=challenger2" alt="Pilote 3" />
+                <span class="slot-color-dot dot-amber"></span>
+              </div>
+              <strong id="lobby-slot3-pseudo" class="lobby-pseudo">En attente...</strong>
+              <div id="lobby-slot3-ready" class="lobby-ready-tag not-ready">NON CONNECTÉ</div>
+            </div>
+
+            <!-- Emplacement 4 : Challenger 3 (Slot 4) -->
+            <div id="lobby-card-slot-4" class="lobby-player-card slot-challenger slot-4 hidden" data-slot="3">
+              <div class="lobby-card-badge">💥 PILOTE 4</div>
+              <div class="lobby-avatar-wrap">
+                <img id="lobby-slot4-avatar" class="lobby-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=challenger3" alt="Pilote 4" />
+                <span class="slot-color-dot dot-purple"></span>
+              </div>
+              <strong id="lobby-slot4-pseudo" class="lobby-pseudo">En attente...</strong>
+              <div id="lobby-slot4-ready" class="lobby-ready-tag not-ready">NON CONNECTÉ</div>
             </div>
           </div>
 

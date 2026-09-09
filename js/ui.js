@@ -38,19 +38,37 @@ export class UIManager {
   }
 
   cacheDOMElements() {
-    // Menu d'accueil cinématique
-    this.startMenu = document.getElementById('start-menu');
+    // Menu d'accueil cinématique AA
+    this.startMenu = document.getElementById('start-menu-overlay') || document.getElementById('start-menu');
     this.btnPlayGame = document.getElementById('btn-play-game');
     this.btnPlayIcon = document.getElementById('btn-play-icon');
     this.btnPlayText = document.getElementById('btn-play-text');
     this.btnPlaySub = document.getElementById('btn-play-sub');
 
-    // Sélecteur de cycle dans le Menu
+    // Sélecteur de mode de jeu (Solo vs Multijoueur)
+    this.gameModeCards = document.querySelectorAll('.game-mode-card');
+    this.selectedMode = 'solo';
+
+    // Sélecteur de cycle & Télémétrie dans le Menu AA
     this.menuBtnPrev = document.getElementById('menu-btn-prev');
     this.menuBtnNext = document.getElementById('menu-btn-next');
     this.menuCycleIcon = document.getElementById('menu-cycle-icon');
     this.menuCycleBadge = document.getElementById('menu-cycle-badge');
     this.menuCycleTitle = document.getElementById('menu-cycle-title');
+    this.menuCycleElementBadge = document.getElementById('menu-cycle-element-badge');
+    this.cycleGlowBackdrop = document.getElementById('cycle-glow-backdrop');
+    this.cycleStatSpeed = document.getElementById('cycle-stat-speed');
+    this.cycleStatBpm = document.getElementById('cycle-stat-bpm');
+    this.cycleStatTheme = document.getElementById('cycle-stat-theme');
+    this.cycleStatPower = document.getElementById('cycle-stat-power');
+    this.cycleBonusText = document.getElementById('cycle-bonus-text');
+
+    // Écran de Chargement Cinématique (#loading-screen)
+    this.loadingScreen = document.getElementById('loading-screen');
+    this.loadingBarFill = document.getElementById('loading-bar-fill');
+    this.loadingProgressVal = document.getElementById('loading-progress-val');
+    this.loadingStepText = document.getElementById('loading-step-text');
+    this.loadingTipText = document.getElementById('loading-tip-text');
 
     // Profil joueur & Session
     this.authUnlogged = document.getElementById('auth-unlogged');
@@ -191,7 +209,10 @@ export class UIManager {
     this.joinCodeError = document.getElementById('join-code-error');
     this.btnSubmitJoinCode = document.getElementById('btn-submit-join-code');
 
-    // Éléments du Lobby
+    // Éléments du Lobby Multi-Pilotes (2 à 4)
+    this.selectRoomMaxPlayers = document.getElementById('select-room-max-players');
+    this.lobbySlotsGrid = document.getElementById('lobby-slots-grid');
+    this.lobbyRoomFormat = document.getElementById('lobby-room-format');
     this.lobbyRoomName = document.getElementById('lobby-room-name');
     this.lobbyRoomCode = document.getElementById('lobby-room-code');
     this.lobbyHostAvatar = document.getElementById('lobby-host-avatar');
@@ -200,6 +221,14 @@ export class UIManager {
     this.lobbyGuestAvatar = document.getElementById('lobby-guest-avatar');
     this.lobbyGuestPseudo = document.getElementById('lobby-guest-pseudo');
     this.lobbyGuestReady = document.getElementById('lobby-guest-ready');
+    this.lobbyCardSlot3 = document.getElementById('lobby-card-slot-3');
+    this.lobbySlot3Avatar = document.getElementById('lobby-slot3-avatar');
+    this.lobbySlot3Pseudo = document.getElementById('lobby-slot3-pseudo');
+    this.lobbySlot3Ready = document.getElementById('lobby-slot3-ready');
+    this.lobbyCardSlot4 = document.getElementById('lobby-card-slot-4');
+    this.lobbySlot4Avatar = document.getElementById('lobby-slot4-avatar');
+    this.lobbySlot4Pseudo = document.getElementById('lobby-slot4-pseudo');
+    this.lobbySlot4Ready = document.getElementById('lobby-slot4-ready');
     this.lobbyStatusText = document.getElementById('lobby-status-text');
     this.btnLobbyToggleReady = document.getElementById('btn-lobby-toggle-ready');
     this.btnLobbyStartRace = document.getElementById('btn-lobby-start-race');
@@ -378,13 +407,49 @@ export class UIManager {
           if (this.auth) this.auth.loginAsGuest();
         }
 
-        // Prêt à décoller !
-        this.hideStartMenu();
-        if (this.onStart) this.onStart();
+        if (this.selectedMode === 'multiplayer') {
+          this.openMultiplayerModal();
+          return;
+        }
+
+        // Prêt à décoller avec écran de chargement dynamique !
+        const cycleIdx = this.currentCycle ? this.currentCycle.id - 1 : 0;
+        if (this.onStart) this.onStart(cycleIdx, false);
       };
 
       this.btnPlayGame.addEventListener('click', handlePlayClick);
-      this.btnPlayGame.addEventListener('pointerdown', handlePlayClick);
+    }
+
+    // Sélecteur de mode de jeu (Solo vs Multijoueur)
+    if (this.gameModeCards) {
+      this.gameModeCards.forEach(card => {
+        card.addEventListener('click', () => {
+          this.gameModeCards.forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          this.selectedMode = card.dataset.mode || 'solo';
+          if (this.selectedMode === 'multiplayer') {
+            if (this.btnPlayText) this.btnPlayText.textContent = 'ACCÉDER À L\'ARÈNE';
+            if (this.btnPlaySub) this.btnPlaySub.textContent = '[ CRÉER OU REJOINDRE UN SALON 2-4 PILOTES ]';
+          } else {
+            if (this.btnPlayText) this.btnPlayText.textContent = 'DÉCOLLER';
+            if (this.btnPlaySub) this.btnPlaySub.textContent = '[ VOL SOLO IMMÉDIAT • ESPACE OU CLIC ]';
+          }
+        });
+      });
+    }
+
+    // Navigation des cycles dans le Menu AA
+    if (this.menuBtnPrev) {
+      this.menuBtnPrev.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (this.onPrevCycle) this.onPrevCycle();
+      });
+    }
+    if (this.menuBtnNext) {
+      this.menuBtnNext.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (this.onNextCycle) this.onNextCycle();
+      });
     }
 
     // 2. Bouton Modification du Pseudo
@@ -629,8 +694,9 @@ export class UIManager {
         const name = this.inputRoomName?.value || '';
         const isPriv = !!this.checkboxRoomPrivate?.checked;
         const cycle = parseInt(this.selectRoomCycle?.value || '0', 10);
+        const maxPlayers = parseInt(this.selectRoomMaxPlayers?.value || '2', 10);
         try {
-          const room = this.multiplayer.createRoom(name, isPriv, cycle);
+          const room = this.multiplayer.createRoom(name, isPriv, cycle, maxPlayers);
           this.renderLobby(room);
         } catch (err) {
           alert(err.message || 'Erreur lors de la création de la salle.');
@@ -2090,6 +2156,8 @@ export class UIManager {
       1: '🌊', 2: '🌍', 3: '🔥', 4: '⚡',
       5: '✨', 6: '🌑', 7: '🌪️', 8: '🌌'
     };
+    const CYCLE_SPEEDS = [44, 53, 63, 74, 85, 96, 108, 120];
+    const CYCLE_BPMS = [128, 132, 136, 140, 144, 150, 156, 164];
 
     if (this.menuCycleBadge) {
       this.menuCycleBadge.textContent = t('cycle_badge', 'CYCLE {id}', { id: cycle.id });
@@ -2104,8 +2172,65 @@ export class UIManager {
     if (this.menuCycleTitle) {
       const cName = t(`cycle_${cycle.id}_name`, cycle.name).toUpperCase();
       const cColor = t(`cycle_${cycle.id}_color`, cycle.colorName || '').toUpperCase();
-      const cElem = t(`cycle_${cycle.id}_element`, cycle.element || '').toUpperCase();
-      this.menuCycleTitle.textContent = `${cName} • ${cColor} (${cElem})`;
+      this.menuCycleTitle.textContent = `${cName} • ${cColor}`;
+    }
+    if (this.menuCycleElementBadge) {
+      const cElem = (cycle.element || 'EAU').toUpperCase();
+      this.menuCycleElementBadge.textContent = `ÉLÉMENT : ${cElem}`;
+      const hex = `#${cycle.primary.toString(16).padStart(6, '0')}`;
+      this.menuCycleElementBadge.style.borderColor = hex;
+      this.menuCycleElementBadge.style.color = hex;
+    }
+    if (this.cycleGlowBackdrop) {
+      const hex = `#${cycle.primary.toString(16).padStart(6, '0')}`;
+      this.cycleGlowBackdrop.style.background = `radial-gradient(circle at 50% 50%, ${hex}26 0%, transparent 70%)`;
+    }
+    if (this.cycleStatSpeed) {
+      this.cycleStatSpeed.textContent = `${CYCLE_SPEEDS[cycle.id - 1] || 44} M/S`;
+    }
+    if (this.cycleStatBpm) {
+      this.cycleStatBpm.textContent = `${CYCLE_BPMS[cycle.id - 1] || 130} BPM`;
+    }
+    if (this.cycleStatTheme) {
+      this.cycleStatTheme.textContent = (cycle.style || 'STANDARD').toUpperCase();
+    }
+    if (this.cycleStatPower) {
+      this.cycleStatPower.textContent = 'PORTAILS DIM.';
+    }
+    if (this.cycleBonusText) {
+      this.cycleBonusText.textContent = cycle.troll || 'Esquive et pilotage supersonique audio-réactif.';
+    }
+  }
+
+  // --- ÉCRAN DE CHARGEMENT CINÉMATOGRAPHIQUE (#loading-screen) ---
+  showLoadingScreen() {
+    if (this.loadingScreen) {
+      this.loadingScreen.classList.remove('hidden');
+    }
+    this.updateLoadingProgress(0, 'Initialisation du saut dimensionnel...');
+  }
+
+  hideLoadingScreen() {
+    if (this.loadingScreen) {
+      this.loadingScreen.classList.add('hidden');
+    }
+  }
+
+  updateLoadingProgress(pct, stepText) {
+    if (this.loadingBarFill) {
+      this.loadingBarFill.style.width = `${pct}%`;
+    }
+    if (this.loadingProgressVal) {
+      this.loadingProgressVal.textContent = `${pct}%`;
+    }
+    if (this.loadingStepText && stepText) {
+      this.loadingStepText.textContent = stepText;
+    }
+  }
+
+  updateLoadingTip(tipText) {
+    if (this.loadingTipText && tipText) {
+      this.loadingTipText.textContent = tipText;
     }
   }
 
@@ -2403,6 +2528,7 @@ export class UIManager {
     }
     if (!room) return;
 
+    const maxP = room.maxPlayers || 2;
     if (this.mpTabsNav) this.mpTabsNav.classList.add('hidden');
     [this.mpViewRooms, this.mpViewCreate, this.mpViewCode].forEach(v => {
       if (v) v.classList.add('hidden');
@@ -2410,64 +2536,117 @@ export class UIManager {
 
     if (this.mpLobbyView) this.mpLobbyView.classList.remove('hidden');
 
-    if (this.lobbyRoomName) this.lobbyRoomName.textContent = room.name || 'Salon 1v1';
+    if (this.lobbyRoomName) this.lobbyRoomName.textContent = room.name || 'Arène Multijoueur';
     if (this.lobbyRoomCode) this.lobbyRoomCode.textContent = room.roomId || 'INFI-XXXX';
+    if (this.lobbyRoomFormat) {
+      this.lobbyRoomFormat.textContent = maxP === 2 ? 'FORMAT : 1 VS 1 (2 PILOTES)' : (maxP === 3 ? 'FORMAT : 1 VS 1 VS 1 (3 PILOTES)' : 'FORMAT : 1 VS 1 VS 1 VS 1 (4 PILOTES)');
+    }
 
-    // Infos Hôte
-    if (this.lobbyHostPseudo) this.lobbyHostPseudo.textContent = `@${room.host.pseudo}`;
-    if (this.lobbyHostAvatar) {
-      this.lobbyHostAvatar.src = room.host.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(room.host.pseudo)}&backgroundColor=020617`;
+    if (this.lobbySlotsGrid) {
+      this.lobbySlotsGrid.className = `lobby-slots-grid format-${maxP}`;
+    }
+
+    // Gestion de la visibilité des slots 3 et 4 selon le format choisi
+    if (this.lobbyCardSlot3) this.lobbyCardSlot3.classList.toggle('hidden', maxP < 3);
+    if (this.lobbyCardSlot4) this.lobbyCardSlot4.classList.toggle('hidden', maxP < 4);
+
+    const players = room.players || [];
+
+    // Emplacement 1 : Hôte (Pilote 1)
+    const hostData = players[0] || room.host;
+    if (this.lobbyHostPseudo && hostData) this.lobbyHostPseudo.textContent = `@${hostData.pseudo}`;
+    if (this.lobbyHostAvatar && hostData) {
+      this.lobbyHostAvatar.src = hostData.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(hostData.pseudo)}&backgroundColor=020617`;
     }
     if (this.lobbyHostReady) {
-      if (room.hostReady) {
-        this.lobbyHostReady.textContent = t('mp_status_ready', 'PRÊT !');
-        this.lobbyHostReady.className = 'lobby-ready-tag ready';
-      } else {
-        this.lobbyHostReady.textContent = t('mp_status_waiting', 'EN ATTENTE');
-        this.lobbyHostReady.className = 'lobby-ready-tag not-ready';
-      }
+      const isHostRdy = room.hostReady || (hostData && hostData.ready);
+      this.lobbyHostReady.textContent = isHostRdy ? t('mp_status_ready', 'PRÊT !') : t('mp_status_waiting', 'EN ATTENTE');
+      this.lobbyHostReady.className = isHostRdy ? 'lobby-ready-tag ready' : 'lobby-ready-tag not-ready';
     }
 
-    // Infos Guest
-    if (room.guest) {
-      if (this.lobbyGuestPseudo) this.lobbyGuestPseudo.textContent = `@${room.guest.pseudo}`;
+    // Emplacement 2 : Challenger 1 (Pilote 2)
+    const p2 = players[1] || room.guest;
+    if (p2) {
+      if (this.lobbyGuestPseudo) this.lobbyGuestPseudo.textContent = `@${p2.pseudo}`;
       if (this.lobbyGuestAvatar) {
-        this.lobbyGuestAvatar.src = room.guest.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(room.guest.pseudo)}&backgroundColor=020617`;
+        this.lobbyGuestAvatar.src = p2.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(p2.pseudo)}&backgroundColor=020617`;
       }
       if (this.lobbyGuestReady) {
-        if (room.guestReady) {
-          this.lobbyGuestReady.textContent = t('mp_status_ready', 'PRÊT !');
-          this.lobbyGuestReady.className = 'lobby-ready-tag ready';
-        } else {
-          this.lobbyGuestReady.textContent = t('mp_status_waiting', 'EN PRÉPARATION');
-          this.lobbyGuestReady.className = 'lobby-ready-tag not-ready';
-        }
-      }
-      if (this.lobbyStatusText) {
-        if (room.hostReady && room.guestReady) {
-          this.lobbyStatusText.textContent = t('mp_ready_imminent', 'Les 2 pilotes sont prêts ! Lancement du duel imminent !');
-          this.lobbyStatusText.style.color = '#4ade80';
-        } else {
-          this.lobbyStatusText.textContent = t('mp_peer_connected_ready_prompt', 'Adversaire connecté ! Cliquez sur « SE DÉCLARER PRÊT »');
-          this.lobbyStatusText.style.color = '#facc15';
-        }
+        const isP2Rdy = room.guestReady || p2.ready;
+        this.lobbyGuestReady.textContent = isP2Rdy ? t('mp_status_ready', 'PRÊT !') : t('mp_status_waiting', 'EN PRÉPARATION');
+        this.lobbyGuestReady.className = isP2Rdy ? 'lobby-ready-tag ready' : 'lobby-ready-tag not-ready';
       }
     } else {
       if (this.lobbyGuestPseudo) this.lobbyGuestPseudo.textContent = t('mp_waiting_dots', 'En attente...');
-      if (this.lobbyGuestAvatar) this.lobbyGuestAvatar.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=waiting&backgroundColor=020617';
+      if (this.lobbyGuestAvatar) this.lobbyGuestAvatar.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=waiting2&backgroundColor=020617';
       if (this.lobbyGuestReady) {
         this.lobbyGuestReady.textContent = t('mp_status_disconnected', 'NON CONNECTÉ');
         this.lobbyGuestReady.className = 'lobby-ready-tag not-ready';
       }
-      if (this.lobbyStatusText) {
-        this.lobbyStatusText.textContent = t('mp_share_code_hint', 'Partagez le code [ {code} ] pour inviter un ami ou attendez un joueur public.', { code: room.roomId });
+    }
+
+    // Emplacement 3 : Challenger 2 (Pilote 3)
+    if (maxP >= 3) {
+      const p3 = players[2];
+      if (p3) {
+        if (this.lobbySlot3Pseudo) this.lobbySlot3Pseudo.textContent = `@${p3.pseudo}`;
+        if (this.lobbySlot3Avatar) {
+          this.lobbySlot3Avatar.src = p3.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(p3.pseudo)}&backgroundColor=020617`;
+        }
+        if (this.lobbySlot3Ready) {
+          this.lobbySlot3Ready.textContent = p3.ready ? 'PRÊT !' : 'EN PRÉPARATION';
+          this.lobbySlot3Ready.className = p3.ready ? 'lobby-ready-tag ready' : 'lobby-ready-tag not-ready';
+        }
+      } else {
+        if (this.lobbySlot3Pseudo) this.lobbySlot3Pseudo.textContent = 'En attente...';
+        if (this.lobbySlot3Avatar) this.lobbySlot3Avatar.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=waiting3&backgroundColor=020617';
+        if (this.lobbySlot3Ready) {
+          this.lobbySlot3Ready.textContent = 'NON CONNECTÉ';
+          this.lobbySlot3Ready.className = 'lobby-ready-tag not-ready';
+        }
+      }
+    }
+
+    // Emplacement 4 : Challenger 3 (Pilote 4)
+    if (maxP >= 4) {
+      const p4 = players[3];
+      if (p4) {
+        if (this.lobbySlot4Pseudo) this.lobbySlot4Pseudo.textContent = `@${p4.pseudo}`;
+        if (this.lobbySlot4Avatar) {
+          this.lobbySlot4Avatar.src = p4.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(p4.pseudo)}&backgroundColor=020617`;
+        }
+        if (this.lobbySlot4Ready) {
+          this.lobbySlot4Ready.textContent = p4.ready ? 'PRÊT !' : 'EN PRÉPARATION';
+          this.lobbySlot4Ready.className = p4.ready ? 'lobby-ready-tag ready' : 'lobby-ready-tag not-ready';
+        }
+      } else {
+        if (this.lobbySlot4Pseudo) this.lobbySlot4Pseudo.textContent = 'En attente...';
+        if (this.lobbySlot4Avatar) this.lobbySlot4Avatar.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=waiting4&backgroundColor=020617';
+        if (this.lobbySlot4Ready) {
+          this.lobbySlot4Ready.textContent = 'NON CONNECTÉ';
+          this.lobbySlot4Ready.className = 'lobby-ready-tag not-ready';
+        }
+      }
+    }
+
+    // Statut global du lobby
+    const currentCount = players.length || (room.guest ? 2 : 1);
+    if (this.lobbyStatusText) {
+      if (currentCount >= 2 && room.hostReady && (room.guestReady || (p2 && p2.ready))) {
+        this.lobbyStatusText.textContent = `Les pilotes sont prêts ! Lancement du combat imminent !`;
+        this.lobbyStatusText.style.color = '#4ade80';
+      } else if (currentCount >= 2) {
+        this.lobbyStatusText.textContent = `Pilotes connectés (${currentCount}/${maxP}) ! Cliquez sur « SE DÉCLARER PRÊT »`;
+        this.lobbyStatusText.style.color = '#facc15';
+      } else {
+        this.lobbyStatusText.textContent = t('mp_share_code_hint', 'Partagez le code [ {code} ] pour inviter vos amis ou attendez des pilotes publics.', { code: room.roomId });
         this.lobbyStatusText.style.color = '#94a3b8';
       }
     }
 
     // Déverrouillage du bouton de lancement pour l'hôte
     if (this.btnLobbyStartRace) {
-      const canStart = this.multiplayer && this.multiplayer.isHost && room.guest && room.hostReady && room.guestReady;
+      const canStart = this.multiplayer && this.multiplayer.isHost && (room.guest || players.length >= 2) && room.hostReady;
       if (canStart) {
         this.btnLobbyStartRace.classList.remove('locked');
       } else {
