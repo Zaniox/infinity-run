@@ -24,13 +24,13 @@ export const CYCLES_DATA = [
     element: "Eau",
     colorName: "Cyan Océan",
     troll: "TROMBES D'EAU ABYSSALES : Cascades et geysers d'eau tourbillonnants en piqué",
-    sky: 0x042442,
-    fog: 0x07446b,
-    ground: 0x023059,
-    monolith: 0x073b61,
-    primary: 0x00f0ff,
-    secondary: 0x38bdf8,
-    lightIntensity: 1.85,
+    sky: 0x07223b,
+    fog: 0x0c3b63,
+    ground: 0x051e34,
+    monolith: 0x0e4573,
+    primary: 0x38bdf8,
+    secondary: 0x7dd3fc,
+    lightIntensity: 1.35,
     style: "falling"
   },
   {
@@ -40,13 +40,13 @@ export const CYCLES_DATA = [
     element: "Terre",
     colorName: "Ocre & Grès",
     troll: "PISTONS TELLURIQUES : Mégalithes de terre et roche qui s'écrasent sur le beat",
-    sky: 0x2d170b,
-    fog: 0x4a2a16,
-    ground: 0x4e2912,
-    monolith: 0x5c3217,
+    sky: 0x27160d,
+    fog: 0x3a2215,
+    ground: 0x3e2416,
+    monolith: 0x53301e,
     primary: 0xf59e0b,
-    secondary: 0x10b981,
-    lightIntensity: 1.75,
+    secondary: 0x34d399,
+    lightIntensity: 1.30,
     style: "sliding"
   },
   {
@@ -56,13 +56,13 @@ export const CYCLES_DATA = [
     element: "Feu",
     colorName: "Rouge Magma",
     troll: "ARCHES DE FEU EN VRILLE : Anneaux de lave en fusion tournant en spirale infernale",
-    sky: 0x300505,
-    fog: 0x520a0a,
-    ground: 0x2b0404,
-    monolith: 0x4a0808,
-    primary: 0xff3b00,
+    sky: 0x1e0606,
+    fog: 0x380c0c,
+    ground: 0x1c0505,
+    monolith: 0x3a0d0d,
+    primary: 0xf97316,
     secondary: 0xfbbf24,
-    lightIntensity: 2.1,
+    lightIntensity: 1.35,
     style: "spiral"
   },
   {
@@ -72,13 +72,13 @@ export const CYCLES_DATA = [
     element: "Électricité",
     colorName: "Jaune Foudre",
     troll: "PYLÔNES TESLA & ARCS DE FOUDRE : Décharges plasma haute-tension entre pylônes",
-    sky: 0x0e0c24,
-    fog: 0x191540,
-    ground: 0x161233,
-    monolith: 0x241e54,
-    primary: 0xfacc15,
-    secondary: 0x00f0ff,
-    lightIntensity: 2.2,
+    sky: 0x0d0b21,
+    fog: 0x171338,
+    ground: 0x120f2b,
+    monolith: 0x221b4f,
+    primary: 0xfde047,
+    secondary: 0x38bdf8,
+    lightIntensity: 1.35,
     style: "tesla"
   },
   {
@@ -88,13 +88,13 @@ export const CYCLES_DATA = [
     element: "Lumière",
     colorName: "Or & Albâtre",
     troll: "HARPE DE LASERS CÉLESTES : Trame de cordes lumineuses dorées à esquiver",
-    sky: 0x1e1b38,
-    fog: 0x3a335e,
-    ground: 0x352f52,
-    monolith: 0x52487a,
+    sky: 0x1a172e,
+    fog: 0x2d2850,
+    ground: 0x272246,
+    monolith: 0x443b6e,
     primary: 0xfef08a,
     secondary: 0xffffff,
-    lightIntensity: 2.0,
+    lightIntensity: 1.35,
     style: "solar"
   },
   {
@@ -104,13 +104,13 @@ export const CYCLES_DATA = [
     element: "Ombre",
     colorName: "Gris Cendre & Argent",
     troll: "SÉISME D'OMBRES : Piliers silhouettes gris acier tremblant violemment sur les basses",
-    sky: 0x16181c,
-    fog: 0x272c33,
-    ground: 0x181a1f,
-    monolith: 0x3f4752,
+    sky: 0x121417,
+    fog: 0x1e2227,
+    ground: 0x15171b,
+    monolith: 0x2f353d,
     primary: 0xd1d5db,
-    secondary: 0x6b7280,
-    lightIntensity: 1.8,
+    secondary: 0x9ca3af,
+    lightIntensity: 1.30,
     style: "quake"
   },
   {
@@ -120,13 +120,13 @@ export const CYCLES_DATA = [
     element: "Vent",
     colorName: "Bleu Azur",
     troll: "AIGUILLES DU VENT ASCENDANT : Pics cristallins profilés jaillissant sous les bourrasques",
-    sky: 0x093359,
-    fog: 0x13548a,
-    ground: 0x0d4370,
-    monolith: 0x165c99,
+    sky: 0x092644,
+    fog: 0x124273,
+    ground: 0x0e365e,
+    monolith: 0x17538f,
     primary: 0x38bdf8,
     secondary: 0xe0f2fe,
-    lightIntensity: 2.1,
+    lightIntensity: 1.35,
     style: "needles"
   },
   {
@@ -136,13 +136,13 @@ export const CYCLES_DATA = [
     element: "Vide ou Cosmos",
     colorName: "Magenta Stellaire",
     troll: "LA FEINTE COSMIQUE : Distorsion du vide, mirages spatiaux et boucle temporelle",
-    sky: 0x16032c,
-    fog: 0x2b0654,
-    ground: 0x1e043b,
-    monolith: 0x3d0a75,
-    primary: 0xd946ef,
+    sky: 0x110324,
+    fog: 0x220742,
+    ground: 0x17042e,
+    monolith: 0x330b5e,
+    primary: 0xe879f9,
     secondary: 0x818cf8,
-    lightIntensity: 2.2,
+    lightIntensity: 1.35,
     style: "glitch"
   }
 ];
@@ -853,9 +853,9 @@ export class World {
     this.currentCycleIndex = 0;
     this.cycle = CYCLES_DATA[0];
 
-    // Brume calibrée pour masquer 100% des apparitions d'obstacles à l'horizon (z = -240)
+    // Brume atmosphérique cinématographique calibrée pour un horizon fluide et profond
     this.scene.background = new THREE.Color(this.cycle.sky);
-    this.scene.fog = new THREE.Fog(this.cycle.fog, 55, 240);
+    this.scene.fog = new THREE.Fog(this.cycle.fog, 75, 340);
 
     // Éclairage directionnel & ombres nettes
     this.setupLighting();
@@ -898,15 +898,15 @@ export class World {
     this.cyclesData = CYCLES_DATA;
   }
 
-  // Configuration de l'éclairage cinématographique avec PCFSoftShadowMap
+  // Configuration de l'éclairage cinématographique réaliste avec PCFSoftShadowMap & Fill Light
   setupLighting() {
-    // Lumière hémisphérique douce pour les zones d'ombre
-    this.hemiLight = new THREE.HemisphereLight(this.cycle.secondary, this.cycle.fog, 0.55);
+    // 1. Lumière hémisphérique naturelle (ciel teinté + rebond de sol doux)
+    this.hemiLight = new THREE.HemisphereLight(this.cycle.secondary, this.cycle.ground, 0.45);
     this.scene.add(this.hemiLight);
 
-    // Lumière directionnelle principale (Soleil venant du dessus / côté-arrière)
-    // Projette de longues ombres dramatiques vers l'avant (Race the Sun)
-    this.sunLight = new THREE.DirectionalLight(0xffffff, this.cycle.lightIntensity);
+    // 2. Lumière directionnelle principale (Soleil chaud naturel avec ombres douces PCF)
+    const naturalSun = new THREE.Color(0xfff8ee).lerp(new THREE.Color(this.cycle.primary), 0.12);
+    this.sunLight = new THREE.DirectionalLight(naturalSun, this.cycle.lightIntensity);
     this.sunLight.position.set(40, 65, 30);
     this.sunLight.castShadow = true;
 
@@ -926,6 +926,11 @@ export class World {
     this.scene.add(this.sunLight);
     this.sunLight.target.position.set(0, 0, -60);
     this.scene.add(this.sunLight.target);
+
+    // 3. Lumière d'appoint douce (Fill Light sans ombre) pour déboucher les volumes 3D
+    this.fillLight = new THREE.DirectionalLight(this.cycle.secondary, 0.30);
+    this.fillLight.position.set(-35, 30, -25);
+    this.scene.add(this.fillLight);
   }
 
   // Terrain solide avec textures procédurales haute définition des 8 cycles
@@ -2210,11 +2215,14 @@ export class World {
     this.scene.fog.color.set(cycle.fog);
 
     // Éclairage directionnel naturel (lumière du jour chaude préservant les teintes de terre/eau réelles)
-    const naturalSun = new THREE.Color(0xfffdf6).lerp(new THREE.Color(cycle.primary), 0.16);
+    const naturalSun = new THREE.Color(0xfff8ee).lerp(new THREE.Color(cycle.primary), 0.12);
     this.sunLight.color.copy(naturalSun);
     this.hemiLight.color.set(cycle.secondary);
-    this.hemiLight.groundColor.set(cycle.fog);
+    this.hemiLight.groundColor.set(cycle.ground);
     this.sunLight.intensity = cycle.lightIntensity;
+    if (this.fillLight) {
+      this.fillLight.color.set(cycle.secondary);
+    }
 
     if (this.currentCycleIndex === 0) {
       this.terrainMesh.material = this.waterMaterial;
@@ -2280,6 +2288,8 @@ export class World {
     this.nextSkyColor = new THREE.Color(this.cycle.sky);
     this.prevFogColor = new THREE.Color(prevCycle.fog);
     this.nextFogColor = new THREE.Color(this.cycle.fog);
+    this.prevGroundColor = new THREE.Color(prevCycle.ground);
+    this.nextGroundColor = new THREE.Color(this.cycle.ground);
     this.prevSunColor = new THREE.Color(prevCycle.primary);
     this.nextSunColor = new THREE.Color(this.cycle.primary);
     this.prevHemiColor = new THREE.Color(prevCycle.secondary);
@@ -3941,12 +3951,15 @@ export class World {
       this.scene.fog.color.lerpColors(this.prevFogColor, this.nextFogColor, smoothT);
 
       // Voile atmosphérique doux qui estompe subtilement l'horizon pendant le passage (pic à mi-course)
-      const fogVeil = Math.sin(t * Math.PI) * 18.0;
-      this.scene.fog.near = Math.max(34, 55 - fogVeil);
+      const fogVeil = Math.sin(t * Math.PI) * 16.0;
+      this.scene.fog.near = Math.max(50, 75 - fogVeil);
 
       this.sunLight.color.lerpColors(this.prevSunColor, this.nextSunColor, smoothT);
       this.hemiLight.color.lerpColors(this.prevHemiColor, this.nextHemiColor, smoothT);
-      this.hemiLight.groundColor.lerpColors(this.prevFogColor, this.nextFogColor, smoothT);
+      this.hemiLight.groundColor.lerpColors(this.prevGroundColor, this.nextGroundColor, smoothT);
+      if (this.fillLight) {
+        this.fillLight.color.lerpColors(this.prevHemiColor, this.nextHemiColor, smoothT);
+      }
       this.sunLight.intensity = THREE.MathUtils.lerp(this.prevLightIntensity, this.nextLightIntensity, smoothT);
       this.groundMaterial.roughness = THREE.MathUtils.lerp(this.prevRoughness, this.targetRoughness, smoothT);
       this.groundMaterial.metalness = THREE.MathUtils.lerp(this.prevMetalness, this.targetMetalness, smoothT);
@@ -3972,7 +3985,7 @@ export class World {
 
       if (t >= 1.0) {
         this.isTransitioning = false;
-        this.scene.fog.near = 55;
+        this.scene.fog.near = 75;
         this.applyCycleImmediate(this.cycle);
       }
     }
@@ -4014,9 +4027,12 @@ export class World {
     }
 
     // Boost lumineux atmosphérique synchronisé avec le beat
-    const audioLightBoost = 1.0 + audioPulse * 0.45;
+    const audioLightBoost = 1.0 + audioPulse * 0.16;
     this.sunLight.intensity = (this.isTransitioning ? this.sunLight.intensity : this.cycle.lightIntensity) * audioLightBoost;
-    this.hemiLight.intensity = 0.55 * (1.0 + audioPulse * 0.4);
+    this.hemiLight.intensity = 0.45 * (1.0 + audioPulse * 0.12);
+    if (this.fillLight) {
+      this.fillLight.intensity = 0.30 * (1.0 + audioPulse * 0.10);
+    }
     this.sunLight.target.position.z = -deltaZ;
 
     // 3. Animation de l'élément environnemental actif et des décors latéraux

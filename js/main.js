@@ -255,8 +255,12 @@ class GameApp {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+    // Rendu réaliste : sRGB Color Space + ACES Filmic Tone Mapping équilibré
+    if ('outputColorSpace' in this.renderer) {
+      this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    }
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.0;
+    this.renderer.toneMappingExposure = 1.05;
   }
 
   applyGraphicsQuality(quality) {
@@ -860,21 +864,29 @@ class GameApp {
     }
 
     if (this.state === this.STATE_PLAYING) {
-      // 2. Calcul de la vitesse de translation avec progression dynamique par cycle (de 44 m/s à 120 m/s)
+      // 2. Calcul de la vitesse de translation avec progression dynamique par cycle
       const cycleSpeeds = [44.0, 53.0, 63.0, 74.0, 85.0, 96.0, 108.0, 120.0];
       const cycleIdx = (this.world && this.world.currentCycleIndex !== undefined) ? this.world.currentCycleIndex : 0;
       const targetCycleSpeed = cycleSpeeds[cycleIdx] || 44.0;
       
-      // Bonus de transition : poussée cinématique d'accélération lors du franchissement de cycle
-      const transitionSurge = (this.world && this.world.isTransitioning) 
-        ? Math.sin(this.world.transitionProgress * Math.PI) * 10.0 
-        : 0.0;
-      
-      const saiyanBonus = this.player.isSayanfinityActive() ? 18.0 : 0.0;
-      const internalProgress = Math.min(8.0, (this.currentCycleDistance || 0) / 280.0);
-      
-      this.baseSpeed = targetCycleSpeed + internalProgress + transitionSurge;
-      this.currentSpeed = this.baseSpeed + this.player.boostExtraSpeed + saiyanBonus;
+      // MULTIJOUEUR : VITESSE STRICTEMENT ÉGALE ET IDENTIQUE POUR TOUS LES PILOTES
+      if (this.isMultiplayerDuel) {
+        // En duel 1v1, tous les joueurs ont exactement la même vitesse synchronisée sur le cycle en cours
+        // Zéro disparité de vitesse, course 100% équitable et fluide
+        const duelEqualSpeeds = [72.0, 78.0, 85.0, 92.0, 100.0, 108.0, 115.0, 122.0];
+        this.baseSpeed = duelEqualSpeeds[cycleIdx] || 72.0;
+        this.currentSpeed = this.baseSpeed;
+      } else {
+        // Mode Solo : progression dynamique avec bonus de cycle, transition et mode Purity
+        const transitionSurge = (this.world && this.world.isTransitioning) 
+          ? Math.sin(this.world.transitionProgress * Math.PI) * 10.0 
+          : 0.0;
+        const saiyanBonus = this.player.isSayanfinityActive() ? 18.0 : 0.0;
+        const internalProgress = Math.min(8.0, (this.currentCycleDistance || 0) / 280.0);
+        
+        this.baseSpeed = targetCycleSpeed + internalProgress + transitionSurge;
+        this.currentSpeed = this.baseSpeed + this.player.boostExtraSpeed + saiyanBonus;
+      }
 
       // Effet cinématique d'étirement du champ de vision dynamique proportionnel à la vitesse
       const speedFOV = Math.max(0, (this.currentSpeed - 44.0) * 0.16);
