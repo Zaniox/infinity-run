@@ -169,11 +169,11 @@ export class SystemManager {
     }
   }
 
-  // Souscription SSE temps réel cross-devices (exclusivement les nouveaux événements en direct avec ?since=now)
+  // Souscription SSE temps réel cross-devices (écoute en direct des nouveaux événements cloud)
   initGlobalSSE() {
     if (typeof EventSource === 'undefined') return;
     try {
-      this.sse = new EventSource(`${this.ntfyEndpoint}/sse?since=now`);
+      this.sse = new EventSource(`${this.ntfyEndpoint}/sse`);
       this.sse.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
