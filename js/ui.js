@@ -1360,11 +1360,17 @@ export class UIManager {
         this.starfoxReticle.classList.remove('warning');
         this.starfoxReticle.classList.add('overheated');
       }
+      if (this.btnMobileFire) {
+        this.btnMobileFire.classList.add('overheated');
+      }
     } else {
       if (this.starfoxReticle) {
         this.starfoxReticle.classList.remove('overheated');
       }
-      if (pct > 75) {
+      if (this.btnMobileFire) {
+        this.btnMobileFire.classList.remove('overheated');
+      }
+      if (pct >= 68) {
         this.blasterHeatFill.style.background = '#f59e0b';
         this.blasterHeatFill.style.boxShadow = '0 0 8px #f59e0b';
         if (this.blasterHeatLabel) {
@@ -1375,7 +1381,7 @@ export class UIManager {
         if (this.starfoxReticle) {
           this.starfoxReticle.classList.add('warning');
         }
-      } else if (pct > 35) {
+      } else if (pct > 25) {
         if (this.starfoxReticle) {
           this.starfoxReticle.classList.remove('warning');
         }

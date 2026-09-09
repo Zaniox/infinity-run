@@ -736,13 +736,13 @@ export class Player {
     this.laserCooldown = 0.0;
     this.laserSpeed = 290.0;
 
-    // Système de gestion thermique (Anti-spam / Cadence tactique)
+    // Système de gestion thermique (Anti-spam / Cadence tactique / Surchauffe rapide)
     this.blasterHeat = 0.0;             // De 0.0 (froid) à 1.0 (surchauffe max)
     this.isOverheated = false;          // Vrai quand verrouillé en surchauffe
     this.overheatCooldownTimer = 0.0;   // Décompte de pénalité
-    this.heatPerShot = 0.22;            // +22% de chaleur par tir (4-5 tirs max avant surchauffe)
-    this.coolingRate = 0.36;            // Dissipation thermique par seconde
-    this.overheatLockoutDuration = 2.6; // 2.6s de verrouillage de sécurité strict
+    this.heatPerShot = 0.38;            // +38% de chaleur par tir (2 tirs max, surchauffe immédiate au 3e)
+    this.coolingRate = 0.22;            // Dissipation thermique lente (impose des tirs espacés)
+    this.overheatLockoutDuration = 3.2; // 3.2s de verrouillage de sécurité strict lors de surchauffe
 
     this.laserGeo = new THREE.CylinderGeometry(0.14, 0.14, 3.6, 8);
     this.laserGeo.rotateX(Math.PI / 2); // Aligné sur l'axe longitudinal (-Z vers l'avant)
@@ -847,7 +847,7 @@ export class Player {
       }
     }
 
-    this.laserCooldown = 0.16; // Cadence anti-spam mesurée
+    this.laserCooldown = 0.20; // Cadence tactique et mesurée
 
     const p = this.group.position;
     const isSaiyan = this.saiyanTimer > 0;

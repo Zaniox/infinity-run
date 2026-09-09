@@ -498,11 +498,18 @@ class GameApp {
 
   firePlayerLaser() {
     if (this.state !== this.STATE_PLAYING) return;
-    this.player.fireLaser(this.audio);
-    this.triggerHaptic(14);
-    if (this.multiplayer && this.multiplayer.isDuelActive) {
-      const p = this.player.group.position;
-      this.multiplayer.sendLaserFire(p.x, p.y, p.z);
+    const fired = this.player.fireLaser(this.audio);
+    if (fired) {
+      this.triggerHaptic(14);
+      if (this.multiplayer && this.multiplayer.isDuelActive) {
+        const p = this.player.group.position;
+        this.multiplayer.sendLaserFire(p.x, p.y, p.z);
+      }
+    } else if (this.player && this.player.isOverheated) {
+      if (this.audio && this.audio.playBlasterJammed) {
+        this.audio.playBlasterJammed();
+      }
+      this.triggerHaptic(8);
     }
   }
 
@@ -602,7 +609,7 @@ class GameApp {
               } else {
                 stopFire();
               }
-            }, 160);
+            }, 200);
           }
         }
       };
@@ -928,15 +935,15 @@ class GameApp {
         }
       });
 
-      // Avertissement sonore pré-surchauffe du blaster
-      if (this.player.blasterHeat >= 0.75 && !this.player.isOverheated) {
+      // Avertissement sonore pré-surchauffe du blaster (après 2 tirs rapides)
+      if (this.player.blasterHeat >= 0.70 && !this.player.isOverheated) {
         if (!this._hasWarnedOverheat) {
           this._hasWarnedOverheat = true;
           if (this.audio && this.audio.playOverheatWarning) {
             this.audio.playOverheatWarning();
           }
         }
-      } else if (this.player.blasterHeat < 0.5) {
+      } else if (this.player.blasterHeat < 0.45) {
         this._hasWarnedOverheat = false;
       }
 

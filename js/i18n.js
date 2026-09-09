@@ -297,8 +297,10 @@ export const TRANSLATIONS = {
     "pseudo_btn_choose": "CHOISIR MON PSEUDO",
     "pseudo_req_hint": "[ PSEUDO REQUIS POUR LE CLASSEMENT ]",
     "pseudo_undefined": "Non défini",
+    "blaster_ready": "BLASTER PRÊT",
     "blaster_cadence": "CADENCE BLASTER",
     "blaster_high_temp": "TEMP ÉLEVÉE",
+    "blaster_overheat": "SURCHAUFFE !",
     "account_title": "Compte Pilote",
     "start_flight": "DÉCOLLER"
   },
@@ -586,8 +588,10 @@ export const TRANSLATIONS = {
     "pseudo_btn_choose": "CHOOSE CALLSIGN",
     "pseudo_req_hint": "[ CALLSIGN REQUIRED FOR LEADERBOARD ]",
     "pseudo_undefined": "Not set",
+    "blaster_ready": "BLASTER READY",
     "blaster_cadence": "BLASTER CADENCE",
     "blaster_high_temp": "HIGH TEMP",
+    "blaster_overheat": "OVERHEAT!",
     "account_title": "Pilot Account",
     "start_flight": "TAKEOFF"
   },
@@ -875,8 +879,10 @@ export const TRANSLATIONS = {
     "pseudo_btn_choose": "ELEGIR APODO",
     "pseudo_req_hint": "[ APODO REQUERIDO PARA CLASIFICACIÓN ]",
     "pseudo_undefined": "No definido",
+    "blaster_ready": "BLÁSTER LISTO",
     "blaster_cadence": "CADENCIA BLASTER",
     "blaster_high_temp": "TEMP ELEVADA",
+    "blaster_overheat": "¡SOBRECALENTADO!",
     "account_title": "Cuenta de Piloto",
     "start_flight": "DESPEGAR"
   },
@@ -1164,8 +1170,10 @@ export const TRANSLATIONS = {
     "pseudo_btn_choose": "选择呼号",
     "pseudo_req_hint": "[ 排行榜需要呼号 ]",
     "pseudo_undefined": "未设置",
+    "blaster_ready": "爆能枪就绪",
     "blaster_cadence": "爆能枪射速",
     "blaster_high_temp": "高温警告",
+    "blaster_overheat": "过热警告！",
     "account_title": "飞行员账户",
     "start_flight": "起飞"
   },
@@ -1453,8 +1461,10 @@ export const TRANSLATIONS = {
     "pseudo_btn_choose": "उपनाम चुनें",
     "pseudo_req_hint": "[ लीडरबोर्ड के लिए उपनाम आवश्यक ]",
     "pseudo_undefined": "सेट नहीं है",
+    "blaster_ready": "ब्लास्टर तैयार",
     "blaster_cadence": "ब्लास्टर गति",
     "blaster_high_temp": "उच्च तापमान",
+    "blaster_overheat": "अत्यधिक गरम!",
     "account_title": "पायलट खाता",
     "start_flight": "उड़ान भरें"
   },
@@ -1742,8 +1752,10 @@ export const TRANSLATIONS = {
     "pseudo_btn_choose": "اختر اسمك",
     "pseudo_req_hint": "[ الاسم مطلوب للوحة الصدارة ]",
     "pseudo_undefined": "غير محدد",
+    "blaster_ready": "المدفع جاهز",
     "blaster_cadence": "إطلاق متتابع",
     "blaster_high_temp": "حرارة مرتفعة",
+    "blaster_overheat": "حرارة زائدة!",
     "account_title": "حساب الطيار",
     "start_flight": "إقلاع"
   },
@@ -2031,8 +2043,10 @@ export const TRANSLATIONS = {
     "pseudo_btn_choose": "কলসাইন নির্বাচন করুন",
     "pseudo_req_hint": "[ লিডারবোর্ডের জন্য কলসাইন প্রয়োজন ]",
     "pseudo_undefined": "নির্ধারিত নয়",
+    "blaster_ready": "ব্লাস্টার প্রস্তুত",
     "blaster_cadence": "ব্লাস্টার গতি",
     "blaster_high_temp": "উচ্চ তাপমাত্রা",
+    "blaster_overheat": "অতিরিক্ত উত্তপ্ত!",
     "account_title": "পাইলট অ্যাকাউন্ট",
     "start_flight": "উড্ডয়ন"
   },
@@ -2320,8 +2334,10 @@ export const TRANSLATIONS = {
     "pseudo_btn_choose": "ESCOLHER CODINOME",
     "pseudo_req_hint": "[ CODINOME NECESSÁRIO PARA O RANKING ]",
     "pseudo_undefined": "Não definido",
+    "blaster_ready": "BLASTER PRONTO",
     "blaster_cadence": "CADÊNCIA DO BLASTER",
     "blaster_high_temp": "TEMPERATURA ALTA",
+    "blaster_overheat": "SUPERAQUECIDO!",
     "account_title": "Conta de Piloto",
     "start_flight": "DECOLAR"
   }

@@ -702,6 +702,26 @@ export class AudioManager {
     });
   }
 
+  // SFX : Clic d'enrayement / Tir impossible en surchauffe
+  playBlasterJammed() {
+    if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
+    const now = this.audioCtx.currentTime;
+    if (this._lastJammedSound && now - this._lastJammedSound < 0.16) return;
+    this._lastJammedSound = now;
+
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(160, now);
+    osc.frequency.exponentialRampToValueAtTime(50, now + 0.05);
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+    osc.connect(gain);
+    gain.connect(this.sfxMasterGain || this.audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.07);
+  }
+
   // SFX : Frôlement d'obstacle in extremis (Close Call / High-speed Doppler Chime)
   playNearMiss() {
     if (!this.isInitialized || !this.audioCtx || this.isMuted) return;
