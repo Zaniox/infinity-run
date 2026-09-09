@@ -40,6 +40,7 @@ class GameApp {
     this.STATE_GAMEOVER = 'GAMEOVER';
     this.state = this.STATE_MENU;
     this.isMultiplayerDuel = false;
+    this.isDuelFrozen = false;
     this.isPaused = false;
 
     // Statistiques de vol
@@ -447,7 +448,7 @@ class GameApp {
     this.state = this.STATE_PLAYING;
   }
 
-  startMultiplayerGame(startCycleIndex = 0) {
+  startMultiplayerGame(startCycleIndex = 0, isFrozen = false) {
     // Contrôle du Mode Maintenance
     if (this.system && this.system.isMaintenanceActive()) {
       const isFounder = !!(this.auth && typeof this.auth.isFounder === 'function' && this.auth.isFounder());
@@ -457,6 +458,7 @@ class GameApp {
     this.isPaused = false;
     if (this.ui) this.ui.hidePauseMenu();
     this.isMultiplayerDuel = true;
+    this.isDuelFrozen = isFrozen;
     if (this.rivalLasers) {
       this.rivalLasers.forEach(rl => {
         this.scene.remove(rl.mesh);
@@ -470,8 +472,10 @@ class GameApp {
     this.heartsCount = 0;
     this.obstacleScore = 0;
     this.obstaclesDestroyed = 0;
-    this.baseSpeed = 70.0;
-    this.currentSpeed = 70.0;
+    // VITESSE UNIFIÉE STRICTEMENT IDENTIQUE POUR TOUS LES PILOTES EN DUEL (85.0 m/s = 306 km/h)
+    const DUEL_SPEED = 85.0;
+    this.baseSpeed = this.isDuelFrozen ? 0.0 : DUEL_SPEED;
+    this.currentSpeed = this.baseSpeed;
     this.loopCount = 1;
     this.cycle8Distance = 0;
     this.isClimaxFeinteActive = false;
@@ -509,6 +513,16 @@ class GameApp {
       const pseudo = user ? user.pseudo : 'Pilote';
       const rival = (this.multiplayer && this.multiplayer.opponentUser) ? this.multiplayer.opponentUser.pseudo : 'Rival';
       this.system.logEvent('DUEL', `Départ duel 1v1 : @${pseudo} vs @${rival} (Cycle ${startCycleIndex + 1})`);
+    }
+  }
+
+  // Libération synchronisée de la vitesse à la fin du compte à rebours 3-2-1
+  releaseDuelSpeed() {
+    this.isDuelFrozen = false;
+    this.baseSpeed = 85.0;
+    this.currentSpeed = 85.0;
+    if (this.ui) {
+      this.ui.updateHUD(100, 0, this.currentSpeed, 0);
     }
   }
 
@@ -641,18 +655,28 @@ class GameApp {
       btnMobileFire.addEventListener('touchstart', startFire, { passive: false });
       btnMobileFire.addEventListener('touchend', stopFire, { passive: false });
       btnMobileFire.addEventListener('touchcancel', stopFire, { passive: false });
-      btnMobileFire.addEventListener('mousedown', startFire);
-      btnMobileFire.addEventListener('mouseup', stopFire);
-      btnMobileFire.addEventListener('mouseleave', stopFire);
+      btnMobileFire.addEventListener('mousedown', (e) => {
+        if (!this.isMobile) startFire(e);
+      });
+      btnMobileFire.addEventListener('mouseup', (e) => {
+        if (!this.isMobile) stopFire(e);
+      });
+      btnMobileFire.addEventListener('mouseleave', (e) => {
+        if (!this.isMobile) stopFire(e);
+      });
     }
 
-    // Bouton Boost instantané
+    // Bouton Boost instantané (avec anti-rebond smartphone)
     if (btnMobileBoost) {
+      let lastBoostTap = 0;
       const handleTouchBoost = (e) => {
         if (e) {
           e.preventDefault();
           e.stopPropagation();
         }
+        const now = performance.now();
+        if (now - lastBoostTap < 350) return;
+        lastBoostTap = now;
         if (this.state === this.STATE_PLAYING && !this.isPaused && this.player) {
           this.player.activateBoost(3.5, 28.0);
           this.triggerHaptic([35, 30, 50]);
@@ -660,7 +684,9 @@ class GameApp {
         }
       };
       btnMobileBoost.addEventListener('touchstart', handleTouchBoost, { passive: false });
-      btnMobileBoost.addEventListener('click', handleTouchBoost);
+      btnMobileBoost.addEventListener('click', (e) => {
+        if (!this.isMobile) handleTouchBoost(e);
+      });
     }
 
     // Joystick dynamique flottant (auto-centrage, zone morte, courbe exponentielle, double-tap boost)
@@ -775,9 +801,9 @@ class GameApp {
       joyZone.addEventListener('touchcancel', endJoy, { passive: false });
     }
 
-    // Fallback tactile sur écran
+    // Fallback souris de bureau UNIQUEMENT (cliquer-glisser sur grand écran PC, zéro conflit avec mobile)
     window.addEventListener('pointerdown', (e) => {
-      if (e.pointerType === 'touch' && !e.target.closest('#mobile-controls') && !e.target.closest('.modal-overlay')) {
+      if (e.pointerType === 'mouse' && !e.target.closest('#mobile-controls') && !e.target.closest('.modal-overlay')) {
         this.isPointerDown = true;
         this.pointerStartX = e.clientX;
         this.pointerStartY = e.clientY;
@@ -785,7 +811,7 @@ class GameApp {
     });
 
     window.addEventListener('pointermove', (e) => {
-      if (this.isPointerDown && e.pointerType === 'touch' && !e.target.closest('#touch-joystick-zone')) {
+      if (this.isPointerDown && e.pointerType === 'mouse') {
         const diffX = (e.clientX - this.pointerStartX) / (window.innerWidth * 0.22);
         const diffY = (this.pointerStartY - e.clientY) / (window.innerHeight * 0.22);
         this.inputAxisX = Math.max(-1, Math.min(1, diffX));
@@ -794,7 +820,7 @@ class GameApp {
     });
 
     const resetPointer = (e) => {
-      if (!e || e.pointerType === 'touch') {
+      if (!e || e.pointerType === 'mouse') {
         this.isPointerDown = false;
         this.updateInputAxes();
       }
@@ -883,10 +909,10 @@ class GameApp {
       
       // MULTIJOUEUR : VITESSE STRICTEMENT ÉGALE ET IDENTIQUE POUR TOUS LES PILOTES
       if (this.isMultiplayerDuel) {
-        // En duel 1v1, tous les joueurs ont exactement la même vitesse synchronisée sur le cycle en cours
-        // Zéro disparité de vitesse, course 100% équitable et fluide
-        const duelEqualSpeeds = [72.0, 78.0, 85.0, 92.0, 100.0, 108.0, 115.0, 122.0];
-        this.baseSpeed = duelEqualSpeeds[cycleIdx] || 72.0;
+        // En duel 1v1, tous les joueurs ont rigoureusement la MÊME vitesse absolue unifiée (85.0 m/s = 306 km/h)
+        // Zéro disparité de vitesse, course 100% équitable et synchronisée
+        const DUEL_FIXED_SPEED = 85.0;
+        this.baseSpeed = this.isDuelFrozen ? 0.0 : DUEL_FIXED_SPEED;
         this.currentSpeed = this.baseSpeed;
       } else {
         // Mode Solo : progression dynamique avec bonus de cycle, transition et mode Purity

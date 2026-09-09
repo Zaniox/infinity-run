@@ -162,6 +162,11 @@ export class UIManager {
     this.multiplayerModal = document.getElementById('multiplayer-modal');
     this.btnCloseMultiplayer = document.getElementById('btn-close-multiplayer');
 
+    this.duelCountdownOverlay = document.getElementById('duel-countdown-overlay');
+    this.duelCountdownNumber = document.getElementById('duel-countdown-number');
+    this.duelCountdownSubtext = document.getElementById('duel-countdown-subtext');
+    this.duelCountdownTimer = null;
+
     this.mpTabsNav = document.getElementById('mp-tabs-nav');
     this.tabBtnRooms = document.getElementById('tab-btn-rooms');
     this.tabBtnCreate = document.getElementById('tab-btn-create');
@@ -547,11 +552,15 @@ export class UIManager {
     }
 
     if (this.btnMobilePause) {
+      let lastPauseTap = 0;
       const handleMobilePause = (e) => {
         if (e) {
           e.preventDefault();
           e.stopPropagation();
         }
+        const now = performance.now();
+        if (now - lastPauseTap < 400) return;
+        lastPauseTap = now;
         if (window.gameApp) {
           window.gameApp.togglePause();
           if (typeof window.gameApp.triggerHaptic === 'function') {
@@ -565,16 +574,19 @@ export class UIManager {
 
     // 10. Bouton Troll Continue
     if (this.btnTrollContinue) {
+      let lastTrollTap = 0;
       const handleTrollContinue = (e) => {
         if (e) {
           e.preventDefault();
           e.stopPropagation();
         }
+        const now = performance.now();
+        if (now - lastTrollTap < 400) return;
+        lastTrollTap = now;
         this.hideTrollModal();
         if (this.onTrollContinue) this.onTrollContinue();
       };
       this.btnTrollContinue.addEventListener('click', handleTrollContinue);
-      this.btnTrollContinue.addEventListener('pointerdown', handleTrollContinue);
     }
 
     // 11. Multijoueur 1v1 (Compte Pilote Requis)
@@ -1196,10 +1208,12 @@ export class UIManager {
     if (!this.settingsModal) return;
     this.updateSettingsUI();
     this.settingsModal.classList.remove('hidden');
+    this.updateMobileControlsVisibility();
   }
 
   closeSettingsModal() {
     if (this.settingsModal) this.settingsModal.classList.add('hidden');
+    this.updateMobileControlsVisibility();
   }
 
   isSettingsModalVisible() {
@@ -1268,6 +1282,7 @@ export class UIManager {
       this.switchAccountTab('register');
     }
     this.accountModal.classList.remove('hidden');
+    this.updateMobileControlsVisibility();
   }
 
   closeAccountModal() {
@@ -1276,6 +1291,7 @@ export class UIManager {
     if (this.logError) this.logError.classList.add('hidden');
     if (this.recError) this.recError.classList.add('hidden');
     if (this.recInfo) this.recInfo.classList.add('hidden');
+    this.updateMobileControlsVisibility();
   }
 
   isAccountModalVisible() {
@@ -1495,11 +1511,13 @@ export class UIManager {
     }
     if (this.pseudoErrorMsg) this.pseudoErrorMsg.classList.add('hidden');
     if (this.pseudoModal) this.pseudoModal.classList.remove('hidden');
+    this.updateMobileControlsVisibility();
     setTimeout(() => this.inputPlayerPseudo?.focus(), 150);
   }
 
   closePseudoModal() {
     if (this.pseudoModal) this.pseudoModal.classList.add('hidden');
+    this.updateMobileControlsVisibility();
   }
 
   isPseudoModalVisible() {
@@ -1510,6 +1528,7 @@ export class UIManager {
   async openLeaderboardModal() {
     this.updatePersonalBestDisplay();
     if (this.leaderboardModal) this.leaderboardModal.classList.remove('hidden');
+    this.updateMobileControlsVisibility();
 
     if (this.lbTableBody) {
       this.lbTableBody.innerHTML = `<div class="lb-loading">${t('lb_loading', 'Connexion au serveur cloud mondial en cours...')}</div>`;
@@ -1520,6 +1539,7 @@ export class UIManager {
 
   closeLeaderboardModal() {
     if (this.leaderboardModal) this.leaderboardModal.classList.add('hidden');
+    this.updateMobileControlsVisibility();
   }
 
   isLeaderboardVisible() {
@@ -1962,6 +1982,7 @@ export class UIManager {
         card.classList.add('animate-death-enter');
       }
     }
+    this.updateMobileControlsVisibility();
   }
 
   animateStatValue(element, startVal, endVal, durationMs = 700, suffix = '', formatLocale = false) {
@@ -2000,12 +2021,34 @@ export class UIManager {
     return this.gameOverModal && !this.gameOverModal.classList.contains('hidden');
   }
 
+  // --- GESTION CENTRALISÉE DE L'AFFICHAGE DES TOUCH CONTROLS SUR MOBILE ---
+  updateMobileControlsVisibility() {
+    if (!this.mobileControls) return;
+    const isPlaying = window.gameApp && window.gameApp.state === window.gameApp.STATE_PLAYING && !window.gameApp.isPaused;
+    const isAnyModalOpen = this.isStartMenuVisible() || this.isPauseMenuVisible() || this.isGameOverVisible() ||
+      (this.multiplayerModal && !this.multiplayerModal.classList.contains('hidden')) ||
+      (this.leaderboardModal && !this.leaderboardModal.classList.contains('hidden')) ||
+      (this.accountModal && !this.accountModal.classList.contains('hidden')) ||
+      (this.settingsModal && !this.settingsModal.classList.contains('hidden')) ||
+      (this.pseudoModal && !this.pseudoModal.classList.contains('hidden')) ||
+      (this.founderModal && !this.founderModal.classList.contains('hidden')) ||
+      (this.trollModal && !this.trollModal.classList.contains('hidden')) ||
+      (this.duelCountdownOverlay && !this.duelCountdownOverlay.classList.contains('hidden'));
+
+    if (isPlaying && !isAnyModalOpen) {
+      this.mobileControls.classList.remove('hidden');
+    } else {
+      this.mobileControls.classList.add('hidden');
+    }
+  }
+
   // --- GESTION DU MENU PAUSE (ÉCHAP / BOUTON PAUSE) ---
   showPauseMenu() {
     this.setReticleVisible(false);
     if (this.pauseMenu) {
       this.pauseMenu.classList.remove('hidden');
     }
+    this.updateMobileControlsVisibility();
   }
 
   hidePauseMenu() {
@@ -2013,6 +2056,7 @@ export class UIManager {
     if (this.pauseMenu) {
       this.pauseMenu.classList.add('hidden');
     }
+    this.updateMobileControlsVisibility();
   }
 
   isPauseMenuVisible() {
@@ -2024,6 +2068,7 @@ export class UIManager {
     if (this.startMenu) this.startMenu.classList.add('hidden');
     if (this.hudOverlay) this.hudOverlay.classList.remove('hidden');
     this.setReticleVisible(true);
+    this.updateMobileControlsVisibility();
   }
 
   showStartMenu() {
@@ -2031,6 +2076,7 @@ export class UIManager {
     if (this.startMenu) this.startMenu.classList.remove('hidden');
     if (this.hudOverlay) this.hudOverlay.classList.add('hidden');
     if (this.auth) this.updateAuthState(this.auth.getUser());
+    this.updateMobileControlsVisibility();
   }
 
   isStartMenuVisible() {
@@ -2076,10 +2122,12 @@ export class UIManager {
         card.classList.add('animate-troll-enter');
       }
     }
+    this.updateMobileControlsVisibility();
   }
 
   hideTrollModal() {
     if (this.trollModal) this.trollModal.classList.add('hidden');
+    this.updateMobileControlsVisibility();
   }
 
   isTrollModalVisible() {
@@ -2101,15 +2149,17 @@ export class UIManager {
         }
         this.renderPublicRooms(rooms || []);
       };
-      this.multiplayer.onDuelStart = (startCycle) => {
-        this.closeMultiplayerModal();
-        this.hideStartMenu();
-        if (this.hudRivalCard) this.hudRivalCard.classList.remove('hidden');
-        if (window.gameApp) {
-          window.gameApp.startMultiplayerGame(startCycle);
-        }
+      this.multiplayer.onDuelStart = (startCycle, startTimestamp) => {
+        this.startDuelSynchronizedCountdown(startCycle, startTimestamp);
       };
       this.multiplayer.onDuelEnd = (result) => {
+        if (this.duelCountdownTimer) {
+          clearInterval(this.duelCountdownTimer);
+          this.duelCountdownTimer = null;
+        }
+        if (this.duelCountdownOverlay) {
+          this.duelCountdownOverlay.classList.add('hidden');
+        }
         this.showDuelResult(result);
       };
       this.multiplayer.onRivalTelemetry = (data) => {
@@ -2124,6 +2174,90 @@ export class UIManager {
     }
   }
 
+  startDuelSynchronizedCountdown(startCycle, startTimestamp) {
+    this.closeMultiplayerModal();
+    this.hideStartMenu();
+    if (this.hudRivalCard) this.hudRivalCard.classList.remove('hidden');
+
+    // Initialisation immédiate de la scène 3D avec vaisseau immobilisé sur la ligne de départ (speed = 0)
+    if (window.gameApp) {
+      window.gameApp.startMultiplayerGame(startCycle, true);
+    }
+
+    if (this.duelCountdownTimer) {
+      clearInterval(this.duelCountdownTimer);
+      this.duelCountdownTimer = null;
+    }
+
+    if (!this.duelCountdownOverlay || !this.duelCountdownNumber) {
+      if (window.gameApp) window.gameApp.releaseDuelSpeed();
+      return;
+    }
+
+    this.duelCountdownOverlay.classList.remove('hidden');
+    if (this.duelCountdownNumber) {
+      this.duelCountdownNumber.classList.remove('go-state');
+    }
+
+    const targetTime = startTimestamp || (Date.now() + 3000);
+    let lastSpokenSec = null;
+
+    const updateTick = () => {
+      const now = Date.now();
+      const remainMs = targetTime - now;
+      const remainSec = Math.ceil(remainMs / 1000);
+
+      if (remainSec > 0) {
+        if (remainSec !== lastSpokenSec) {
+          lastSpokenSec = remainSec;
+          if (this.duelCountdownNumber) {
+            this.duelCountdownNumber.textContent = remainSec;
+            this.duelCountdownNumber.classList.remove('go-state');
+          }
+          if (this.duelCountdownSubtext) {
+            this.duelCountdownSubtext.textContent = 'PRÉPAREZ VOS RÉACTEURS...';
+          }
+          if (window.gameApp && window.gameApp.audio) {
+            window.gameApp.audio.playDuelCountdown(remainSec);
+          }
+          if (window.gameApp && typeof window.gameApp.triggerHaptic === 'function') {
+            window.gameApp.triggerHaptic(20);
+          }
+        }
+      } else {
+        // DÉCOLLAGE SIMULTANÉ !
+        if (this.duelCountdownTimer) {
+          clearInterval(this.duelCountdownTimer);
+          this.duelCountdownTimer = null;
+        }
+        if (this.duelCountdownNumber) {
+          this.duelCountdownNumber.textContent = 'DÉCOLLAGE !';
+          this.duelCountdownNumber.classList.add('go-state');
+        }
+        if (this.duelCountdownSubtext) {
+          this.duelCountdownSubtext.textContent = '⚔️ DUEL 1V1 EN COURS • MÊME VITESSE SYNCHRONISÉE !';
+        }
+        if (window.gameApp && window.gameApp.audio) {
+          window.gameApp.audio.playDuelCountdown(0);
+        }
+        if (window.gameApp) {
+          window.gameApp.releaseDuelSpeed();
+          if (typeof window.gameApp.triggerHaptic === 'function') {
+            window.gameApp.triggerHaptic([40, 30, 70]);
+          }
+        }
+        setTimeout(() => {
+          if (this.duelCountdownOverlay) {
+            this.duelCountdownOverlay.classList.add('hidden');
+          }
+        }, 750);
+      }
+    };
+
+    updateTick();
+    this.duelCountdownTimer = setInterval(updateTick, 100);
+  }
+
   openMultiplayerModal() {
     if (!this.auth || !this.auth.isAuthenticated()) {
       this.openAccountModal();
@@ -2136,6 +2270,7 @@ export class UIManager {
 
     if (this.multiplayerModal) {
       this.multiplayerModal.classList.remove('hidden');
+      this.updateMobileControlsVisibility();
       if (this.multiplayer && this.multiplayer.isInRoom) {
         this.renderLobby(this.multiplayer.currentRoom);
       } else {
@@ -2147,6 +2282,7 @@ export class UIManager {
 
   closeMultiplayerModal() {
     if (this.multiplayerModal) this.multiplayerModal.classList.add('hidden');
+    this.updateMobileControlsVisibility();
   }
 
   isMultiplayerModalVisible() {
@@ -2477,6 +2613,7 @@ export class UIManager {
       }
     }
     if (this.founderModal) this.founderModal.classList.remove('hidden');
+    this.updateMobileControlsVisibility();
     this.populateUserRegistry();
     this.refreshAuditLogs();
 
@@ -2731,6 +2868,7 @@ export class UIManager {
       this.inputResetConfirm.value = '';
       this.inputResetConfirm.style.borderColor = '';
     }
+    this.updateMobileControlsVisibility();
   }
 
   updateMaintenanceLabel(active) {

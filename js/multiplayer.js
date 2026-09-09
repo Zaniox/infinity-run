@@ -729,15 +729,19 @@ export class MultiplayerManager {
     this.currentRoom.updatedAt = Date.now();
     localStorage.setItem(`soundrise_room_${this.currentRoom.roomId}`, JSON.stringify(this.currentRoom));
 
+    const countdownMs = 3200;
+    const startTimestamp = Date.now() + countdownMs;
+
     this.sendDuelMessage({
       type: 'start_race_countdown',
-      startCycleIndex: startCycle
+      startCycleIndex: startCycle,
+      startTimestamp
     });
 
-    this.triggerRaceStart(startCycle);
+    this.triggerRaceStart(startCycle, startTimestamp);
   }
 
-  triggerRaceStart(startCycleIndex) {
+  triggerRaceStart(startCycleIndex, startTimestamp = null) {
     this.stopRoomSync();
     if (this.joinRetryInterval) {
       clearInterval(this.joinRetryInterval);
@@ -760,7 +764,7 @@ export class MultiplayerManager {
     this.telemetryInterval = setInterval(() => this.sendTelemetry(), 33);
 
     if (this.onDuelStart) {
-      this.onDuelStart(startCycleIndex);
+      this.onDuelStart(startCycleIndex, startTimestamp);
     }
   }
 
@@ -932,7 +936,7 @@ export class MultiplayerManager {
 
       case 'start_race_countdown':
         if (!this.isHost) {
-          this.triggerRaceStart(data.startCycleIndex || 0);
+          this.triggerRaceStart(data.startCycleIndex || 0, data.startTimestamp || (Date.now() + 3000));
         }
         break;
 
@@ -1008,11 +1012,12 @@ export class MultiplayerManager {
   update(dt, myDistance) {
     if (!this.isDuelActive || !this.rivalGroup.visible) return;
 
-    // Interpolation douce vers la position de l'adversaire
-    const deltaZ = (this.opponentData.distance - myDistance); // Écart relatif de distance
+    // Interpolation douce vers la position de l'adversaire (même vitesse, écart relatif clamped)
+    const deltaZ = ((this.opponentData.distance || 0) - myDistance); // Écart relatif de distance
     const targetX = this.opponentData.x || 0;
     const targetY = Math.max(1.2, this.opponentData.y || 3.5);
-    const targetZ = -deltaZ; // Si l'adversaire est devant, deltaZ > 0 donc targetZ est en avant (< 0)
+    const clampedDeltaZ = Math.max(-45.0, Math.min(60.0, deltaZ));
+    const targetZ = -clampedDeltaZ; // Si l'adversaire est devant, deltaZ > 0 donc targetZ est en avant (< 0)
 
     this.rivalGroup.position.x += (targetX - this.rivalGroup.position.x) * 12.0 * dt;
     this.rivalGroup.position.y += (targetY - this.rivalGroup.position.y) * 10.0 * dt;

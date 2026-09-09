@@ -2938,6 +2938,11 @@ html, body {
   display: none; /* Actif sur mobile */
 }
 
+.mobile-controls-layer.hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
+
 /* ==========================================================================
    EXPÉRIENCE MOBILE NATIVE & MODE PORTRAIT ÉPURÉ (ZÉRO POLLUTION VISUELLE)
    ========================================================================== */
@@ -2959,22 +2964,35 @@ html, body {
     display: none !important;
   }
 
-  /* 2. Affichage des contrôles tactiles */
-  .mobile-controls-layer {
+  /* 2. Affichage des contrôles tactiles (seulement si non masqué) */
+  .mobile-controls-layer:not(.hidden) {
     display: block !important;
     pointer-events: none;
-    position: absolute;
+    position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: 80;
   }
 
-  /* 3. Zone de pilotage tactile (pleine hauteur gauche/centre) */
+  .mobile-controls-layer.hidden {
+    display: none !important;
+    pointer-events: none !important;
+  }
+
+  /* 3. Zone de pilotage tactile adaptée (gauche/centre) */
   .touch-joystick-zone {
-    width: 75% !important;
-    height: 75% !important;
+    width: 65% !important;
+    height: 70% !important;
     bottom: 0 !important;
     left: 0 !important;
     padding: 0 !important;
+  }
+
+  /* En mode paysage sur mobile : la zone ne doit pas déborder sur les boutons de tir à droite */
+  @media (orientation: landscape) {
+    .touch-joystick-zone {
+      width: 48% !important;
+      height: 90% !important;
+    }
   }
 
   .touch-joystick-base {
@@ -5454,3 +5472,141 @@ html.maintenance-active #start-menu {
 #game-canvas.speed-blur {
   filter: blur(0.4px) saturate(1.15);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OVERLAY COMPTE À REBOURS DUEL 1V1 (DÉPART SYNCHRONISÉ)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.duel-countdown-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 50%, rgba(10, 2, 28, 0.72) 0%, rgba(0, 0, 0, 0.88) 80%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+  pointer-events: auto;
+  transition: opacity 0.25s ease-out;
+}
+
+.duel-countdown-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  display: none !important;
+}
+
+.duel-countdown-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.duel-countdown-badge {
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+  color: #22c55e;
+  text-transform: uppercase;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  border-radius: 20px;
+  padding: 6px 18px;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+}
+
+.duel-countdown-number {
+  font-size: clamp(6rem, 22vw, 12rem);
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 0 35px #22c55e, 0 0 70px #00f0ff, 0 0 100px #22c55e;
+  line-height: 1;
+  font-family: 'Montserrat', sans-serif, monospace;
+  animation: countdown-pulse 0.9s ease-out infinite;
+}
+
+.duel-countdown-number.go-state {
+  color: #facc15;
+  text-shadow: 0 0 45px #facc15, 0 0 90px #ff0055, 0 0 140px #facc15;
+  font-size: clamp(4rem, 14vw, 8rem);
+  animation: countdown-slam 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.duel-countdown-subtext {
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+@keyframes countdown-pulse {
+  0% { transform: scale(1.35); opacity: 0.4; }
+  50% { transform: scale(1.0); opacity: 1.0; }
+  100% { transform: scale(0.92); opacity: 0.75; }
+}
+
+@keyframes countdown-slam {
+  0% { transform: scale(2.2); opacity: 0; filter: blur(6px); }
+  60% { transform: scale(0.95); opacity: 1; filter: blur(0px); }
+  100% { transform: scale(1.0); opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OPTIMISATIONS GLOBALES MOBILES & ANTI-BUGS TACTILES
+   ═══════════════════════════════════════════════════════════════════════════ */
+html, body {
+  overscroll-behavior: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+
+/* Permettre le défilement tactile fluide à l'intérieur des modales sans déborder sur le jeu */
+.modal-overlay,
+.modal-card,
+.mp-card,
+.leaderboard-card,
+.leaderboard-list,
+.mp-rooms-list,
+.founder-panel-card,
+.account-card {
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain !important;
+}
+
+/* Empêcher le zoom automatique iOS sur les champs de formulaire */
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+  input, select, textarea,
+  .form-field input,
+  .form-field select,
+  .mp-select {
+    font-size: 16px !important;
+  }
+
+  /* Bouton fermer modal agrandi pour le doigt sur téléphone (zone tactile 44x44px conforme iOS/Android) */
+  .modal-close-corner {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 1.15rem !important;
+    top: 10px !important;
+    right: 12px !important;
+  }
+
+  /* Rendre les boutons des modals faciles à presser sur smartphone */
+  .btn-modal-action,
+  .btn-restart-game,
+  .btn-pause-action,
+  .btn-account-action,
+  .mp-tab-btn {
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+

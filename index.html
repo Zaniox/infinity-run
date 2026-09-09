@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>// SOUNDRISE : INFINITY RUN - by zanioxx_off</title>
   <link rel="stylesheet" href="style.css" />
 
@@ -423,8 +423,8 @@
       </div>
     </div>
 
-    <!-- CONTRÔLES TACTILES POUR SMARTPHONE (AUTO-DÉTECTÉS) -->
-    <div id="mobile-controls" class="mobile-controls-layer">
+    <!-- CONTRÔLES TACTILES POUR SMARTPHONE (AUTO-DÉTECTÉS & MASQUÉS EN MENU) -->
+    <div id="mobile-controls" class="mobile-controls-layer hidden">
       <!-- Zone de joystick tactile virtuel sur l'écran gauche/centre -->
       <div id="touch-joystick-zone" class="touch-joystick-zone">
         <div id="touch-joystick-base" class="touch-joystick-base hidden">
@@ -448,6 +448,15 @@
           🔫
           <span class="touch-action-label" data-i18n="touch_blaster">BLASTER</span>
         </button>
+      </div>
+    </div>
+
+    <!-- OVERLAY COMPTE À REBOURS DÉPART DUEL 1V1 (DÉPART SYNCHRONISÉ) -->
+    <div id="duel-countdown-overlay" class="duel-countdown-overlay hidden">
+      <div class="duel-countdown-box">
+        <div class="duel-countdown-badge">⚔️ DÉPART DUEL SYNCHRONISÉ</div>
+        <div id="duel-countdown-number" class="duel-countdown-number">3</div>
+        <div id="duel-countdown-subtext" class="duel-countdown-subtext">PRÉPAREZ VOS RÉACTEURS...</div>
       </div>
     </div>
 
