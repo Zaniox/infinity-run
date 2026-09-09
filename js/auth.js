@@ -236,9 +236,13 @@ export class AuthManager {
       cleanPseudo.toLowerCase() === this.founderPseudo.toLowerCase()
     );
 
-    // Si c'est le Fondateur officiel qui s'inscrit ou revendique son compte
+    // Protection critique du compte Fondateur : mot de passe officiel requis
     if (isFounder) {
-      return this.loginAsFounder(cleanPwd);
+      if (cleanPwd === this.founderDefaultPassword) {
+        return this.loginAsFounder(cleanPwd);
+      } else {
+        throw new Error('Ce compte est strictement réservé au Fondateur officiel. Veuillez vous connecter dans l\'onglet "Se connecter" avec vos identifiants.');
+      }
     }
 
     let accounts = this.getAccounts();
@@ -307,14 +311,9 @@ export class AuthManager {
       cleanId === this.founderPseudo.toLowerCase()
     );
 
-    // Détection immédiate du Fondateur
+    // Détection immédiate du Fondateur : mot de passe officiel requis
     if (isTargetFounder) {
-      if (
-        cleanPwd === this.founderDefaultPassword ||
-        cleanPwd === 'zanioxx_off' ||
-        cleanPwd === 'soundrise2026' ||
-        cleanPwd === 'founder'
-      ) {
+      if (cleanPwd === this.founderDefaultPassword) {
         return this.loginAsFounder(cleanPwd);
       }
     }
@@ -328,12 +327,7 @@ export class AuthManager {
       if (!matchPseudo && !matchEmail) return false;
 
       if (a.passwordHash === hash) return true;
-      if (isTargetFounder && (
-        cleanPwd === this.founderDefaultPassword ||
-        cleanPwd === 'zanioxx_off' ||
-        cleanPwd === 'soundrise2026' ||
-        cleanPwd === 'founder'
-      )) return true;
+      if (isTargetFounder && cleanPwd === this.founderDefaultPassword) return true;
       return false;
     });
 

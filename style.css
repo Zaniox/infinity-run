@@ -4808,36 +4808,4 @@ html, body {
   background: rgba(56, 189, 248, 0.1);
 }
 
-.founder-quick-bar {
-  margin: 12px 0 16px 0;
-  text-align: center;
-}
-
-.btn-founder-quick {
-  width: 100%;
-  padding: 10px 14px;
-  background: linear-gradient(135deg, rgba(234, 179, 8, 0.18), rgba(245, 158, 11, 0.08));
-  border: 1px solid rgba(234, 179, 8, 0.5);
-  border-radius: 8px;
-  color: #fde047;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 0 15px rgba(234, 179, 8, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.btn-founder-quick:hover {
-  background: linear-gradient(135deg, rgba(234, 179, 8, 0.32), rgba(245, 158, 11, 0.2));
-  border-color: #facc15;
-  color: #ffffff;
-  box-shadow: 0 0 25px rgba(234, 179, 8, 0.4);
-  transform: translateY(-1px);
-}
-
 

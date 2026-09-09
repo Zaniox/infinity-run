@@ -269,7 +269,6 @@ export class UIManager {
     this.recInfo = document.getElementById('rec-info');
     this.btnRecSubmit = document.getElementById('btn-rec-submit');
     this.btnBackToLogin = document.getElementById('btn-back-to-login');
-    this.btnQuickFounderLogin = document.getElementById('btn-quick-founder-login');
     this.accountAvatarLarge = document.getElementById('account-avatar-large');
     this.accountPseudoLarge = document.getElementById('account-pseudo-large');
     this.accountFounderTag = document.getElementById('account-founder-tag');
@@ -789,24 +788,6 @@ export class UIManager {
     }
     if (this.btnBackToLogin) {
       this.btnBackToLogin.addEventListener('click', () => this.switchAccountTab('login'));
-    }
-
-    // Connexion Directe Fondateur (Bouton 1-clic)
-    if (this.btnQuickFounderLogin) {
-      this.btnQuickFounderLogin.addEventListener('click', () => {
-        if (!this.auth) return;
-        try {
-          const res = this.auth.loginAsFounder('Mealyana@@@@1122');
-          if (res && res.success) {
-            this.closeAccountModal();
-            this.updateAuthState(this.auth.getUser());
-            this.showClimaxAlert('👑 SESSION FONDATEUR ACTIVÉE ! BIENVENUE @zanioxx_off', true);
-            setTimeout(() => this.hideClimaxAlert(), 3500);
-          }
-        } catch (err) {
-          alert('Erreur connexion Fondateur : ' + err.message);
-        }
-      });
     }
 
     // Boutons Voir / Masquer mot de passe et code (👁️)
