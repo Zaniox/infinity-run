@@ -4,17 +4,17 @@
  * Boucle de vol et Synchronisation Audio-Réactive.
  */
 import * as THREE from 'three';
-import { AudioManager, TRACKS } from './audio.js';
-import { TargetManager } from './target.js';
-import { Player } from './player.js';
-import { World, CYCLES_DATA, CYCLE_FLIGHT_PROFILES } from './world.js';
-import { UIManager } from './ui.js';
-import { AuthManager } from './auth.js';
-import { LeaderboardManager } from './leaderboard.js';
-import { MultiplayerManager } from './multiplayer.js';
-import { SystemManager } from './system.js';
-import { settings } from './settings.js';
-import { i18n } from './i18n.js';
+import { AudioManager, TRACKS } from './audio.js?v=2.5';
+import { TargetManager } from './target.js?v=2.5';
+import { Player } from './player.js?v=2.5';
+import { World, CYCLES_DATA, CYCLE_FLIGHT_PROFILES } from './world.js?v=2.5';
+import { UIManager } from './ui.js?v=2.5';
+import { AuthManager } from './auth.js?v=2.5';
+import { LeaderboardManager } from './leaderboard.js?v=2.5';
+import { MultiplayerManager } from './multiplayer.js?v=2.5';
+import { SystemManager } from './system.js?v=2.5';
+import { settings } from './settings.js?v=2.5';
+import { i18n } from './i18n.js?v=2.5';
 
 class GameApp {
   constructor() {
