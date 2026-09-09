@@ -23,7 +23,7 @@ class GameApp {
     window.gameApp = this;
     window.game = this;
 
-    // Gestionnaires d'Authentification Google et de Classement Mondial
+    // Gestionnaires d'Authentification et de Classement Mondial
     this.auth = new AuthManager((user) => {
       if (this.ui) this.ui.updateAuthState(user);
       if (this.player && this.player.setFounder) {
@@ -320,12 +320,12 @@ class GameApp {
       }
     }
 
-    // Si l'utilisateur est connecté avec Google mais n'a pas encore choisi de pseudo
-    if (this.auth && this.auth.user && this.auth.user.googleUid && !this.auth.hasPseudo()) {
+    // Si l'utilisateur est connecté mais n'a pas encore choisi de pseudo
+    if (this.auth && this.auth.isAuthenticated() && !this.auth.hasPseudo()) {
       if (this.ui) this.ui.openPseudoModal();
       return;
     }
-    // Si non connecté avec Google, s'assurer que la session invité est active
+    // Si non connecté, s'assurer que la session invité est active
     if (this.auth && !this.auth.isAuthenticated() && !this.auth.isGuest()) {
       this.auth.loginAsGuest();
     }
@@ -1286,7 +1286,7 @@ class GameApp {
         if (this.leaderboard) {
           this.leaderboard.submitScore({
             pseudo: pilotPseudo,
-            googleUid: user ? user.googleUid : null,
+            googleUid: user ? (user.googleUid || user.email || user.id) : null,
             avatar: user ? user.picture : 'https://api.dicebear.com/7.x/bottts/svg?seed=pilot',
             score: totalScore,
             distance: this.distance,
@@ -1327,7 +1327,7 @@ class GameApp {
     if (this.leaderboard) {
       this.leaderboard.submitScore({
         pseudo: pilotPseudo,
-        googleUid: user ? user.googleUid : null,
+        googleUid: user ? (user.googleUid || user.email || user.id) : null,
         avatar: user ? user.picture : 'https://api.dicebear.com/7.x/bottts/svg?seed=pilot',
         score: totalScore,
         distance: this.distance,

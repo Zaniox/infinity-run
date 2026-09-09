@@ -951,26 +951,7 @@ html, body {
   box-shadow: 0 0 6px #38bdf8;
 }
 
-.btn-google-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  padding: 3px 10px;
-  color: #ffffff;
-  font-size: 0.70rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
 
-.btn-google-pill:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: #00f0ff;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
-}
 
 .pill-avatar {
   width: 24px;
@@ -1305,7 +1286,7 @@ html, body {
 }
 
 /* ==========================================================================
-   AUTHENTIFICATION GOOGLE & PROFIL DU PILOTE DANS LE MENU
+   AUTHENTIFICATION COMPTE PILOTE & PROFIL DU PILOTE DANS LE MENU
    ========================================================================== */
 .menu-auth-box {
   width: 100%;
@@ -1371,41 +1352,6 @@ html, body {
   width: 100%;
 }
 
-.google-btn-slot {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 40px;
-}
-
-.btn-google-direct {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 9999px;
-  padding: 9px 20px;
-  color: #f8fafc;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-.btn-google-direct:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: #00f0ff;
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
-  transform: translateY(-1px);
-}
-
-.google-icon {
-  flex-shrink: 0;
-}
-
 /* Profil du joueur connecté */
 .user-profile-banner {
   display: flex;
@@ -1469,7 +1415,7 @@ html, body {
   gap: 8px;
 }
 
-.user-badge-google {
+.user-badge-pilot {
   font-size: 0.58rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -1697,7 +1643,7 @@ html, body {
   background: #020617;
 }
 
-.pseudo-google-info {
+.pseudo-pilot-info {
   display: flex;
   flex-direction: column;
   text-align: left;
@@ -1779,16 +1725,6 @@ html, body {
   margin-top: 4px;
 }
 
-/* ==========================================================================
-   MODAL DE CONNEXION GOOGLE DIRECTE
-   ========================================================================== */
-.google-login-card {
-  max-width: 460px;
-  position: relative;
-  border-color: #4285f4;
-  box-shadow: 0 0 50px rgba(66, 133, 244, 0.4), 0 0 100px rgba(0, 0, 0, 0.9);
-}
-
 .modal-close-corner {
   position: absolute;
   top: 14px;
@@ -1814,13 +1750,6 @@ html, body {
   transform: scale(1.1);
 }
 
-.form-google-login {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
 .form-field {
   display: flex;
   flex-direction: column;
@@ -1837,7 +1766,7 @@ html, body {
 
 .form-field input {
   background: rgba(10, 4, 20, 0.9);
-  border: 1px solid rgba(66, 133, 244, 0.4);
+  border: 1px solid rgba(0, 240, 255, 0.4);
   border-radius: 8px;
   padding: 10px 14px;
   color: #ffffff;
@@ -1848,15 +1777,8 @@ html, body {
 }
 
 .form-field input:focus {
-  border-color: #4285f4;
-  box-shadow: 0 0 15px rgba(66, 133, 244, 0.5);
-}
-
-.btn-google-confirm {
-  background: linear-gradient(135deg, #4285f4 0%, #00f0ff 100%) !important;
-  border-color: #4285f4 !important;
-  width: 100%;
-  margin-top: 6px;
+  border-color: #00f0ff;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
 }
 
 /* ==========================================================================

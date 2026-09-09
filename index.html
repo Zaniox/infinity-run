@@ -6,9 +6,6 @@
   <title>// SOUNDRISE : INFINITY RUN - by zanioxx_off</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Google Identity Services (GIS) officiel -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-
   <!-- Importmap Three.js ES6 officiel -->
   <script type="importmap">
     {
@@ -72,19 +69,9 @@
               <button id="btn-open-account-modal" class="btn-account-pill" type="button" title="Créer un compte ou se connecter">
                 <span>👤</span> <span>Compte</span>
               </button>
-              <button id="btn-open-google-login" class="btn-google-pill" type="button" title="Lier un compte Google pour le classement et le 1v1">
-                <svg class="google-icon-mini" viewBox="0 0 24 24" width="14" height="14">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
-                <span>Google</span>
-              </button>
-              <div id="google-signin-btn-container" class="google-btn-slot hidden"></div>
             </div>
 
-            <!-- Connecté avec Google / Compte -->
+            <!-- Connecté avec Compte Pilote -->
             <div id="auth-logged" class="profile-pill-content hidden">
               <img id="user-avatar-img" class="pill-avatar" src="" alt="Avatar" />
               <div class="pill-user-info">
@@ -441,14 +428,14 @@
         <div class="modal-badge">// ENREGISTREMENT OFFICIEL PILOTE</div>
         <h2 class="modal-title">CHOISIS TON PSEUDO</h2>
         <p class="modal-instruction">
-          Ce pseudo sera inscrit en temps réel dans le <strong>Classement Mondial</strong> avec votre compte Google.
+          Ce pseudo sera inscrit en temps réel dans le <strong>Classement Mondial</strong>.
         </p>
 
         <div class="pseudo-profile-preview">
           <img id="pseudo-avatar-preview" class="pseudo-avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=pilot&backgroundColor=020617" alt="Avatar" />
-          <div class="pseudo-google-info">
-            <span id="pseudo-google-name" class="pseudo-g-name">Pilote Google</span>
-            <span id="pseudo-google-email" class="pseudo-g-email">compte@gmail.com</span>
+          <div class="pseudo-pilot-info">
+            <span id="pseudo-pilot-name" class="pseudo-g-name">Pilote Soundrise</span>
+            <span id="pseudo-pilot-email" class="pseudo-g-email">compte@soundrise</span>
           </div>
         </div>
 
@@ -463,35 +450,6 @@
             <div class="btn-shimmer"></div>
             <span class="btn-play-text">VALIDER MON PSEUDO & DÉCOLLER</span>
             <span class="btn-play-sub">[ ENREGISTREMENT AU CLASSEMENT MONDIAL ]</span>
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- MODAL CONNEXION DIRECTE COMPTE GOOGLE -->
-    <div id="google-login-modal" class="modal-overlay hidden">
-      <div class="modal-card google-login-card">
-        <div class="modal-top-bar"></div>
-        <button id="btn-close-google-modal" class="modal-close-corner" type="button" title="Fermer">✖</button>
-        <div class="modal-badge">// CONNEXION GOOGLE OFFICIELLE</div>
-        <h2 class="modal-title">CONNECTER UN COMPTE GOOGLE</h2>
-        <p class="modal-instruction">
-          Entrez votre adresse email Google / Gmail pour lier votre compte et enregistrer vos records mondiaux.
-        </p>
-
-        <form id="form-google-login" class="form-google-login" onsubmit="return false;">
-          <div class="form-field">
-            <label for="input-google-email">ADRESSE EMAIL GOOGLE (GMAIL)</label>
-            <input id="input-google-email" type="email" placeholder="votre.compte@gmail.com" required />
-          </div>
-          <div class="form-field">
-            <label for="input-google-name">NOM DE PILOTE OU PRÉNOM</label>
-            <input id="input-google-name" type="text" placeholder="Prénom ou Nom" />
-          </div>
-          <div id="google-login-error" class="pseudo-error-msg hidden"></div>
-
-          <button id="btn-confirm-google-login" class="btn-play-giant btn-google-confirm" type="submit">
-            <span class="btn-play-text">SE CONNECTER AVEC CE COMPTE GOOGLE</span>
           </button>
         </form>
       </div>

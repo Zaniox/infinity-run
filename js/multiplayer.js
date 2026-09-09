@@ -431,7 +431,7 @@ export class MultiplayerManager {
       isPrivate: !!isPrivate,
       startCycleIndex: startCycleIndex || 0,
       host: {
-        googleUid: user ? user.googleUid : 'guest_host_' + Date.now(),
+        googleUid: user ? (user.googleUid || user.email || user.id) : 'guest_host_' + Date.now(),
         pseudo: pseudo,
         name: user ? user.name : pseudo,
         picture: user ? user.picture : ''
@@ -527,7 +527,7 @@ export class MultiplayerManager {
 
   joinRoom(roomId) {
     const user = this.auth.getUser();
-    if (!user) throw new Error('Connexion Google requise.');
+    if (!user) throw new Error('Connexion au compte pilote requise.');
     if (!roomId) throw new Error('Code de salon invalide.');
 
     const cleanCode = roomId.trim().toUpperCase();
@@ -552,7 +552,7 @@ export class MultiplayerManager {
     }
 
     room.guest = {
-      googleUid: user.googleUid,
+      googleUid: user.googleUid || user.email || user.id,
       pseudo: user.pseudo,
       name: user.name,
       picture: user.picture
@@ -588,7 +588,7 @@ export class MultiplayerManager {
         type: 'guest_join_request',
         roomId: cleanCode,
         guest: {
-          googleUid: user ? user.googleUid : 'guest_' + Date.now(),
+          googleUid: user ? (user.googleUid || user.email || user.id) : 'guest_' + Date.now(),
           pseudo: user ? user.pseudo : 'Pilote',
           name: user ? user.name : 'Pilote',
           picture: user ? user.picture : ''
@@ -599,7 +599,7 @@ export class MultiplayerManager {
     sendJoin();
     this.joinRetryInterval = setInterval(() => {
       attempts++;
-      if (attempts >= 15 || (this.currentRoom && this.currentRoom.host && this.currentRoom.host.googleUid)) {
+      if (attempts >= 15 || (this.currentRoom && this.currentRoom.host && (this.currentRoom.host.googleUid || this.currentRoom.host.pseudo))) {
         clearInterval(this.joinRetryInterval);
         this.joinRetryInterval = null;
         return;
@@ -661,7 +661,7 @@ export class MultiplayerManager {
           type: 'guest_join_request',
           roomId: this.currentRoom ? this.currentRoom.roomId : '',
           guest: {
-            googleUid: user ? user.googleUid : 'guest_' + Date.now(),
+            googleUid: user ? (user.googleUid || user.email || user.id) : 'guest_' + Date.now(),
             pseudo: user ? user.pseudo : 'Pilote',
             name: user ? user.name : 'Pilote',
             picture: user ? user.picture : ''

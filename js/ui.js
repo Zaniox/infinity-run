@@ -1,6 +1,7 @@
-/**\n * // SOUNDRISE : INFINITY RUN - by zanioxx_off
+/**
+ * // SOUNDRISE : INFINITY RUN - by zanioxx_off
  * // SOUNDRISE : INFINITY RUN - INTERFACE UTILISATEUR, AUTHENTIFICATION & CLASSEMENT MONDIAL
- * Écran d'accueil épuré, Authentification Google (GIS & Direct), Gestion du Pseudo,
+ * Écran d'accueil épuré, Authentification Compte Pilote, Gestion du Pseudo,
  * Leaderboard mondial en direct, Jauge d'énergie et Écran de Game Over synchronisé.
  */
 import { i18n, t } from './i18n.js';
@@ -50,11 +51,9 @@ export class UIManager {
     this.menuCycleBadge = document.getElementById('menu-cycle-badge');
     this.menuCycleTitle = document.getElementById('menu-cycle-title');
 
-    // Authentification Google & Profil joueur
+    // Profil joueur & Session
     this.authUnlogged = document.getElementById('auth-unlogged');
     this.authLogged = document.getElementById('auth-logged');
-    this.googleBtnSlot = document.getElementById('google-signin-btn-container');
-    this.btnOpenGoogleLogin = document.getElementById('btn-open-google-login');
 
     this.userAvatarImg = document.getElementById('user-avatar-img');
     this.userNameDisplay = document.getElementById('user-name-display');
@@ -70,21 +69,12 @@ export class UIManager {
     // Modal Choix du Pseudo
     this.pseudoModal = document.getElementById('pseudo-modal');
     this.pseudoAvatarPreview = document.getElementById('pseudo-avatar-preview');
-    this.pseudoGoogleName = document.getElementById('pseudo-google-name');
-    this.pseudoGoogleEmail = document.getElementById('pseudo-google-email');
+    this.pseudoPilotName = document.getElementById('pseudo-pilot-name');
+    this.pseudoPilotEmail = document.getElementById('pseudo-pilot-email');
     this.formPseudo = document.getElementById('form-pseudo');
     this.inputPlayerPseudo = document.getElementById('input-player-pseudo');
     this.pseudoErrorMsg = document.getElementById('pseudo-error-msg');
     this.btnConfirmPseudo = document.getElementById('btn-confirm-pseudo');
-
-    // Modal Connexion Directe Google
-    this.googleLoginModal = document.getElementById('google-login-modal');
-    this.btnCloseGoogleModal = document.getElementById('btn-close-google-modal');
-    this.formGoogleLogin = document.getElementById('form-google-login');
-    this.inputGoogleEmail = document.getElementById('input-google-email');
-    this.inputGoogleName = document.getElementById('input-google-name');
-    this.googleLoginError = document.getElementById('google-login-error');
-    this.btnConfirmGoogleLogin = document.getElementById('btn-confirm-google-login');
 
     // Modal Leaderboard Mondial
     this.leaderboardModal = document.getElementById('leaderboard-modal');
@@ -323,13 +313,7 @@ export class UIManager {
       const handlePlayClick = (e) => {
         if (e) e.preventDefault();
 
-        // Si connecté avec Google mais pas encore de pseudo -> ouvrir le modal Pseudo
-        if (this.auth && this.auth.user && this.auth.user.googleUid && !this.auth.hasPseudo()) {
-          this.openPseudoModal();
-          return;
-        }
-
-        // Si non connecté avec Google -> activer session invité
+        // Si non connecté -> activer la session invité
         if (!this.auth || !this.auth.isAuthenticated()) {
           if (this.auth) this.auth.loginAsGuest();
         }
@@ -343,51 +327,7 @@ export class UIManager {
       this.btnPlayGame.addEventListener('pointerdown', handlePlayClick);
     }
 
-    // 2. Bouton Connexion Google Directe
-    if (this.btnOpenGoogleLogin) {
-      this.btnOpenGoogleLogin.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.openGoogleDirectModal();
-      });
-    }
-
-    if (this.btnCloseGoogleModal) {
-      this.btnCloseGoogleModal.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.closeGoogleDirectModal();
-      });
-    }
-
-    if (this.formGoogleLogin) {
-      this.formGoogleLogin.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = this.inputGoogleEmail?.value || '';
-        const name = this.inputGoogleName?.value || '';
-
-        if (!email || !email.includes('@')) {
-          if (this.googleLoginError) {
-            this.googleLoginError.textContent = 'Veuillez saisir une adresse email valide.';
-            this.googleLoginError.classList.remove('hidden');
-          }
-          return;
-        }
-
-        try {
-          const user = this.auth.loginWithGoogleAccount(email, name);
-          this.closeGoogleDirectModal();
-          if (!user.pseudo) {
-            this.openPseudoModal();
-          }
-        } catch (err) {
-          if (this.googleLoginError) {
-            this.googleLoginError.textContent = err.message || 'Erreur de connexion.';
-            this.googleLoginError.classList.remove('hidden');
-          }
-        }
-      });
-    }
-
-    // 3. Bouton Modification du Pseudo
+    // 2. Bouton Modification du Pseudo
     if (this.btnEditPseudo) {
       this.btnEditPseudo.addEventListener('click', (e) => {
         e.preventDefault();
@@ -411,12 +351,12 @@ export class UIManager {
       });
     }
 
-    // 4. Déconnexion
+    // 3. Déconnexion
     if (this.btnLogout) {
       this.btnLogout.addEventListener('click', (e) => {
         e.preventDefault();
-        if (confirm('Voulez-vous vraiment vous déconnecter de votre compte Google ?')) {
-          if (this.auth) this.auth.signOut();
+        if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+          if (this.auth) this.auth.logout();
         }
       });
     }
@@ -582,16 +522,12 @@ export class UIManager {
       this.btnTrollContinue.addEventListener('pointerdown', handleTrollContinue);
     }
 
-    // 11. Multijoueur 1v1 (Compte Google Requis)
+    // 11. Multijoueur 1v1 (Compte Pilote Requis)
     if (this.btnOpenMultiplayer) {
       this.btnOpenMultiplayer.addEventListener('click', (e) => {
         e.preventDefault();
-        if (!this.auth || !this.auth.isAuthenticated()) {
-          this.openGoogleDirectModal();
-          if (this.googleLoginError) {
-            this.googleLoginError.textContent = 'Connexion Google requise : Le mode multijoueur (1 vs 1) nécessite un compte Google vérifié.';
-            this.googleLoginError.classList.remove('hidden');
-          }
+        if (!this.auth || !this.auth.isAuthenticated() || this.auth.isGuest()) {
+          this.openAccountModal();
           return;
         }
         this.openMultiplayerModal();
@@ -943,7 +879,6 @@ export class UIManager {
       if (e.code === 'Escape') {
         if (this.isFounderModalVisible()) this.closeFounderPanel();
         if (this.isLeaderboardVisible()) this.closeLeaderboardModal();
-        if (this.isGoogleModalVisible()) this.closeGoogleDirectModal();
         if (this.isMultiplayerModalVisible()) this.closeMultiplayerModal();
         if (this.isDuelResultVisible()) this.closeDuelResult();
         if (this.isSettingsModalVisible()) this.closeSettingsModal();
@@ -954,15 +889,11 @@ export class UIManager {
       if (e.code === 'Space' || e.code === 'Enter') {
         if (this.isStartMenuVisible() && !this.isAnyModalOpen()) {
           e.preventDefault();
-          if (this.auth && this.auth.user && this.auth.user.googleUid && !this.auth.hasPseudo()) {
-            this.openPseudoModal();
-          } else {
-            if (!this.auth || !this.auth.isAuthenticated()) {
-              if (this.auth) this.auth.loginAsGuest();
-            }
-            this.hideStartMenu();
-            if (this.onStart) this.onStart();
+          if (!this.auth || !this.auth.isAuthenticated()) {
+            if (this.auth) this.auth.loginAsGuest();
           }
+          this.hideStartMenu();
+          if (this.onStart) this.onStart();
         } else if (this.isTrollModalVisible()) {
           e.preventDefault();
           this.hideTrollModal();
@@ -979,7 +910,6 @@ export class UIManager {
   isAnyModalOpen() {
     return (
       this.isPseudoModalVisible() ||
-      this.isGoogleModalVisible() ||
       this.isLeaderboardVisible() ||
       this.isGameOverVisible() ||
       this.isTrollModalVisible() ||
@@ -1153,7 +1083,7 @@ export class UIManager {
   // --- MISE À JOUR DE L'ÉTAT D'AUTHENTIFICATION & PROFIL ---
   updateAuthState(user) {
     if (user && !user.isGuest) {
-      // Connecté avec Compte (Email/Mot de passe ou Google)
+      // Connecté avec Compte Pilote
       if (this.authUnlogged) this.authUnlogged.classList.add('hidden');
       if (this.authLogged) this.authLogged.classList.remove('hidden');
 
@@ -1214,7 +1144,7 @@ export class UIManager {
     const user = this.auth.getUser();
     if (!user) return;
 
-    const best = this.leaderboard.getPlayerBest(user.googleUid, user.pseudo);
+    const best = this.leaderboard.getPlayerBest(user.googleUid || user.email || user.id, user.pseudo);
     if (best) {
       if (this.userBestScore) this.userBestScore.textContent = `${best.score.toLocaleString('fr-FR')} PTS`;
       if (this.userBestRank) this.userBestRank.textContent = `#${best.worldRank}`;
@@ -1235,8 +1165,8 @@ export class UIManager {
     const user = this.auth ? this.auth.getUser() : null;
     if (user) {
       if (this.pseudoAvatarPreview) this.pseudoAvatarPreview.src = user.picture;
-      if (this.pseudoGoogleName) this.pseudoGoogleName.textContent = user.name || 'Pilote Google';
-      if (this.pseudoGoogleEmail) this.pseudoGoogleEmail.textContent = user.email || '';
+      if (this.pseudoPilotName) this.pseudoPilotName.textContent = user.name || user.pseudo || 'Pilote Soundrise';
+      if (this.pseudoPilotEmail) this.pseudoPilotEmail.textContent = user.email || '';
       if (this.inputPlayerPseudo) this.inputPlayerPseudo.value = user.pseudo || '';
     }
     if (this.pseudoErrorMsg) this.pseudoErrorMsg.classList.add('hidden');
@@ -1250,21 +1180,6 @@ export class UIManager {
 
   isPseudoModalVisible() {
     return this.pseudoModal && !this.pseudoModal.classList.contains('hidden');
-  }
-
-  // --- MODAL DE CONNEXION DIRECTE GOOGLE ---
-  openGoogleDirectModal() {
-    if (this.googleLoginError) this.googleLoginError.classList.add('hidden');
-    if (this.googleLoginModal) this.googleLoginModal.classList.remove('hidden');
-    setTimeout(() => this.inputGoogleEmail?.focus(), 150);
-  }
-
-  closeGoogleDirectModal() {
-    if (this.googleLoginModal) this.googleLoginModal.classList.add('hidden');
-  }
-
-  isGoogleModalVisible() {
-    return this.googleLoginModal && !this.googleLoginModal.classList.contains('hidden');
   }
 
   // --- MODAL DU CLASSEMENT MONDIAL ---
@@ -1318,7 +1233,7 @@ export class UIManager {
       else if (rank === 2) rankBadge = '<span class="lb-medal-silver">🥈 2e</span>';
       else if (rank === 3) rankBadge = '<span class="lb-medal-bronze">🥉 3e</span>';
 
-      const isMyRow = user && ((user.googleUid && user.googleUid === entry.googleUid) || user.pseudo === entry.pseudo);
+      const isMyRow = user && (((user.googleUid || user.email) && (user.googleUid === entry.googleUid || user.email === entry.googleUid)) || user.pseudo === entry.pseudo);
       const rowClass = isMyRow ? 'lb-row my-row' : 'lb-row';
       const youBadge = isMyRow ? ' <span style="color:#00f0ff;font-size:0.65rem;font-weight:900;">(VOUS)</span>' : '';
 
@@ -1839,7 +1754,7 @@ export class UIManager {
 
   openMultiplayerModal() {
     if (!this.auth || !this.auth.isAuthenticated()) {
-      this.openGoogleDirectModal();
+      this.openAccountModal();
       return;
     }
     if (!this.auth.hasPseudo()) {
