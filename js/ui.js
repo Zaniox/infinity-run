@@ -872,16 +872,19 @@ export class UIManager {
             if (this.recStep2) this.recStep2.classList.remove('hidden');
             if (this.btnRecSubmit) this.btnRecSubmit.textContent = 'CONFIRMER & ME CONNECTER';
 
+            // Auto-remplissage immédiat du code de sécurité dans le champ pour supprimer toute friction
+            if (this.recCode) this.recCode.value = res.securityCode;
+
             if (this.recInfo) {
-              this.recInfo.innerHTML = `✉️ Email de récupération préparé pour <strong>${res.maskedEmail}</strong> !<br>` +
-                `Votre code de sécurité temporaire est : <strong style="color:#facc15; font-size:0.92rem; letter-spacing:0.12em;">${res.securityCode}</strong><br>` +
-                `Entrez ce code ci-dessous avec votre nouveau mot de passe (et éventuellement votre nouveau pseudo).`;
+              this.recInfo.innerHTML = `
+                <div style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); padding:10px 14px; border-radius:8px; margin-bottom:12px; text-align:left;">
+                  <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:4px;">Compte pilote : <strong style="color:#f8fafc;">@${res.pseudo}</strong> (${res.maskedEmail})</div>
+                  <div style="font-size:0.88rem; color:#e2e8f0; margin-bottom:4px;">🔑 Code de sécurité généré : <strong style="color:#38bdf8; font-size:1.15rem; letter-spacing:0.18em; font-family:monospace; background:rgba(56,189,248,0.22); padding:3px 10px; border-radius:6px; border:1px solid rgba(56,189,248,0.4);">${res.securityCode}</strong></div>
+                  <div style="font-size:0.75rem; color:#38bdf8; line-height:1.4;">✨ Le code a été <strong>automatiquement inséré</strong> ci-dessous ! Choisissez votre nouveau mot de passe puis cliquez sur Confirmer.</div>
+                </div>
+              `;
               this.recInfo.classList.remove('hidden');
             }
-
-            try {
-              window.open(res.mailtoUrl, '_blank');
-            } catch (ign) {}
           } else {
             const code = (this.recCode?.value || '').trim();
             const newPwd = (this.recNewPassword?.value || '').trim();
@@ -2436,7 +2439,7 @@ export class UIManager {
 
       let html = '';
       accounts.forEach((acc, idx) => {
-        const isF = acc.role === 'FONDATEUR' || acc.isFounder || acc.email === 'maximenax05@gmail.com' || acc.pseudo === 'zanioxx_off';
+        const isF = acc.role === 'FONDATEUR' || acc.isFounder || acc.email === 'maximenax@gmail.com' || acc.email === 'maximenax05@gmail.com' || acc.pseudo === 'zanioxx_off';
         const roleClass = isF ? 'user-role-founder' : 'user-role-player';
         const roleText = isF ? `👑 ${t('founder_role_founder', 'FONDATEUR')}` : t('founder_role_pilot', 'Pilote');
         const dateStr = acc.createdAt ? new Date(acc.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '--';

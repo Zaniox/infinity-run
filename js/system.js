@@ -65,7 +65,7 @@ export class SystemManager {
   }
 
   async setMaintenance(active, reason, founderUser) {
-    if (!founderUser || (!founderUser.isFounder && founderUser.email !== 'maximenax05@gmail.com' && founderUser.pseudo !== 'zanioxx_off')) {
+    if (!founderUser || (!founderUser.isFounder && founderUser.email !== 'maximenax@gmail.com' && founderUser.email !== 'maximenax05@gmail.com' && founderUser.pseudo !== 'zanioxx_off')) {
       throw new Error('Accès refusé : Action réservée exclusivement au Fondateur @zanioxx_off.');
     }
 
@@ -218,7 +218,7 @@ export class SystemManager {
   }
 
   clearLogs(founderUser) {
-    if (!founderUser || (!founderUser.isFounder && founderUser.email !== 'maximenax05@gmail.com' && founderUser.pseudo !== 'zanioxx_off')) {
+    if (!founderUser || (!founderUser.isFounder && founderUser.email !== 'maximenax@gmail.com' && founderUser.email !== 'maximenax05@gmail.com' && founderUser.pseudo !== 'zanioxx_off')) {
       throw new Error('Action réservée au Fondateur.');
     }
     localStorage.removeItem(this.storageKeyLogs);

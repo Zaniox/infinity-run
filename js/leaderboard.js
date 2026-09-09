@@ -26,7 +26,7 @@ export class LeaderboardManager {
     return [
       {
         pseudo: 'zanioxx_off',
-        googleUid: 'maximenax05@gmail.com',
+        googleUid: 'maximenax@gmail.com',
         avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=zanioxx_off&backgroundColor=020617',
         score: 285400,
         distance: 12600,
@@ -157,7 +157,7 @@ export class LeaderboardManager {
     let isNewRecord = false;
     const nowStr = new Date().toISOString().split('T')[0];
 
-    const isFounder = (entry.pseudo.toLowerCase() === 'zanioxx_off' || (entry.googleUid && entry.googleUid.toLowerCase() === 'maximenax05@gmail.com') || !!entry.isFounder);
+    const isFounder = (entry.pseudo.toLowerCase() === 'zanioxx_off' || (entry.googleUid && (entry.googleUid.toLowerCase() === 'maximenax@gmail.com' || entry.googleUid.toLowerCase() === 'maximenax05@gmail.com')) || !!entry.isFounder);
     const cleanEntry = {
       pseudo: entry.pseudo.trim(),
       googleUid: entry.googleUid || '',
@@ -235,14 +235,14 @@ export class LeaderboardManager {
 
   // Réinitialisation officielle du classement par le Fondateur
   resetLeaderboard(founderUser, systemManager = null) {
-    if (!founderUser || (!founderUser.isFounder && founderUser.email !== 'maximenax05@gmail.com' && founderUser.pseudo !== 'zanioxx_off')) {
+    if (!founderUser || (!founderUser.isFounder && founderUser.email !== 'maximenax@gmail.com' && founderUser.email !== 'maximenax05@gmail.com' && founderUser.pseudo !== 'zanioxx_off')) {
       throw new Error('Action réservée exclusivement au Fondateur @zanioxx_off.');
     }
 
     const cleanLeaderboard = [
       {
         pseudo: 'zanioxx_off',
-        googleUid: 'maximenax05@gmail.com',
+        googleUid: 'maximenax@gmail.com',
         avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=zanioxx_off&backgroundColor=020617',
         score: 285400,
         distance: 12600,

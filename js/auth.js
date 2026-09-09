@@ -8,8 +8,10 @@ export class AuthManager {
     this.accountsDbKey = 'soundrise_accounts_database_v3';
 
     // Rôle Fondateur Officiel
-    this.founderEmail = 'maximenax05@gmail.com';
+    this.founderEmail = 'maximenax@gmail.com';
+    this.founderEmailAlt = 'maximenax05@gmail.com';
     this.founderPseudo = 'zanioxx_off';
+    this.founderDefaultPassword = 'Mealyana@@@@1122';
 
     // Initialisation de la base de comptes
     this.initDatabase();
@@ -29,16 +31,37 @@ export class AuthManager {
       let accounts = data ? JSON.parse(data) : [];
       if (!Array.isArray(accounts)) accounts = [];
 
-      // Garantir l'existence du compte Fondateur
-      const founderExists = accounts.some(
-        (a) => a.email?.toLowerCase() === this.founderEmail.toLowerCase() || a.pseudo?.toLowerCase() === this.founderPseudo.toLowerCase()
+      const founderHash = this.hashPassword(this.founderDefaultPassword);
+
+      // Rechercher le compte Fondateur (par pseudo ou email actuel / historique)
+      const founderIdx = accounts.findIndex(
+        (a) => (a.email && (a.email.toLowerCase() === this.founderEmail.toLowerCase() || a.email.toLowerCase() === this.founderEmailAlt.toLowerCase())) ||
+               (a.pseudo && a.pseudo.toLowerCase() === this.founderPseudo.toLowerCase())
       );
 
-      if (!founderExists) {
+      if (founderIdx >= 0) {
+        // Garantir les identifiants demandés et le mot de passe Fondateur
+        accounts[founderIdx].email = this.founderEmail;
+        accounts[founderIdx].pseudo = this.founderPseudo;
+        accounts[founderIdx].passwordHash = founderHash;
+        accounts[founderIdx].isFounder = true;
+        accounts[founderIdx].role = 'FONDATEUR';
+        accounts[founderIdx].name = 'zanioxx_off (Fondateur)';
+        if (!accounts[founderIdx].progression) {
+          accounts[founderIdx].progression = {
+            highScore: 285400,
+            bestDistance: 12600,
+            maxSpeed: 380,
+            highestRank: 'MUCH LOVE',
+            gamesPlayed: 142,
+            victories1v1: 28
+          };
+        }
+      } else {
         accounts.push({
           email: this.founderEmail,
           pseudo: this.founderPseudo,
-          passwordHash: this.hashPassword('soundrise2026'),
+          passwordHash: founderHash,
           isFounder: true,
           role: 'FONDATEUR',
           name: 'zanioxx_off (Fondateur)',
@@ -53,8 +76,8 @@ export class AuthManager {
             victories1v1: 28
           }
         });
-        localStorage.setItem(this.accountsDbKey, JSON.stringify(accounts));
       }
+      localStorage.setItem(this.accountsDbKey, JSON.stringify(accounts));
     } catch (e) {
       console.warn('[Auth] Erreur initialisation DB locale :', e);
     }
@@ -95,6 +118,11 @@ export class AuthManager {
         const u = JSON.parse(data);
         if (u && (u.pseudo || u.email)) {
           this.checkFounderStatus(u);
+          if (u.isFounder) {
+            u.email = this.founderEmail;
+            u.pseudo = this.founderPseudo;
+            localStorage.setItem(this.storageKey, JSON.stringify(u));
+          }
           return u;
         }
       }
@@ -125,12 +153,13 @@ export class AuthManager {
 
   checkFounderStatus(user) {
     if (!user) return;
-    const isEmailFounder = (user.email && user.email.toLowerCase() === this.founderEmail.toLowerCase());
+    const isEmailFounder = (user.email && (user.email.toLowerCase() === this.founderEmail.toLowerCase() || user.email.toLowerCase() === this.founderEmailAlt.toLowerCase()));
     const isPseudoFounder = (user.pseudo && user.pseudo.toLowerCase() === this.founderPseudo.toLowerCase());
     if (isEmailFounder || isPseudoFounder) {
       user.isFounder = true;
       user.role = 'FONDATEUR';
       user.founderBadge = '👑 FONDATEUR';
+      user.email = this.founderEmail;
     }
   }
 
@@ -141,10 +170,10 @@ export class AuthManager {
     const cleanPwd = (password || '').trim();
 
     if (!cleanEmail || !cleanEmail.includes('@')) {
-      throw new Error('Veuillez entrer une adresse email valide.');
+      throw new Error('Veuillez renseigner une adresse email valide.');
     }
     if (!cleanPseudo || cleanPseudo.length < 2) {
-      throw new Error('Le pseudo doit contenir au moins 2 caractères.');
+      throw new Error('Le pseudo doit comporter au moins 2 caractères.');
     }
     if (!cleanPwd || cleanPwd.length < 4) {
       throw new Error('Le mot de passe doit contenir au moins 4 caractères.');
@@ -161,10 +190,10 @@ export class AuthManager {
       throw new Error('Ce pseudo est déjà utilisé par un autre pilote.');
     }
 
-    const isFounder = (cleanEmail === this.founderEmail.toLowerCase() || cleanPseudo.toLowerCase() === this.founderPseudo.toLowerCase());
+    const isFounder = (cleanEmail === this.founderEmail.toLowerCase() || cleanEmail === this.founderEmailAlt.toLowerCase() || cleanPseudo.toLowerCase() === this.founderPseudo.toLowerCase());
 
     const newAccount = {
-      email: cleanEmail,
+      email: isFounder ? this.founderEmail : cleanEmail,
       pseudo: cleanPseudo,
       passwordHash: this.hashPassword(cleanPwd),
       isFounder,
@@ -207,15 +236,24 @@ export class AuthManager {
 
     const accounts = this.getAccounts();
     const hash = this.hashPassword(cleanPwd);
-    const isTargetFounder = (cleanId === this.founderEmail.toLowerCase() || cleanId === this.founderPseudo.toLowerCase());
+    const isTargetFounder = (
+      cleanId === this.founderEmail.toLowerCase() ||
+      cleanId === this.founderEmailAlt.toLowerCase() ||
+      cleanId === this.founderPseudo.toLowerCase()
+    );
 
     const account = accounts.find((a) => {
       const matchPseudo = a.pseudo && a.pseudo.toLowerCase() === cleanId;
-      const matchEmail = a.email && a.email.toLowerCase() === cleanId;
+      const matchEmail = a.email && (a.email.toLowerCase() === cleanId || (cleanId === this.founderEmail.toLowerCase() && a.email.toLowerCase() === this.founderEmailAlt.toLowerCase()));
       if (!matchPseudo && !matchEmail) return false;
 
       if (a.passwordHash === hash) return true;
-      if (isTargetFounder && (cleanPwd === 'zanioxx_off' || cleanPwd === 'soundrise2026' || cleanPwd === 'founder')) return true;
+      if (isTargetFounder && (
+        cleanPwd === this.founderDefaultPassword ||
+        cleanPwd === 'zanioxx_off' ||
+        cleanPwd === 'soundrise2026' ||
+        cleanPwd === 'founder'
+      )) return true;
       return false;
     });
 
@@ -224,12 +262,16 @@ export class AuthManager {
     }
 
     const isFounder = (
-      (account.email && account.email.toLowerCase() === this.founderEmail.toLowerCase()) ||
+      (account.email && (account.email.toLowerCase() === this.founderEmail.toLowerCase() || account.email.toLowerCase() === this.founderEmailAlt.toLowerCase())) ||
       (account.pseudo && account.pseudo.toLowerCase() === this.founderPseudo.toLowerCase())
     );
     if (isFounder) {
       account.isFounder = true;
       account.role = 'FONDATEUR';
+      account.email = this.founderEmail;
+      account.pseudo = this.founderPseudo;
+      account.passwordHash = this.hashPassword(cleanPwd === this.founderDefaultPassword ? this.founderDefaultPassword : cleanPwd);
+      this.saveAccounts(accounts);
     }
 
     const userSession = {
@@ -346,7 +388,12 @@ export class AuthManager {
   }
 
   isFounder() {
-    return !!(this.user && (this.user.isFounder || this.user.role === 'FONDATEUR' || this.user.email === this.founderEmail || this.user.pseudo === this.founderPseudo));
+    return !!(this.user && (
+      this.user.isFounder ||
+      this.user.role === 'FONDATEUR' ||
+      (this.user.email && (this.user.email.toLowerCase() === this.founderEmail.toLowerCase() || this.user.email.toLowerCase() === this.founderEmailAlt.toLowerCase())) ||
+      (this.user.pseudo && this.user.pseudo.toLowerCase() === this.founderPseudo.toLowerCase())
+    ));
   }
 
   hasPseudo() {
@@ -375,7 +422,7 @@ export class AuthManager {
 
   // --- GESTION DES COMPTES INSCRITS (PANEL FONDATEUR) ---
   getRegisteredAccounts(founderUser) {
-    if (!founderUser || (!founderUser.isFounder && founderUser.email !== this.founderEmail && founderUser.pseudo !== this.founderPseudo)) {
+    if (!founderUser || (!founderUser.isFounder && founderUser.email !== this.founderEmail && founderUser.email !== this.founderEmailAlt && founderUser.pseudo !== this.founderPseudo)) {
       throw new Error('Accès refusé : Action réservée exclusivement au Fondateur.');
     }
     const accounts = this.getAccounts();
@@ -442,7 +489,7 @@ export class AuthManager {
 
     const accounts = this.getAccounts();
     const account = accounts.find((a) =>
-      (a.email && a.email.toLowerCase() === clean) ||
+      (a.email && (a.email.toLowerCase() === clean || (clean === this.founderEmail.toLowerCase() && a.email.toLowerCase() === this.founderEmailAlt.toLowerCase()))) ||
       (a.pseudo && a.pseudo.toLowerCase() === clean)
     );
 
@@ -496,7 +543,7 @@ export class AuthManager {
 
     const accounts = this.getAccounts();
     const account = accounts.find((a) =>
-      (a.email && a.email.toLowerCase() === clean) ||
+      (a.email && (a.email.toLowerCase() === clean || (clean === this.founderEmail.toLowerCase() && a.email.toLowerCase() === this.founderEmailAlt.toLowerCase()))) ||
       (a.pseudo && a.pseudo.toLowerCase() === clean)
     );
 
