@@ -12,7 +12,8 @@ import {
   getGroundGlyphTexture,
   getSaiyanAuraTexture,
   getLaserBeamTexture,
-  getSparkTexture
+  getSparkTexture,
+  getPurityMoteTexture
 } from './particles.js';
 
 export class Player {
@@ -60,6 +61,7 @@ export class Player {
     this.createSaiyanAura();
     this.createLaserPool();
     this.createFounderEffects();
+    this.createFlightTrail();
 
     // Positionnement initial
     this.group.position.set(0, this.minAltitude, 0);
@@ -467,8 +469,8 @@ export class Player {
     geo.setAttribute('color', new THREE.BufferAttribute(this.disCol, 3));
 
     this.disMat = new THREE.PointsMaterial({
-      size: 2.2,
-      map: getSoftGlowTexture(),
+      size: 1.5,
+      map: getPurityMoteTexture(),
       vertexColors: true,
       transparent: true,
       opacity: 0,
@@ -491,6 +493,7 @@ export class Player {
     this.avatar.visible = false;
     this.heartLight.visible = false;
     if (this.founderTrailPoints) this.founderTrailPoints.visible = false;
+    if (this.flightTrailPoints) this.flightTrailPoints.visible = false;
     this.disMat.opacity = 1.0;
 
     const p = this.group.position;
@@ -642,58 +645,63 @@ export class Player {
 
     if (!this.purityAuraMeshes) this.purityAuraMeshes = [];
 
-    // 1. Coque anatomique lisse épousant le corps (Super Saiyan Blue Shimmer)
+    // 1. Coque anatomique de secours (activée uniquement si modèle procédural fallback)
     const auraCapsuleGeo = new THREE.CapsuleGeometry(0.55, 2.4, 16, 24);
     this.purityBodyMat = new THREE.MeshBasicMaterial({
       color: 0x38bdf8,
       transparent: true,
-      opacity: 0.38,
+      opacity: 0.28,
       blending: THREE.AdditiveBlending,
       side: THREE.BackSide,
       depthWrite: false
     });
     this.purityBodyMesh = new THREE.Mesh(auraCapsuleGeo, this.purityBodyMat);
     this.purityBodyMesh.position.set(0, 0.2, 0);
+    this.purityBodyMesh.visible = false;
     this.saiyanGroup.add(this.purityBodyMesh);
 
-    // Seconde coque externe d'ondulation d'énergie ascendante
-    const outerCapsuleGeo = new THREE.CapsuleGeometry(0.72, 2.6, 16, 24);
+    // Seconde coque externe douce
+    const outerCapsuleGeo = new THREE.CapsuleGeometry(0.70, 2.5, 16, 24);
     this.purityOuterMat = new THREE.MeshBasicMaterial({
       color: 0x7dd3fc,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.16,
       blending: THREE.AdditiveBlending,
       side: THREE.BackSide,
       depthWrite: false
     });
     this.purityOuterMesh = new THREE.Mesh(outerCapsuleGeo, this.purityOuterMat);
     this.purityOuterMesh.position.set(0, 0.2, 0);
+    this.purityOuterMesh.visible = false;
     this.saiyanGroup.add(this.purityOuterMesh);
 
-    // 2. Micro-étincelles bleues claires ascendantes de Ki (Style Saiyan Divin)
-    this.kiParticleCount = 45;
+    // 2. Micro-étincelles célestes de Ki PURITY (Poussière cristalline étincelante montant le long du corps)
+    this.kiParticleCount = 56;
     const kiGeo = new THREE.BufferGeometry();
     this.kiPos = new Float32Array(this.kiParticleCount * 3);
     this.kiSeeds = [];
     for (let i = 0; i < this.kiParticleCount; i++) {
       this.kiSeeds.push({
-        angle: Math.random() * Math.PI * 2,
-        radius: 0.45 + Math.random() * 0.55,
-        y: Math.random() * 3.2 - 1.6,
-        speedY: 1.4 + Math.random() * 2.2,
-        rotSpeed: 0.8 + Math.random() * 1.4
+        baseX: (Math.random() - 0.5) * 0.85,
+        baseZ: (Math.random() - 0.5) * 0.65,
+        y: Math.random() * 2.8 - 1.4,
+        speedY: 1.1 + Math.random() * 1.5,
+        swaySpeed: 2.2 + Math.random() * 3.0,
+        swayAmp: 0.08 + Math.random() * 0.12,
+        phase: Math.random() * Math.PI * 2
       });
       this.kiPos[i * 3] = 0;
-      this.kiPos[i * 3 + 1] = 0;
+      this.kiPos[i * 3 + 1] = -100;
       this.kiPos[i * 3 + 2] = 0;
     }
     kiGeo.setAttribute('position', new THREE.BufferAttribute(this.kiPos, 3));
 
     this.kiMat = new THREE.PointsMaterial({
-      size: 1.4,
-      color: 0xbae6fd,
+      size: 1.35,
+      map: getPurityMoteTexture(),
+      color: 0xe0f2fe,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.88,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
@@ -701,7 +709,7 @@ export class Player {
     this.saiyanGroup.add(this.kiPoints);
 
     // 3. Lueur ponctuelle céleste bleu clair douce
-    this.saiyanLight = new THREE.PointLight(0x38bdf8, 3.2, 9.0);
+    this.saiyanLight = new THREE.PointLight(0x38bdf8, 3.0, 9.0);
     this.saiyanLight.position.set(0, 0.3, 0);
     this.saiyanGroup.add(this.saiyanLight);
   }
@@ -709,6 +717,8 @@ export class Player {
   activateSayanfinity(duration = 20.0, audioManager) {
     this.saiyanTimer = duration;
     if (this.saiyanGroup) this.saiyanGroup.visible = true;
+    if (this.purityBodyMesh) this.purityBodyMesh.visible = !this.fbxModel;
+    if (this.purityOuterMesh) this.purityOuterMesh.visible = !this.fbxModel;
     if (this.purityAuraMeshes) {
       for (const m of this.purityAuraMeshes) {
         m.visible = true;
@@ -829,6 +839,84 @@ export class Player {
       pos[i * 3 + 2] = p.z + s.z;
     }
     this.founderTrailPoints.geometry.attributes.position.needsUpdate = true;
+  }
+
+  // --- 5. TRAÎNÉE RÉACTEURS ÉLÉGANTE (FLIGHT PHOTON MOTES) ---
+  createFlightTrail() {
+    this.flightTrailCount = 36;
+    const geo = new THREE.BufferGeometry();
+    this.flightTrailPos = new Float32Array(this.flightTrailCount * 3);
+    this.flightTrailSeeds = [];
+
+    for (let i = 0; i < this.flightTrailCount; i++) {
+      this.flightTrailPos[i * 3 + 1] = -1000;
+      this.flightTrailSeeds.push({
+        side: i % 2 === 0 ? -0.55 : 0.55,
+        offsetY: -0.22 + (Math.random() - 0.5) * 0.15,
+        z: Math.random() * 5.0,
+        speedZ: 18.0 + Math.random() * 24.0,
+        life: Math.random()
+      });
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(this.flightTrailPos, 3));
+
+    this.flightTrailMat = new THREE.PointsMaterial({
+      size: 1.25,
+      map: getPurityMoteTexture(),
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    this.flightTrailPoints = new THREE.Points(geo, this.flightTrailMat);
+    this.scene.add(this.flightTrailPoints);
+  }
+
+  updateFlightTrail(dt) {
+    if (!this.flightTrailPoints || this.isDead) {
+      if (this.flightTrailPoints) this.flightTrailPoints.visible = false;
+      return;
+    }
+    this.flightTrailPoints.visible = true;
+
+    // Teinte et intensité dynamiques : Purity (blanc céleste), Boost (cyan intense), Normal (bleu ciel doux)
+    const isPurity = this.saiyanTimer > 0;
+    const isBoost = this.boostTimer > 0;
+    if (isPurity) {
+      this.flightTrailMat.color.set(0xe0f2fe);
+      this.flightTrailMat.size = 1.45;
+      this.flightTrailMat.opacity = 0.85;
+    } else if (isBoost) {
+      this.flightTrailMat.color.set(0x00f0ff);
+      this.flightTrailMat.size = 1.35;
+      this.flightTrailMat.opacity = 0.78;
+    } else {
+      this.flightTrailMat.color.set(0x38bdf8);
+      this.flightTrailMat.size = 1.15;
+      this.flightTrailMat.opacity = 0.55;
+    }
+
+    const pos = this.flightTrailPoints.geometry.attributes.position.array;
+    const p = this.group.position;
+    const speedMult = isPurity ? 1.6 : (isBoost ? 1.4 : 1.0);
+
+    for (let i = 0; i < this.flightTrailCount; i++) {
+      const s = this.flightTrailSeeds[i];
+      s.life += dt * 3.5;
+      s.z += s.speedZ * speedMult * dt;
+
+      if (s.life >= 1.0 || s.z > (isPurity || isBoost ? 7.5 : 5.0)) {
+        s.life = 0;
+        s.z = 0.1 + Math.random() * 0.3;
+      }
+
+      pos[i * 3] = p.x + s.side;
+      pos[i * 3 + 1] = p.y + s.offsetY;
+      pos[i * 3 + 2] = p.z + s.z;
+    }
+    this.flightTrailPoints.geometry.attributes.position.needsUpdate = true;
   }
 
   fireLaser(audioManager) {
@@ -973,20 +1061,22 @@ export class Player {
       if (this.isDislocating) {
         this.dyingTimer += dt;
         const pos = this.disParticles.geometry.attributes.position.array;
-        const grav = -18.0;
+        const drag = Math.pow(0.20, dt);
 
         for (let i = 0; i < this.particleCount; i++) {
           pos[i * 3] += this.disVel[i * 3] * dt;
           pos[i * 3 + 1] += this.disVel[i * 3 + 1] * dt;
           pos[i * 3 + 2] += this.disVel[i * 3 + 2] * dt;
-          this.disVel[i * 3 + 1] += grav * dt;
-          if (pos[i * 3 + 1] < 0.2) {
-            pos[i * 3 + 1] = 0.2;
-            this.disVel[i * 3 + 1] = -this.disVel[i * 3 + 1] * 0.35;
+          this.disVel[i * 3] *= drag;
+          this.disVel[i * 3 + 2] *= drag;
+          this.disVel[i * 3 + 1] -= 9.8 * dt; // Gravité modérée et naturelle
+          if (pos[i * 3 + 1] < 0.15) {
+            pos[i * 3 + 1] = 0.15;
+            this.disVel[i * 3 + 1] = -this.disVel[i * 3 + 1] * 0.25;
           }
         }
         this.disParticles.geometry.attributes.position.needsUpdate = true;
-        this.disMat.opacity = Math.max(0, 1.0 - Math.pow(this.dyingTimer / 1.5, 2));
+        this.disMat.opacity = Math.max(0, 1.0 - Math.pow(this.dyingTimer / 1.5, 1.8));
       }
       return;
     }
@@ -1148,28 +1238,33 @@ export class Player {
       this.saiyanGroup.visible = true;
 
       // Pulsation de l'aura silhouette exacte de chaque membre
-      if (this.purityAuraMeshes) {
+      if (this.purityAuraMeshes && this.purityAuraMeshes.length > 0) {
         const bodyPulse = 1.0 + Math.sin(time * 5.0) * 0.018;
         for (const m of this.purityAuraMeshes) {
           m.visible = true;
           m.scale.set(1.045 * bodyPulse, 1.045 * bodyPulse, 1.045 * bodyPulse);
         }
+        if (this.purityBodyMesh) this.purityBodyMesh.visible = false;
+        if (this.purityOuterMesh) this.purityOuterMesh.visible = false;
       }
 
-      // Particules montantes très proches du corps
+      // Particules montantes très proches du corps, ondulant organiquement (style Purity)
       if (this.kiPoints && this.kiSeeds) {
         const kPos = this.kiPoints.geometry.attributes.position.array;
         for (let i = 0; i < this.kiParticleCount; i++) {
           const s = this.kiSeeds[i];
           s.y += s.speedY * dt;
-          s.angle += s.rotSpeed * dt;
-          if (s.y > 2.0) {
-            s.y = -1.8;
-            s.radius = 0.42 + Math.random() * 0.55;
+          if (s.y > 1.9) {
+            s.y = -1.4;
+            s.baseX = (Math.random() - 0.5) * 0.85;
+            s.baseZ = (Math.random() - 0.5) * 0.65;
           }
-          kPos[i * 3] = Math.cos(s.angle) * s.radius;
+          const swayX = Math.sin(time * s.swaySpeed + s.phase) * s.swayAmp;
+          const swayZ = Math.cos(time * (s.swaySpeed * 0.8) + s.phase) * (s.swayAmp * 0.7);
+
+          kPos[i * 3] = s.baseX + swayX;
           kPos[i * 3 + 1] = s.y;
-          kPos[i * 3 + 2] = Math.sin(s.angle) * s.radius;
+          kPos[i * 3 + 2] = s.baseZ + swayZ;
         }
         this.kiPoints.geometry.attributes.position.needsUpdate = true;
       }
@@ -1210,8 +1305,9 @@ export class Player {
       }
     }
 
-    // 12. Traînée réacteurs exclusive Fondateur
+    // 12. Traînée réacteurs exclusive Fondateur & Traînée photonique de vol
     this.updateFounderTrail(dt);
+    this.updateFlightTrail(dt);
 
     // 13. Échec si énergie à zéro au sol
     if (this.energy <= 0 && p.y <= this.minAltitude + 0.05) {
@@ -1257,9 +1353,12 @@ export class Player {
     this.isOverheated = false;
     this.overheatCooldownTimer = 0.0;
 
-    // Reset Effets Fondateur
+    // Reset Effets Fondateur & Traînée de vol
     if (this.founderTrailPoints) {
       this.founderTrailPoints.visible = this.isFounderMode;
+    }
+    if (this.flightTrailPoints) {
+      this.flightTrailPoints.visible = true;
     }
   }
 }

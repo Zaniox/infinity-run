@@ -274,6 +274,41 @@ export function getCosmicDustTexture() {
 }
 
 /**
+ * Texture de particule céleste Purity (Cristal azur & cœur diamant étincelant)
+ */
+export function getPurityMoteTexture() {
+  if (textureCache.purityMote) return textureCache.purityMote;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+
+  const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+  grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+  grad.addColorStop(0.18, 'rgba(224, 242, 254, 0.95)');
+  grad.addColorStop(0.42, 'rgba(56, 189, 248, 0.60)');
+  grad.addColorStop(0.72, 'rgba(14, 165, 233, 0.18)');
+  grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 64, 64);
+
+  // Micro-diffraction cristalline diamant
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.70)';
+  ctx.lineWidth = 1.0;
+  ctx.beginPath();
+  ctx.moveTo(16, 32); ctx.lineTo(48, 32);
+  ctx.moveTo(32, 16); ctx.lineTo(32, 48);
+  ctx.stroke();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  textureCache.purityMote = texture;
+  return texture;
+}
+
+/**
  * Texture de flamme dorée et aura d'énergie de Super Saiyan (Sayanfinity)
  */
 export function getSaiyanAuraTexture() {

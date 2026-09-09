@@ -12,7 +12,8 @@ import {
   getWaterDropletTexture,
   getElectricZapTexture,
   getLavaBubbleTexture,
-  getCosmicDustTexture
+  getCosmicDustTexture,
+  getPurityMoteTexture
 } from './particles.js';
 
 export const CYCLES_DATA = [
@@ -326,10 +327,11 @@ export class PortalGate {
     }
     pGeo.setAttribute('position', new THREE.BufferAttribute(this.pPos, 3));
     this.pMat = new THREE.PointsMaterial({
-      size: 1.4,
+      size: 1.8,
+      map: getSoftGlowTexture(),
       color: targetColorPrimary,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.85,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
@@ -2181,14 +2183,14 @@ export class World {
   }
 
   createObstacleExplosion(pos, element, isSaiyan = false) {
-    const pCount = isSaiyan ? 56 : 34;
+    const pCount = isSaiyan ? 48 : 32;
     const geo = new THREE.BufferGeometry();
     const positions = new Float32Array(pCount * 3);
     const velocities = [];
 
     let pColor = 0x00f0ff;
     if (isSaiyan) {
-      pColor = 0xffea00;
+      pColor = 0x38bdf8; // PURITY céleste cyan / bleu ciel éclatant
     } else {
       switch (element) {
         case 'Eau': pColor = 0x00f0ff; break;
@@ -2203,25 +2205,25 @@ export class World {
     }
 
     for (let i = 0; i < pCount; i++) {
-      positions[i * 3] = pos.x + (Math.random() - 0.5) * 2;
-      positions[i * 3 + 1] = pos.y + (Math.random() - 0.5) * 2;
-      positions[i * 3 + 2] = pos.z + (Math.random() - 0.5) * 2;
+      positions[i * 3] = pos.x + (Math.random() - 0.5) * 1.5;
+      positions[i * 3 + 1] = pos.y + (Math.random() - 0.5) * 1.5;
+      positions[i * 3 + 2] = pos.z + (Math.random() - 0.5) * 1.5;
 
-      const spd = (isSaiyan ? 24 : 15) + Math.random() * 20;
+      const spd = (isSaiyan ? 18 : 12) + Math.random() * 18;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
       velocities.push(
         Math.sin(phi) * Math.cos(theta) * spd,
-        Math.cos(phi) * spd + 3.0,
+        Math.cos(phi) * spd * 0.8 + 2.0,
         Math.sin(phi) * Math.sin(theta) * spd
       );
     }
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
     const mat = new THREE.PointsMaterial({
-      size: isSaiyan ? 3.2 : 2.4,
+      size: isSaiyan ? 1.5 : 1.35,
       color: pColor,
-      map: getSoftGlowTexture(),
+      map: isSaiyan ? getPurityMoteTexture() : getSparkTexture(),
       transparent: true,
       opacity: 0.95,
       blending: THREE.AdditiveBlending,
@@ -2235,7 +2237,7 @@ export class World {
       pts,
       velocities,
       timer: 0.0,
-      maxAge: 0.65
+      maxAge: 0.75
     });
   }
 
@@ -3851,21 +3853,25 @@ export class World {
       }
     }
 
-    // 6. Animation des particules d'explosion des obstacles détruits (Star Fox & Saiyan)
+    // 6. Animation des particules d'explosion des obstacles détruits (Star Fox & Purity)
     if (this.activeExplosions) {
       for (let i = this.activeExplosions.length - 1; i >= 0; i--) {
         const exp = this.activeExplosions[i];
         exp.timer += dt;
         const pos = exp.pts.geometry.attributes.position.array;
         const vel = exp.velocities;
+        const drag = Math.pow(0.12, dt); // Freinage aérodynamique soyeux
         for (let p = 0; p < vel.length / 3; p++) {
           pos[p * 3] += vel[p * 3] * dt;
           pos[p * 3 + 1] += vel[p * 3 + 1] * dt;
           pos[p * 3 + 2] += vel[p * 3 + 2] * dt;
-          vel[p * 3 + 1] -= 24.0 * dt; // Pesanteur
+          vel[p * 3] *= drag;
+          vel[p * 3 + 1] = vel[p * 3 + 1] * drag + 0.8 * dt; // Micro-lévitation céleste
+          vel[p * 3 + 2] *= drag;
         }
         exp.pts.geometry.attributes.position.needsUpdate = true;
-        exp.pts.material.opacity = Math.max(0, 0.95 * (1.0 - exp.timer / exp.maxAge));
+        const lifeRatio = exp.timer / exp.maxAge;
+        exp.pts.material.opacity = Math.max(0, 0.95 * Math.pow(1.0 - lifeRatio, 1.5));
 
         if (exp.timer >= exp.maxAge) {
           this.scene.remove(exp.pts);
