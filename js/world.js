@@ -1792,25 +1792,58 @@ export class World {
   // 5. Lumière : Rayons sacrés (God-Rays) & photons célestes
   setupLightShafts() {
     this.lightShaftsGroup = new THREE.Group();
-    const shaftGeo = new THREE.CylinderGeometry(1.5, 6.5, 55, 16, 1, true);
+    this.lightShafts = [];
+
+    // Faisceaux célestes élancés et majestueux très hauts (140m) pour éviter les coupures disgracieuses dans le ciel
+    const shaftGeoSlender = new THREE.CylinderGeometry(1.6, 6.5, 140, 16, 1, true);
+    const shaftGeoBroad = new THREE.CylinderGeometry(3.2, 12.0, 140, 16, 1, true);
+
     this.shaftMat = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 0.16,
+      opacity: 0.13,
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
 
-    for (let i = 0; i < 12; i++) {
-      const shaft = new THREE.Mesh(shaftGeo, this.shaftMat);
-      shaft.position.set(
-        (Math.random() - 0.5) * 80,
-        18,
-        -Math.random() * 220
-      );
-      shaft.rotation.z = (Math.random() - 0.5) * 0.25;
-      shaft.rotation.x = Math.PI * 0.1;
+    this.shaftMatGold = new THREE.MeshBasicMaterial({
+      color: 0xfef08a,
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    const count = 18;
+    for (let i = 0; i < count; i++) {
+      const isBroad = (i % 3 === 0);
+      const isGold = (i % 2 === 0);
+      const geo = isBroad ? shaftGeoBroad : shaftGeoSlender;
+      const mat = isGold ? this.shaftMatGold : this.shaftMat;
+
+      const shaft = new THREE.Mesh(geo, mat);
+      const x = (Math.random() - 0.5) * 85;
+      const y = 45; // Base à -25m (enfoncée sous l'horizon), sommet à +115m (haut dans les cieux)
+      const z = 25 - (i / count) * 300; // Étagement continu sur 300m depuis l'arrière de la caméra jusqu'à l'horizon
+      const rotZ = (Math.random() - 0.5) * 0.22;
+      const rotX = (Math.random() - 0.5) * 0.12 + Math.PI * 0.08;
+
+      shaft.position.set(x, y, z);
+      shaft.rotation.set(rotX, 0, rotZ);
+
       this.lightShaftsGroup.add(shaft);
+
+      this.lightShafts.push({
+        mesh: shaft,
+        baseX: x,
+        baseRotZ: rotZ,
+        baseRotX: rotX,
+        swaySpeed: 0.7 + Math.random() * 0.8,
+        swayAmp: 0.025 + Math.random() * 0.03,
+        swayPhase: Math.random() * Math.PI * 2
+      });
     }
 
     const photonCount = 450;
@@ -1819,7 +1852,7 @@ export class World {
     for (let i = 0; i < photonCount; i++) {
       pPos[i * 3] = (Math.random() - 0.5) * 75;
       pPos[i * 3 + 1] = Math.random() * 26;
-      pPos[i * 3 + 2] = -Math.random() * 240 + 10;
+      pPos[i * 3 + 2] = -Math.random() * 260 + 10;
     }
     photonGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
     const photonMat = new THREE.PointsMaterial({
@@ -1968,6 +2001,16 @@ export class World {
     this.shadowSmokeGroup.visible = (cycleIndex === 5);
     this.windStreaksGroup.visible = (cycleIndex === 6);
     this.cosmicVoidGroup.visible = (cycleIndex === 7);
+
+    // À l'entrée dans le cycle Bonheur (Lumière), réétager les rayons sacrés pour un défilé parfait
+    if (cycleIndex === 4 && this.lightShafts) {
+      const count = this.lightShafts.length;
+      for (let i = 0; i < count; i++) {
+        const s = this.lightShafts[i];
+        s.mesh.position.z = 25 - (i / count) * 300;
+        s.mesh.position.x = (Math.random() - 0.5) * 85;
+      }
+    }
   }
 
   generateLightningArc() {
@@ -2067,15 +2110,38 @@ export class World {
       this.sparkPoints.geometry.attributes.position.needsUpdate = true;
 
     } else if (this.lightShaftsGroup.visible) {
-      this.shaftMat.opacity = 0.12 + bassEnergy * 0.16 + Math.sin(time * 2.0) * 0.03;
+      // Pulsation céleste rythmée sur le tempo musical
+      const pulseGlow = 0.12 + bassEnergy * 0.16 + Math.sin(time * 2.2) * 0.03;
+      if (this.shaftMat) this.shaftMat.opacity = pulseGlow * 0.9;
+      if (this.shaftMatGold) this.shaftMatGold.opacity = pulseGlow * 1.15;
+
+      // Défilement continu et fluide des colonnes de lumière : elles dépassent le vaisseau et filent derrière nous
+      if (this.lightShafts) {
+        for (let i = 0; i < this.lightShafts.length; i++) {
+          const s = this.lightShafts[i];
+          s.mesh.position.z += deltaZ;
+          // Légère oscillation aérienne céleste
+          s.mesh.rotation.z = s.baseRotZ + Math.sin(time * s.swaySpeed + s.swayPhase) * s.swayAmp;
+
+          // Dès que la lumière dépasse le joueur et la caméra (z > 35)
+          if (s.mesh.position.z > 35) {
+            // Téléportation fluide à l'horizon lointain (-265m) pour un renouvellement perpétuel
+            s.mesh.position.z -= 300;
+            s.mesh.position.x = (Math.random() - 0.5) * 85;
+            s.baseRotZ = (Math.random() - 0.5) * 0.22;
+          }
+        }
+      }
+
+      // Défilement des photons célestes
       const pPos = this.photonPoints.geometry.attributes.position.array;
       const pCount = pPos.length / 3;
       for (let i = 0; i < pCount; i++) {
-        pPos[i * 3 + 1] += 2.0 * dt;
+        pPos[i * 3 + 1] += 2.2 * dt;
         pPos[i * 3 + 2] += deltaZ;
-        if (pPos[i * 3 + 1] > 28 || pPos[i * 3 + 2] > 20) {
+        if (pPos[i * 3 + 1] > 30 || pPos[i * 3 + 2] > 25) {
           pPos[i * 3 + 1] = 0.5;
-          pPos[i * 3 + 2] = -240;
+          pPos[i * 3 + 2] = -260;
         }
       }
       this.photonPoints.geometry.attributes.position.needsUpdate = true;
