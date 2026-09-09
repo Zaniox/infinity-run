@@ -139,6 +139,10 @@
             <span class="pill-btn-icon">⚔️</span>
             <span id="btn-mp-text">Duel 1 vs 1</span>
           </button>
+          <button id="btn-open-founder-panel" class="btn-secondary-pill btn-founder-pill hidden" type="button" title="Panel Fondateur Officiel">
+            <span class="pill-btn-icon">👑</span>
+            <span>Panel Fondateur</span>
+          </button>
         </div>
 
         <!-- Ligne d'aide au pilotage discrète -->
@@ -910,6 +914,120 @@
           </form>
         </div>
       </div>
+    </div>
+
+    <!-- PANEL FONDATEUR OFFICIEL (ADMINISTRATION EXCLUSIVE @zanioxx_off) -->
+    <div id="founder-modal" class="modal-overlay hidden">
+      <div class="modal-card founder-card">
+        <div class="modal-top-bar"></div>
+        <button id="btn-close-founder" class="modal-close-corner" type="button" title="Fermer">✕</button>
+        <div class="modal-badge">// PANEL FONDATEUR OFFICIEL</div>
+        <h2 class="modal-title">👑 CONSOLE D'ADMINISTRATION</h2>
+
+        <!-- Onglets du Panel -->
+        <div class="founder-tabs-nav">
+          <button id="ftab-btn-maintenance" class="founder-tab-btn active" type="button">🔧 Maintenance</button>
+          <button id="ftab-btn-leaderboard" class="founder-tab-btn" type="button">🏆 Classement</button>
+          <button id="ftab-btn-users" class="founder-tab-btn" type="button">👤 Utilisateurs</button>
+          <button id="ftab-btn-logs" class="founder-tab-btn" type="button">📋 Logs Système</button>
+        </div>
+
+        <!-- Onglet 1 : Mode Maintenance Globale -->
+        <div id="ftab-maintenance" class="founder-tab-view">
+          <div class="founder-section">
+            <h3 class="founder-section-title">MODE MAINTENANCE GLOBALE</h3>
+            <p class="founder-section-desc">Active un écran holographique de maintenance visible par TOUS les joueurs en temps réel. Seul le fondateur peut continuer à jouer.</p>
+            <div class="maintenance-toggle-row">
+              <span id="maintenance-status-label" class="maintenance-status-off">⚫ DÉSACTIVÉ</span>
+              <label class="toggle-switch toggle-big">
+                <input id="toggle-maintenance-mode" type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="form-field" style="margin-top:16px;">
+              <label for="input-maintenance-reason">MESSAGE DE MAINTENANCE (AFFICHÉ EN DIRECT AUX JOUEURS)</label>
+              <input id="input-maintenance-reason" type="text" maxlength="120" placeholder="Ex: Mise à niveau des serveurs quantiques & réacteurs..." value="Mise à niveau des serveurs quantiques & maintenance des réacteurs" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet 2 : Réinitialisation du Classement Mondial -->
+        <div id="ftab-leaderboard" class="founder-tab-view hidden">
+          <div class="founder-section">
+            <h3 class="founder-section-title">RÉINITIALISATION DU CLASSEMENT MONDIAL</h3>
+            <p class="founder-section-desc">Purge intégrale de tous les records mondiaux sur le serveur. Action irréversible synchronisée mondialement.</p>
+            <div class="founder-danger-zone">
+              <span class="danger-icon">⚠️</span>
+              <span>ATTENTION — Cette action efface immédiatement l'intégralité du leaderboard mondial.</span>
+            </div>
+            <button id="btn-founder-reset-lb" class="btn-founder-danger" type="button">
+              🗑️ RÉINITIALISER LE CLASSEMENT MONDIAL
+            </button>
+            <div id="founder-reset-confirm" class="founder-confirm-box hidden">
+              <p>Tapez <strong>PURGE</strong> en majuscules pour valider l'effacement :</p>
+              <input id="input-reset-confirm" type="text" placeholder="PURGE" maxlength="8" autocomplete="off" />
+              <button id="btn-confirm-reset-lb" class="btn-founder-danger-confirm" type="button">CONFIRMER LA PURGE MONDIALE</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet 3 : Registre des Utilisateurs Inscrits -->
+        <div id="ftab-users" class="founder-tab-view hidden">
+          <div class="founder-section">
+            <h3 class="founder-section-title">REGISTRE DES PILOTES INSCRITS</h3>
+            <div class="founder-users-toolbar">
+              <span id="founder-users-count">0 compte(s) enregistré(s)</span>
+              <button id="btn-refresh-users" class="btn-mp-mini" type="button">🔄 Actualiser</button>
+            </div>
+            <div id="founder-users-table" class="founder-users-table">
+              <div class="founder-table-header">
+                <span class="col-fu-id">N°</span>
+                <span class="col-fu-pseudo">PSEUDO</span>
+                <span class="col-fu-email">ADRESSE EMAIL</span>
+                <span class="col-fu-role">RÔLE</span>
+                <span class="col-fu-date">INSCRIPTION</span>
+              </div>
+              <div id="founder-users-body" class="founder-users-body">
+                <div class="founder-empty">Chargement du registre des pilotes...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet 4 : Journal d'Audit et Logs Système -->
+        <div id="ftab-logs" class="founder-tab-view hidden">
+          <div class="founder-section">
+            <h3 class="founder-section-title">JOURNAL D'AUDIT SYSTÈME</h3>
+            <div class="founder-logs-toolbar">
+              <span id="founder-logs-count">0 entrée(s)</span>
+              <button id="btn-clear-logs" class="btn-mp-mini" type="button">🗑️ Vider le journal</button>
+            </div>
+            <div id="founder-logs-console" class="founder-logs-console">
+              <div class="founder-empty">Aucun événement enregistré.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ÉCRAN DE MAINTENANCE GLOBALE (ANIMATION TEMPS RÉEL MONDIAL) -->
+    <div id="maintenance-overlay" class="maintenance-overlay hidden">
+      <div class="maintenance-content">
+        <div class="maintenance-holographic-core">
+          <div class="holo-ring ring-1"></div>
+          <div class="holo-ring ring-2"></div>
+          <div class="holo-ring ring-3"></div>
+          <div class="holo-core-icon">🔧</div>
+        </div>
+        <div class="maintenance-glitch-text" data-text="MAINTENANCE EN COURS">MAINTENANCE EN COURS</div>
+        <p id="maintenance-reason-display" class="maintenance-reason">Mise à niveau des serveurs quantiques & maintenance des réacteurs</p>
+        <div class="maintenance-info-bar">
+          <span class="maintenance-dot-pulse"></span>
+          <span>SOUNDRISE : INFINITY RUN sera de retour très bientôt</span>
+        </div>
+        <p class="maintenance-founder-credit">// Système géré par @<span id="maintenance-by-display">zanioxx_off</span></p>
+      </div>
+      <div class="maintenance-scanlines"></div>
     </div>
 
   <!-- Point d'entrée ES6 modulaire officiel -->

@@ -232,4 +232,44 @@ export class LeaderboardManager {
     const rank = this.cachedScores.indexOf(match) + 1;
     return { ...match, worldRank: rank };
   }
+
+  // Réinitialisation officielle du classement par le Fondateur
+  resetLeaderboard(founderUser, systemManager = null) {
+    if (!founderUser || (!founderUser.isFounder && founderUser.email !== 'maximenax05@gmail.com' && founderUser.pseudo !== 'zanioxx_off')) {
+      throw new Error('Action réservée exclusivement au Fondateur @zanioxx_off.');
+    }
+
+    const cleanLeaderboard = [
+      {
+        pseudo: 'zanioxx_off',
+        googleUid: 'maximenax05@gmail.com',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=zanioxx_off&backgroundColor=020617',
+        score: 285400,
+        distance: 12600,
+        maxSpeed: 380,
+        cycle: 'Folie',
+        rank: 'MUCH LOVE',
+        isFounder: true,
+        date: new Date().toISOString().split('T')[0]
+      }
+    ];
+
+    this.saveLocalCache(cleanLeaderboard);
+    this.lastFetched = Date.now();
+
+    if (systemManager && typeof systemManager.broadcastLeaderboardReset === 'function') {
+      systemManager.broadcastLeaderboardReset(founderUser);
+    } else {
+      try {
+        const channel = new BroadcastChannel('soundrise_system_channel');
+        channel.postMessage({ type: 'leaderboard_reset', by: founderUser.pseudo || 'zanioxx_off', timestamp: Date.now() });
+      } catch (_) {}
+    }
+
+    return cleanLeaderboard;
+  }
+
+  getScores() {
+    return this.cachedScores || [];
+  }
 }

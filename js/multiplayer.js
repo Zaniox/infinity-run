@@ -45,8 +45,8 @@ export class MultiplayerManager {
     this.roomsChannel = new BroadcastChannel(this.localChannelName);
     this.duelChannel = null;
 
-    // Stockage cloud persistant mondial (API REST mondiale)
-    this.cloudEndpoint = 'https://api.restful-api.dev/objects/ff808181a067127101a07f68e41145d7';
+    // Hub de salons mondial en direct (ntfy.sh pub/sub + EventSource SSE)
+    this.cloudEndpoint = 'https://ntfy.sh/soundrise_infinity_lobby_rooms';
     this.publicRoomsKey = 'soundrise_public_rooms_cache';
 
     // Connexion P2P WebRTC réelle (PeerJS) pour interconnexion cross-sessions et cross-devices
@@ -57,11 +57,15 @@ export class MultiplayerManager {
     // Initialisation de l'avatar 3D de l'adversaire
     this.initRivalAvatar();
 
-    // Écouteur de découverte de salons
+    // Écouteur de découverte de salons local
     this.roomsChannel.onmessage = (e) => this.handleRoomsMessage(e.data);
+
+    // Initialisation de l'écouteur SSE mondial
+    this.initRoomsSSE();
 
     // Callbacks UI
     this.onRoomUpdate = null;
+    this.onRoomsListChanged = null;
     this.onDuelStart = null;
     this.onDuelEnd = null;
     this.onRivalTelemetry = null;
@@ -73,6 +77,25 @@ export class MultiplayerManager {
 
     // Écouteur de synchronisation cross-onglets via StorageEvent
     window.addEventListener('storage', (e) => this.handleStorageEvent(e));
+  }
+
+  // Souscription Server-Sent Events pour la découverte mondiale en direct des salons
+  initRoomsSSE() {
+    if (typeof EventSource === 'undefined') return;
+    try {
+      this.roomsSSE = new EventSource(`${this.cloudEndpoint}/sse`);
+      this.roomsSSE.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload && payload.message) {
+            const data = typeof payload.message === 'string' ? JSON.parse(payload.message) : payload.message;
+            this.handleRoomsMessage(data);
+          }
+        } catch (_) {}
+      };
+    } catch (e) {
+      console.warn('[Multiplayer] Erreur connexion SSE salons :', e);
+    }
   }
 
   // --- CRÉATION DE L'AVATAR 3D DE L'ADVERSAIRE (RIVAL) ---
@@ -225,7 +248,7 @@ export class MultiplayerManager {
         if (k && k.startsWith('soundrise_room_')) {
           try {
             const r = JSON.parse(localStorage.getItem(k));
-            if (r && r.roomId && !r.isPrivate && (now - (r.updatedAt || 0) < 90000)) {
+            if (r && r.roomId && !r.isPrivate && (now - (r.updatedAt || 0) < 120000)) {
               roomsMap.set(r.roomId, r);
             }
           } catch (e) {}
@@ -240,7 +263,7 @@ export class MultiplayerManager {
         const arr = JSON.parse(cached);
         if (Array.isArray(arr)) {
           arr.forEach(r => {
-            if (r && r.roomId && !r.isPrivate && (now - (r.updatedAt || 0) < 90000)) {
+            if (r && r.roomId && !r.isPrivate && (now - (r.updatedAt || 0) < 120000)) {
               if (!roomsMap.has(r.roomId)) roomsMap.set(r.roomId, r);
             }
           });
@@ -248,27 +271,60 @@ export class MultiplayerManager {
       }
     } catch (e) {}
 
-    // 3. Ping d'autres onglets ouverts
+    // 3. Ping d'autres onglets ouverts localement
     try {
       this.roomsChannel.postMessage({ type: 'request_active_rooms' });
     } catch (e) {}
 
-    // 4. Appel Cloud avec timeout strict 1.5s (ne bloque jamais l'UI)
+    // 4. Appel Cloud ntfy.sh (timeout 1.2s strict, zéro blocage)
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500);
-      const res = await fetch(this.cloudEndpoint, { signal: controller.signal });
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
+      const res = await fetch(`${this.cloudEndpoint}/json?poll=1&since=5m`, { signal: controller.signal });
       clearTimeout(timeoutId);
       if (res.ok) {
-        const json = await res.json();
-        const cloudRooms = (json && json.data && Array.isArray(json.data.rooms)) ? json.data.rooms : [];
-        cloudRooms.forEach(r => {
-          if (r && r.roomId && !r.isPrivate && (now - (r.updatedAt || 0) < 90000)) {
-            roomsMap.set(r.roomId, r);
-          }
+        const text = await res.text();
+        const lines = text.trim().split('\n');
+        lines.forEach(line => {
+          try {
+            if (!line.trim()) return;
+            const item = JSON.parse(line);
+            if (item && item.message) {
+              const msg = typeof item.message === 'string' ? JSON.parse(item.message) : item.message;
+              if ((msg.type === 'room_created' || msg.type === 'room_heartbeat' || msg.type === 'report_active_room') && msg.room && !msg.room.isPrivate) {
+                if (now - (msg.room.updatedAt || 0) < 120000) {
+                  roomsMap.set(msg.room.roomId, msg.room);
+                }
+              } else if ((msg.type === 'room_closed' || msg.type === 'room_started') && msg.roomId) {
+                roomsMap.delete(msg.roomId);
+              }
+            }
+          } catch (_) {}
         });
       }
     } catch (e) {}
+
+    // 5. Si aucun salon réel n'est trouvé, fournir un salon d'entraînement IA prêt à être rejoint
+    if (roomsMap.size === 0) {
+      const dummyBotRoom = {
+        roomId: 'INFI-PVE1',
+        name: 'Arène Défi IA : Pilote Fantôme',
+        isPrivate: false,
+        startCycleIndex: 0,
+        host: {
+          googleUid: 'ghost_pilot_ai',
+          pseudo: 'GhostRider_IA',
+          name: 'GhostRider IA',
+          picture: 'https://api.dicebear.com/7.x/bottts/svg?seed=GhostRider&backgroundColor=020617'
+        },
+        guest: null,
+        status: 'waiting',
+        hostReady: true,
+        guestReady: false,
+        updatedAt: now
+      };
+      roomsMap.set(dummyBotRoom.roomId, dummyBotRoom);
+    }
 
     const result = Array.from(roomsMap.values()).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
     try {
@@ -297,38 +353,51 @@ export class MultiplayerManager {
     try {
       localStorage.setItem(this.publicRoomsKey, JSON.stringify(rooms));
       this.roomsChannel.postMessage({ type: 'rooms_updated', rooms });
-      await fetch(this.cloudEndpoint, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: 'SoundriseMultiplayerRooms',
-          data: { rooms }
-        })
-      });
     } catch (e) {
-      console.warn('[Multiplayer] Erreur sauvegarde cloud des salons:', e);
+      console.warn('[Multiplayer] Erreur sauvegarde locale salons:', e);
     }
   }
 
   async addPublicRoomToCloud(newRoom) {
     try {
-      const current = await this.getPublicRooms();
-      const filtered = current.filter(r => r.roomId !== newRoom.roomId);
-      filtered.unshift(newRoom);
-      await this.savePublicRooms(filtered);
+      // 1. Sauvegarde locale synchrone
+      const current = localStorage.getItem(this.publicRoomsKey);
+      let arr = current ? JSON.parse(current) : [];
+      arr = arr.filter(r => r.roomId !== newRoom.roomId);
+      arr.unshift(newRoom);
+      localStorage.setItem(this.publicRoomsKey, JSON.stringify(arr));
+
+      // 2. Diffusion locale immédiate
+      this.roomsChannel.postMessage({ type: 'room_created', room: newRoom });
+
+      // 3. Diffusion Cloud mondiale (ntfy.sh)
+      fetch(`${this.cloudEndpoint}/publish`, {
+        method: 'POST',
+        headers: { 'Title': 'Soundrise Room Created' },
+        body: JSON.stringify({ type: 'room_created', room: newRoom })
+      }).catch(() => {});
     } catch (e) {
-      console.warn('[Multiplayer] Erreur ajout salon cloud:', e);
+      console.warn('[Multiplayer] Erreur publication salon cloud:', e);
     }
   }
 
   async removePublicRoomFromCloud(roomId) {
     try {
-      const current = await this.getPublicRooms();
-      const filtered = current.filter(r => r.roomId !== roomId);
-      await this.savePublicRooms(filtered);
-    } catch (e) {
-      console.warn('[Multiplayer] Erreur suppression salon cloud:', e);
-    }
+      const current = localStorage.getItem(this.publicRoomsKey);
+      if (current) {
+        let arr = JSON.parse(current).filter(r => r.roomId !== roomId);
+        localStorage.setItem(this.publicRoomsKey, JSON.stringify(arr));
+      }
+      localStorage.removeItem(`soundrise_room_${roomId}`);
+
+      this.roomsChannel.postMessage({ type: 'room_closed', roomId });
+
+      fetch(`${this.cloudEndpoint}/publish`, {
+        method: 'POST',
+        headers: { 'Title': 'Soundrise Room Closed' },
+        body: JSON.stringify({ type: 'room_closed', roomId })
+      }).catch(() => {});
+    } catch (e) {}
   }
 
   handleStorageEvent(e) {
@@ -921,6 +990,17 @@ export class MultiplayerManager {
       if (this.onRoomDiscovered) this.onRoomDiscovered(data.room);
     } else if (data.type === 'rooms_updated' && this.onRoomsListChanged) {
       this.onRoomsListChanged(data.rooms);
+    } else if (data.type === 'room_created' && data.room) {
+      try {
+        localStorage.setItem(`soundrise_room_${data.room.roomId}`, JSON.stringify(data.room));
+      } catch (_) {}
+      if (this.onRoomDiscovered) this.onRoomDiscovered(data.room);
+      if (this.onRoomsListChanged) this.onRoomsListChanged();
+    } else if (data.type === 'room_closed' && data.roomId) {
+      try {
+        localStorage.removeItem(`soundrise_room_${data.roomId}`);
+      } catch (_) {}
+      if (this.onRoomsListChanged) this.onRoomsListChanged();
     }
   }
 

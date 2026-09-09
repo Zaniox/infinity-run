@@ -12,6 +12,7 @@ import { UIManager } from './ui.js';
 import { AuthManager } from './auth.js';
 import { LeaderboardManager } from './leaderboard.js';
 import { MultiplayerManager } from './multiplayer.js';
+import { SystemManager } from './system.js';
 import { settings } from './settings.js';
 import { i18n } from './i18n.js';
 
@@ -29,6 +30,7 @@ class GameApp {
         this.player.setFounder(this.auth && this.auth.isFounder && this.auth.isFounder());
       }
     });
+    this.system = new SystemManager(this.auth);
     this.leaderboard = new LeaderboardManager();
 
     // États de jeu
@@ -89,6 +91,9 @@ class GameApp {
       this.multiplayer
     );
     this.ui.setMultiplayer(this.multiplayer);
+    if (this.ui.setSystemManager) {
+      this.ui.setSystemManager(this.system);
+    }
 
     // Initialisation des volumes et qualité graphique selon les réglages
     if (this.audio) {
@@ -306,6 +311,15 @@ class GameApp {
   }
 
   startGame() {
+    // Contrôle du Mode Maintenance Globale (contournable par le Fondateur)
+    if (this.system && this.system.isMaintenanceActive()) {
+      const isFounder = !!(this.auth && typeof this.auth.isFounder === 'function' && this.auth.isFounder());
+      if (!isFounder) {
+        console.warn('[System] Décollage refusé : Mode maintenance globale actif.');
+        return;
+      }
+    }
+
     // Si l'utilisateur est connecté avec Google mais n'a pas encore choisi de pseudo
     if (this.auth && this.auth.user && this.auth.user.googleUid && !this.auth.hasPseudo()) {
       if (this.ui) this.ui.openPseudoModal();
@@ -336,9 +350,22 @@ class GameApp {
     if (!this.audio.isPlaying) this.audio.start();
     const track = this.audio.getCurrentTrack();
     this.onTrackChange(this.audio.currentTrackIndex, track);
+
+    // Journalisation de la mission
+    if (this.system) {
+      const user = this.auth ? this.auth.getUser() : null;
+      const pseudo = user ? user.pseudo : 'Invité';
+      this.system.logEvent('VOL', `Décollage solo de @${pseudo} — Cycle ${this.world ? this.world.cycleIndex + 1 : 1}`);
+    }
   }
 
   restartGame() {
+    // Contrôle du Mode Maintenance
+    if (this.system && this.system.isMaintenanceActive()) {
+      const isFounder = !!(this.auth && typeof this.auth.isFounder === 'function' && this.auth.isFounder());
+      if (!isFounder) return;
+    }
+
     this.isPaused = false;
     if (this.ui) {
       this.ui.hidePauseMenu();
@@ -405,6 +432,12 @@ class GameApp {
   }
 
   startMultiplayerGame(startCycleIndex = 0) {
+    // Contrôle du Mode Maintenance
+    if (this.system && this.system.isMaintenanceActive()) {
+      const isFounder = !!(this.auth && typeof this.auth.isFounder === 'function' && this.auth.isFounder());
+      if (!isFounder) return;
+    }
+
     this.isPaused = false;
     if (this.ui) this.ui.hidePauseMenu();
     this.isMultiplayerDuel = true;
@@ -454,6 +487,13 @@ class GameApp {
 
     this.ui.updateHUD(100, 0, this.currentSpeed, 0);
     this.state = this.STATE_PLAYING;
+
+    if (this.system) {
+      const user = this.auth ? this.auth.getUser() : null;
+      const pseudo = user ? user.pseudo : 'Pilote';
+      const rival = (this.multiplayer && this.multiplayer.opponentUser) ? this.multiplayer.opponentUser.pseudo : 'Rival';
+      this.system.logEvent('DUEL', `Départ duel 1v1 : @${pseudo} vs @${rival} (Cycle ${startCycleIndex + 1})`);
+    }
   }
 
   firePlayerLaser() {

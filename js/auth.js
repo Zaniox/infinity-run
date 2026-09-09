@@ -352,4 +352,57 @@ export class AuthManager {
     }
     return false;
   }
+
+  // --- GESTION DES COMPTES INSCRITS (PANEL FONDATEUR) ---
+  getRegisteredAccounts(founderUser) {
+    if (!founderUser || (!founderUser.isFounder && founderUser.email !== this.founderEmail && founderUser.pseudo !== this.founderPseudo)) {
+      throw new Error('Accès refusé : Action réservée exclusivement au Fondateur.');
+    }
+    const accounts = this.getAccounts();
+    return accounts.map(a => ({
+      email: a.email,
+      pseudo: a.pseudo,
+      isFounder: !!a.isFounder,
+      role: a.role || (a.isFounder ? 'FONDATEUR' : 'PILOTE'),
+      createdAt: a.createdAt || '2026-09-08',
+      highScore: a.progression?.highScore || 0,
+      bestDistance: a.progression?.bestDistance || 0,
+      victories1v1: a.progression?.victories1v1 || 0,
+      gamesPlayed: a.progression?.gamesPlayed || 0,
+      picture: a.picture
+    }));
+  }
+
+  deleteAccount(pseudoOrEmail, founderUser) {
+    if (!founderUser || (!founderUser.isFounder && founderUser.email !== this.founderEmail && founderUser.pseudo !== this.founderPseudo)) {
+      throw new Error('Accès refusé : Action réservée exclusivement au Fondateur.');
+    }
+    const target = (pseudoOrEmail || '').trim().toLowerCase();
+    if (target === this.founderEmail.toLowerCase() || target === this.founderPseudo.toLowerCase()) {
+      throw new Error('Protection critique : Impossible de supprimer le compte Fondateur.');
+    }
+    let accounts = this.getAccounts();
+    const countBefore = accounts.length;
+    accounts = accounts.filter(a => a.email.toLowerCase() !== target && a.pseudo.toLowerCase() !== target);
+    if (accounts.length === countBefore) {
+      throw new Error('Compte introuvable : ' + pseudoOrEmail);
+    }
+    this.saveAccounts(accounts);
+    return true;
+  }
+
+  resetAccountPassword(pseudoOrEmail, newPassword, founderUser) {
+    if (!founderUser || (!founderUser.isFounder && founderUser.email !== this.founderEmail && founderUser.pseudo !== this.founderPseudo)) {
+      throw new Error('Accès refusé : Action réservée exclusivement au Fondateur.');
+    }
+    const target = (pseudoOrEmail || '').trim().toLowerCase();
+    const accounts = this.getAccounts();
+    const account = accounts.find(a => a.email.toLowerCase() === target || a.pseudo.toLowerCase() === target);
+    if (!account) {
+      throw new Error('Compte introuvable : ' + pseudoOrEmail);
+    }
+    account.passwordHash = this.hashPassword(newPassword || 'soundrise123');
+    this.saveAccounts(accounts);
+    return true;
+  }
 }

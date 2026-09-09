@@ -284,6 +284,37 @@ export class UIManager {
     this.myLivesDisplay = document.getElementById('my-lives-display');
     this.rivalLivesDisplay = document.getElementById('rival-lives-display');
     this.rivalLivesLabel = document.getElementById('rival-lives-label');
+
+    // Panel Fondateur (administration exclusive @zanioxx_off)
+    this.founderModal = document.getElementById('founder-modal');
+    this.btnOpenFounderPanel = document.getElementById('btn-open-founder-panel');
+    this.btnCloseFounder = document.getElementById('btn-close-founder');
+    this.ftabBtnMaintenance = document.getElementById('ftab-btn-maintenance');
+    this.ftabBtnLeaderboard = document.getElementById('ftab-btn-leaderboard');
+    this.ftabBtnUsers = document.getElementById('ftab-btn-users');
+    this.ftabBtnLogs = document.getElementById('ftab-btn-logs');
+    this.ftabMaintenance = document.getElementById('ftab-maintenance');
+    this.ftabLeaderboard = document.getElementById('ftab-leaderboard');
+    this.ftabUsers = document.getElementById('ftab-users');
+    this.ftabLogs = document.getElementById('ftab-logs');
+    this.toggleMaintenanceMode = document.getElementById('toggle-maintenance-mode');
+    this.maintenanceStatusLabel = document.getElementById('maintenance-status-label');
+    this.inputMaintenanceReason = document.getElementById('input-maintenance-reason');
+    this.btnFounderResetLb = document.getElementById('btn-founder-reset-lb');
+    this.founderResetConfirm = document.getElementById('founder-reset-confirm');
+    this.inputResetConfirm = document.getElementById('input-reset-confirm');
+    this.btnConfirmResetLb = document.getElementById('btn-confirm-reset-lb');
+    this.founderUsersCount = document.getElementById('founder-users-count');
+    this.btnRefreshUsers = document.getElementById('btn-refresh-users');
+    this.founderUsersBody = document.getElementById('founder-users-body');
+    this.founderLogsCount = document.getElementById('founder-logs-count');
+    this.btnClearLogs = document.getElementById('btn-clear-logs');
+    this.founderLogsConsole = document.getElementById('founder-logs-console');
+
+    // Écran de Maintenance Globale
+    this.maintenanceOverlay = document.getElementById('maintenance-overlay');
+    this.maintenanceReasonDisplay = document.getElementById('maintenance-reason-display');
+    this.maintenanceByDisplay = document.getElementById('maintenance-by-display');
   }
 
   bindEvents() {
@@ -852,9 +883,65 @@ export class UIManager {
       });
     }
 
-    // 14. Raccourcis clavier (Espace / Entrée / Échap)
+    // 14. Panel Fondateur Officiel
+    if (this.btnOpenFounderPanel) {
+      this.btnOpenFounderPanel.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openFounderPanel();
+      });
+    }
+    if (this.btnCloseFounder) {
+      this.btnCloseFounder.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.closeFounderPanel();
+      });
+    }
+
+    // Navigation des 4 onglets du panel fondateur
+    const founderTabBtns = [this.ftabBtnMaintenance, this.ftabBtnLeaderboard, this.ftabBtnUsers, this.ftabBtnLogs];
+    const founderTabViews = [this.ftabMaintenance, this.ftabLeaderboard, this.ftabUsers, this.ftabLogs];
+    founderTabBtns.forEach((btn, idx) => {
+      if (btn) {
+        btn.addEventListener('click', () => {
+          founderTabBtns.forEach(b => { if (b) b.classList.remove('active'); });
+          founderTabViews.forEach(v => { if (v) v.classList.add('hidden'); });
+          btn.classList.add('active');
+          if (founderTabViews[idx]) founderTabViews[idx].classList.remove('hidden');
+          if (idx === 2) this.populateUserRegistry();
+          if (idx === 3) this.refreshAuditLogs();
+        });
+      }
+    });
+
+    // Basculement Mode Maintenance
+    if (this.toggleMaintenanceMode) {
+      this.toggleMaintenanceMode.addEventListener('change', () => this.handleMaintenanceToggle());
+    }
+
+    // Réinitialisation du Classement Mondial
+    if (this.btnFounderResetLb) {
+      this.btnFounderResetLb.addEventListener('click', () => {
+        if (this.founderResetConfirm) this.founderResetConfirm.classList.remove('hidden');
+      });
+    }
+    if (this.btnConfirmResetLb) {
+      this.btnConfirmResetLb.addEventListener('click', () => this.handleResetLeaderboard());
+    }
+
+    // Actualisation du Registre Utilisateurs
+    if (this.btnRefreshUsers) {
+      this.btnRefreshUsers.addEventListener('click', () => this.populateUserRegistry());
+    }
+
+    // Vidage des Logs
+    if (this.btnClearLogs) {
+      this.btnClearLogs.addEventListener('click', () => this.handleClearLogs());
+    }
+
+    // 15. Raccourcis clavier (Espace / Entrée / Échap)
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Escape') {
+        if (this.isFounderModalVisible()) this.closeFounderPanel();
         if (this.isLeaderboardVisible()) this.closeLeaderboardModal();
         if (this.isGoogleModalVisible()) this.closeGoogleDirectModal();
         if (this.isMultiplayerModalVisible()) this.closeMultiplayerModal();
@@ -899,7 +986,8 @@ export class UIManager {
       this.isMultiplayerModalVisible() ||
       this.isDuelResultVisible() ||
       this.isSettingsModalVisible() ||
-      this.isAccountModalVisible()
+      this.isAccountModalVisible() ||
+      this.isFounderModalVisible()
     );
   }
 
@@ -1074,13 +1162,13 @@ export class UIManager {
 
       const pseudo = user.pseudo ? user.pseudo.trim() : '';
 
-      // Badge Fondateur Officiel 👑
+      // Badge Fondateur Officiel 👑 & Bouton Panel Fondateur
+      const isFounder = !!(this.auth && this.auth.isFounder && this.auth.isFounder());
       if (this.userFounderBadge) {
-        if (this.auth && this.auth.isFounder && this.auth.isFounder()) {
-          this.userFounderBadge.classList.remove('hidden');
-        } else {
-          this.userFounderBadge.classList.add('hidden');
-        }
+        this.userFounderBadge.classList.toggle('hidden', !isFounder);
+      }
+      if (this.btnOpenFounderPanel) {
+        this.btnOpenFounderPanel.classList.toggle('hidden', !isFounder);
       }
 
       if (pseudo) {
@@ -1109,6 +1197,7 @@ export class UIManager {
       if (this.authUnlogged) this.authUnlogged.classList.remove('hidden');
       if (this.authLogged) this.authLogged.classList.add('hidden');
       if (this.userFounderBadge) this.userFounderBadge.classList.add('hidden');
+      if (this.btnOpenFounderPanel) this.btnOpenFounderPanel.classList.add('hidden');
 
       if (this.btnPlayGame) {
         this.btnPlayGame.classList.remove('locked');
@@ -1715,7 +1804,16 @@ export class UIManager {
     this.multiplayer = mp;
     if (this.multiplayer) {
       this.multiplayer.onRoomUpdate = (room) => this.renderLobby(room);
-      this.multiplayer.onRoomsListChanged = (rooms) => this.renderPublicRooms(rooms);
+      this.multiplayer.onRoomsListChanged = async (rooms) => {
+        if (!rooms && this.multiplayer) {
+          try {
+            rooms = await this.multiplayer.getPublicRooms();
+          } catch (_) {
+            rooms = [];
+          }
+        }
+        this.renderPublicRooms(rooms || []);
+      };
       this.multiplayer.onDuelStart = (startCycle) => {
         this.closeMultiplayerModal();
         this.hideStartMenu();
@@ -2040,6 +2138,237 @@ export class UIManager {
 
   isDuelResultVisible() {
     return this.duelResultModal && !this.duelResultModal.classList.contains('hidden');
+  }
+
+  // ============================================================
+  // PANEL FONDATEUR — MÉTHODES D'ADMINISTRATION EXCLUSIVES
+  // ============================================================
+
+  setSystemManager(systemManager) {
+    this.system = systemManager;
+    if (this.system) {
+      this.system.onMaintenanceChanged((state) => this.handleMaintenanceStateUpdate(state));
+      this.system.onLogAdded(() => {
+        if (this.isFounderModalVisible()) this.refreshAuditLogs();
+      });
+      this.system.onLeaderboardReset(() => {
+        this.refreshLeaderboard();
+      });
+      // Vérification initiale de la maintenance au chargement
+      this.handleMaintenanceStateUpdate(this.system.getMaintenanceState());
+    }
+  }
+
+  isFounderModalVisible() {
+    return this.founderModal && !this.founderModal.classList.contains('hidden');
+  }
+
+  openFounderPanel() {
+    if (!this.auth || !this.auth.isFounder || !this.auth.isFounder()) {
+      alert('Accès refusé : Ce panel est réservé exclusivement au Fondateur @zanioxx_off.');
+      return;
+    }
+    if (this.founderModal) this.founderModal.classList.remove('hidden');
+    this.populateUserRegistry();
+    this.refreshAuditLogs();
+
+    // Synchronisation du commutateur de maintenance
+    if (this.system && this.toggleMaintenanceMode) {
+      const state = this.system.getMaintenanceState();
+      this.toggleMaintenanceMode.checked = !!state.active;
+      this.updateMaintenanceLabel(!!state.active);
+      if (this.inputMaintenanceReason && state.reason) {
+        this.inputMaintenanceReason.value = state.reason;
+      }
+    }
+  }
+
+  closeFounderPanel() {
+    if (this.founderModal) this.founderModal.classList.add('hidden');
+    if (this.founderResetConfirm) this.founderResetConfirm.classList.add('hidden');
+    if (this.inputResetConfirm) {
+      this.inputResetConfirm.value = '';
+      this.inputResetConfirm.style.borderColor = '';
+    }
+  }
+
+  updateMaintenanceLabel(active) {
+    if (this.maintenanceStatusLabel) {
+      if (active) {
+        this.maintenanceStatusLabel.textContent = '🔴 ACTIVÉ (EN COURS)';
+        this.maintenanceStatusLabel.className = 'maintenance-status-on';
+      } else {
+        this.maintenanceStatusLabel.textContent = '⚫ DÉSACTIVÉ';
+        this.maintenanceStatusLabel.className = 'maintenance-status-off';
+      }
+    }
+  }
+
+  async handleMaintenanceToggle() {
+    if (!this.system || !this.auth) return;
+    const user = this.auth.getUser();
+    const isActive = this.toggleMaintenanceMode ? this.toggleMaintenanceMode.checked : false;
+    const reason = this.inputMaintenanceReason ? this.inputMaintenanceReason.value.trim() : '';
+
+    try {
+      await this.system.setMaintenance(isActive, reason, user);
+      this.updateMaintenanceLabel(isActive);
+    } catch (err) {
+      console.error('[Founder] Erreur lors de la modification de la maintenance :', err);
+      if (this.toggleMaintenanceMode) this.toggleMaintenanceMode.checked = !isActive;
+      alert(err.message || 'Erreur d\'autorisation.');
+    }
+  }
+
+  handleMaintenanceStateUpdate(state) {
+    if (!state) return;
+    const isFounder = !!(this.auth && typeof this.auth.isFounder === 'function' && this.auth.isFounder());
+
+    if (state.active) {
+      if (!isFounder) {
+        // Blocage total et affichage de l'animation de maintenance pour tous les non-fondateurs
+        if (this.maintenanceOverlay) this.maintenanceOverlay.classList.remove('hidden');
+        if (this.startMenu) this.startMenu.style.display = 'none';
+        if (this.hudOverlay) this.hudOverlay.classList.add('hidden');
+      } else {
+        // Le fondateur est prévenu par un bandeau discret mais continue d'avoir accès au jeu
+        this.showFounderBypassBanner(state.reason);
+        if (this.maintenanceOverlay) this.maintenanceOverlay.classList.add('hidden');
+        if (this.startMenu) this.startMenu.style.display = '';
+      }
+
+      if (this.maintenanceReasonDisplay) this.maintenanceReasonDisplay.textContent = state.reason || '';
+      if (this.maintenanceByDisplay) this.maintenanceByDisplay.textContent = state.by || 'zanioxx_off';
+    } else {
+      // Fin de maintenance : réouverture pour tout le monde
+      if (this.maintenanceOverlay) this.maintenanceOverlay.classList.add('hidden');
+      if (this.startMenu) this.startMenu.style.display = '';
+      this.removeFounderBypassBanner();
+    }
+
+    if (this.toggleMaintenanceMode) this.toggleMaintenanceMode.checked = !!state.active;
+    this.updateMaintenanceLabel(!!state.active);
+  }
+
+  showFounderBypassBanner(reason) {
+    this.removeFounderBypassBanner();
+    const banner = document.createElement('div');
+    banner.className = 'founder-bypass-banner';
+    banner.id = 'founder-bypass-banner';
+    banner.innerHTML = `👑 MODE MAINTENANCE ACTIF — Accès maintenu pour le Fondateur @zanioxx_off &bull; <em>${reason || ''}</em>`;
+    document.body.appendChild(banner);
+  }
+
+  removeFounderBypassBanner() {
+    const existing = document.getElementById('founder-bypass-banner');
+    if (existing) existing.remove();
+  }
+
+  async handleResetLeaderboard() {
+    if (!this.auth || !this.leaderboard || !this.system) return;
+    const user = this.auth.getUser();
+    const confirmText = this.inputResetConfirm ? this.inputResetConfirm.value.trim().toUpperCase() : '';
+
+    if (confirmText !== 'PURGE') {
+      if (this.inputResetConfirm) {
+        this.inputResetConfirm.style.borderColor = '#ff2222';
+        this.inputResetConfirm.focus();
+      }
+      return;
+    }
+
+    try {
+      await this.leaderboard.resetLeaderboard(user, this.system);
+      if (this.founderResetConfirm) this.founderResetConfirm.classList.add('hidden');
+      if (this.inputResetConfirm) {
+        this.inputResetConfirm.value = '';
+        this.inputResetConfirm.style.borderColor = '';
+      }
+      alert('Classement mondial réinitialisé avec succès !');
+      this.refreshLeaderboard();
+      this.refreshAuditLogs();
+    } catch (err) {
+      console.error('[Founder] Erreur purge leaderboard :', err);
+      alert('Erreur : ' + (err.message || 'Action impossible.'));
+    }
+  }
+
+  populateUserRegistry() {
+    if (!this.auth || !this.founderUsersBody) return;
+    const user = this.auth.getUser();
+    if (!user) return;
+
+    try {
+      const accounts = this.auth.getRegisteredAccounts(user);
+      if (this.founderUsersCount) {
+        this.founderUsersCount.textContent = `${accounts.length} compte${accounts.length > 1 ? 's' : ''} enregistré${accounts.length > 1 ? 's' : ''}`;
+      }
+
+      if (accounts.length === 0) {
+        this.founderUsersBody.innerHTML = '<div class="founder-empty">Aucun pilote enregistré pour le moment.</div>';
+        return;
+      }
+
+      let html = '';
+      accounts.forEach((acc, idx) => {
+        const isF = acc.role === 'FONDATEUR' || acc.isFounder || acc.email === 'maximenax05@gmail.com' || acc.pseudo === 'zanioxx_off';
+        const roleClass = isF ? 'user-role-founder' : 'user-role-player';
+        const roleText = isF ? '👑 FONDATEUR' : 'Pilote';
+        const dateStr = acc.createdAt ? new Date(acc.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '--';
+
+        html += `
+          <div class="founder-user-row">
+            <span>#${idx + 1}</span>
+            <span><strong>@${acc.pseudo || '--'}</strong></span>
+            <span>${acc.email || '--'}</span>
+            <span class="${roleClass}">${roleText}</span>
+            <span>${dateStr}</span>
+          </div>
+        `;
+      });
+
+      this.founderUsersBody.innerHTML = html;
+    } catch (err) {
+      this.founderUsersBody.innerHTML = `<div class="founder-empty">${err.message || 'Erreur de lecture du registre.'}</div>`;
+    }
+  }
+
+  refreshAuditLogs() {
+    if (!this.system || !this.founderLogsConsole) return;
+    const logs = this.system.getLogs();
+
+    if (this.founderLogsCount) {
+      this.founderLogsCount.textContent = `${logs.length} entrée${logs.length > 1 ? 's' : ''}`;
+    }
+
+    if (logs.length === 0) {
+      this.founderLogsConsole.innerHTML = '<div class="founder-empty">Aucun événement dans le journal système.</div>';
+      return;
+    }
+
+    let html = '';
+    logs.forEach((log) => {
+      const catClass = 'cat-' + (log.category || 'info').toLowerCase();
+      html += `
+        <div class="log-entry">
+          <span class="log-time">[${log.timeFormatted || '--:--:--'}]</span>
+          <span class="log-category ${catClass}">${log.category || 'INFO'}</span>
+          <span class="log-message">${log.message || ''}</span>
+        </div>
+      `;
+    });
+
+    this.founderLogsConsole.innerHTML = html;
+  }
+
+  handleClearLogs() {
+    if (!this.system || !this.auth) return;
+    try {
+      this.system.clearLogs(this.auth.getUser());
+      this.refreshAuditLogs();
+    } catch (err) {
+      console.error('[Founder] Erreur vidage journal :', err);
+    }
   }
 }
 
