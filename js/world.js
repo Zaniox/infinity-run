@@ -1015,7 +1015,7 @@ export class World {
 
     // Brume atmosphérique cinématographique calibrée pour un horizon fluide et profond
     this.scene.background = new THREE.Color(this.cycle.sky);
-    this.scene.fog = new THREE.Fog(this.cycle.fog, 75, 340);
+    this.scene.fog = new THREE.Fog(this.cycle.fog, 75, 420);
 
     // Éclairage directionnel & ombres nettes
     this.setupLighting();
@@ -1052,6 +1052,12 @@ export class World {
 
     // Lignes de vitesse Hyperdrive 3D (Speed Streaks cinématiques)
     this.setupSpeedLines();
+
+    // Silhouettes d'horizon lointain thématiques par cycle (skyline, montagnes, ruines)
+    this.setupHorizonSkyline();
+
+    // Particules atmosphériques flottantes (poussière, brume, motes célestes)
+    this.setupAtmosphericParticles();
 
     // Système de Portail de Transition 3D monumental
     this.transitionPortal = null;
@@ -2411,6 +2417,9 @@ export class World {
     this.groundMaterial.metalness = this.getMetalnessForElement(cycle.element);
 
     this.updateActiveElement(this.currentCycleIndex);
+
+    // Forcer la reconstruction de l'horizon au prochain frame
+    this._horizonCycleIdx = -1;
   }
 
   // --- SYSTÈME D'ÉVÉNEMENTS COSMIQUES FONDATEUR (ÉCLIPSE & VORTEX) ---
@@ -2599,6 +2608,9 @@ export class World {
 
     // Effet d'explosion avec particules de l'élément du cycle
     this.createObstacleExplosion(pos, this.cycle.element, isSaiyan);
+
+    // Nettoyer la lumière standalone si elle existe
+    if (obs._pl) this.scene.remove(obs._pl);
 
     this.scene.remove(obs.mesh);
     this.obstacles.splice(obstacleIndex, 1);
@@ -2963,6 +2975,10 @@ export class World {
     subBoxes.push({ mesh: boxBot, box: new THREE.Box3() });
 
     group.position.set(gapX, 7.5, this.spawnDistance);
+    // Lueur de feu dynamique illuminant le décor environnant
+    const firePL = new THREE.PointLight(0xff4400, 3.8, 55);
+    firePL.position.set(0, 0, 0);
+    group.add(firePL);
     const obj = { mesh: group, subBoxes, type: 'spiral', rotSpeed: (Math.random() < 0.5 ? 1 : -1) * 1.8 };
 
     this.scene.add(group);
@@ -3054,6 +3070,11 @@ export class World {
     subBoxes.push({ mesh: hazardMesh, box: new THREE.Box3() });
 
     group.position.set(x, 0, this.spawnDistance);
+
+    // Éclairage électrique dynamique illuminant la piste en jaune plasma
+    const teslaPL = new THREE.PointLight(0xfde047, 4.2, 50);
+    teslaPL.position.set(0, pylonH, 0);
+    group.add(teslaPL);
 
     const obj = {
       mesh: group,
@@ -3209,9 +3230,13 @@ export class World {
     const mesh = new THREE.Mesh(geo, cosmosMat);
     mesh.position.set(x, h / 2, this.spawnDistance);
     mesh.castShadow = true;
+    // Lueur cosmique violette
+    const cosmicPL = new THREE.PointLight(0xc084fc, 3.0, 42);
+    cosmicPL.position.set(x, h, this.spawnDistance);
+    this.scene.add(cosmicPL);
 
     const bbox = new THREE.Box3().setFromObject(mesh);
-    const obj = { mesh, bbox, type: 'glitch', glitchTimer: 0 };
+    const obj = { mesh, bbox, type: 'glitch', glitchTimer: 0, _pl: cosmicPL };
 
     this.scene.add(mesh);
     this.obstacles.push(obj);
@@ -3384,6 +3409,10 @@ export class World {
     }
 
     group.position.set(x, 0, this.spawnDistance);
+    // Lueur de magma incandescente illuminant la zone
+    const magmaPL = new THREE.PointLight(0xff3300, 3.2, 45);
+    magmaPL.position.set(0, h + 4, 0);
+    group.add(magmaPL);
     const bbox = new THREE.Box3().setFromObject(group);
     const obj = { mesh: group, subBoxes, bbox, type: 'standard' };
 
@@ -4226,6 +4255,7 @@ export class World {
       if (t >= 1.0) {
         this.isTransitioning = false;
         this.scene.fog.near = 75;
+        this.scene.fog.far = 420;
         this.applyCycleImmediate(this.cycle);
       }
     }
@@ -4351,6 +4381,10 @@ export class World {
     if (this.updateSideProps) {
       this.updateSideProps(dt, speed, audioPulse);
     }
+
+    // Mise à jour des silhouettes d'horizon et particules atmosphériques
+    if (this.horizonGroup) this.updateHorizonSkyline(this.currentCycleIndex);
+    this.updateAtmosphericParticles(dt, speed, deltaZ, this.currentCycleIndex, bass, time);
 
     // Défilement et animation du Portail Dimensionnel de Transition
     if (this.transitionPortal) {
@@ -4551,6 +4585,12 @@ export class World {
         if (isNewBeat && Math.random() < 0.25) {
           obs.mesh.position.x += (Math.random() - 0.5) * 1.2;
         }
+        // Synchronise la lumière cosmique avec l'obstacle
+        if (obs._pl) {
+          obs._pl.position.copy(obs.mesh.position);
+          obs._pl.position.y += 12;
+          obs._pl.intensity = 2.5 + Math.sin(time * 5.0) * 0.8 + audioPulse * 1.5;
+        }
       }
 
       // Boîtes de collision
@@ -4596,6 +4636,7 @@ export class World {
       // Despawn derrière Infi
       if (obs.mesh.position.z > this.despawnZ) {
         this.scene.remove(obs.mesh);
+        if (obs._pl) this.scene.remove(obs._pl);
         this.obstacles.splice(i, 1);
       }
     }
@@ -4721,6 +4762,366 @@ export class World {
     this.speedLinesMesh.geometry.attributes.position.needsUpdate = true;
   }
 
+  // ─── HORIZON SKYLINE : silhouettes thématiques par cycle à ~350-500 unités ──────────────
+  setupHorizonSkyline() {
+    this.horizonGroup = new THREE.Group();
+    this.scene.add(this.horizonGroup);
+
+    // Données de skyline par cycle  [couleur, emissive, roughness, metalness]
+    this.skylineCycleData = [
+      { color: 0x03243f, emissive: 0x0284c7, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.8 }, // Eau
+      { color: 0x2d180c, emissive: 0xd97706, emissiveIntensity: 0.3, roughness: 0.95, metalness: 0.05 }, // Terre
+      { color: 0x1c0404, emissive: 0xef4444, emissiveIntensity: 0.7, roughness: 0.6, metalness: 0.3 }, // Feu
+      { color: 0x0d0b21, emissive: 0xfde047, emissiveIntensity: 0.6, roughness: 0.2, metalness: 0.85 }, // Électricité
+      { color: 0x1a172e, emissive: 0xfef08a, emissiveIntensity: 0.5, roughness: 0.15, metalness: 0.6 }, // Lumière
+      { color: 0x1a1e24, emissive: 0x9ca3af, emissiveIntensity: 0.4, roughness: 0.5, metalness: 0.7 }, // Chaos
+      { color: 0x062540, emissive: 0x38bdf8, emissiveIntensity: 0.55, roughness: 0.2, metalness: 0.8 }, // Vent
+      { color: 0x110324, emissive: 0xe879f9, emissiveIntensity: 0.65, roughness: 0.1, metalness: 0.9 }  // Cosmos
+    ];
+
+    this.horizonMeshes = [];
+    this.horizonLights = [];
+
+    // Construire la skyline du cycle initial
+    this._buildHorizonForCycle(this.currentCycleIndex);
+  }
+
+  _buildHorizonForCycle(cycleIdx) {
+    // Nettoyer l'ancienne skyline
+    for (const m of this.horizonMeshes) this.horizonGroup.remove(m);
+    this.horizonMeshes = [];
+    for (const l of this.horizonLights) this.horizonGroup.remove(l);
+    this.horizonLights = [];
+
+    const c = this.skylineCycleData[cycleIdx] || this.skylineCycleData[0];
+    const mat = new THREE.MeshStandardMaterial({
+      color: c.color,
+      emissive: c.emissive,
+      emissiveIntensity: c.emissiveIntensity,
+      roughness: c.roughness,
+      metalness: c.metalness,
+      flatShading: cycleIdx === 1 || cycleIdx === 2
+    });
+
+    // Paramètres de génération par cycle
+    const configs = [
+      // 0 Eau : falaises marines & arches océaniques
+      () => {
+        const peaks = [
+          { x: -95, w: 38, h: 75 }, { x: -55, w: 22, h: 52 }, { x: -20, w: 18, h: 62 },
+          { x: 18, w: 20, h: 55 }, { x: 52, w: 24, h: 80 }, { x: 92, w: 36, h: 68 }
+        ];
+        peaks.forEach(p => {
+          const geo = new THREE.CylinderGeometry(p.w * 0.4, p.w * 0.55, p.h, 7, 1, false);
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(p.x, p.h * 0.45, -390);
+          this.horizonGroup.add(mesh);
+          this.horizonMeshes.push(mesh);
+        });
+        // Arche marine
+        const archMat = new THREE.MeshStandardMaterial({ color: 0x031928, emissive: 0x0284c7, emissiveIntensity: 0.3, roughness: 0.35, metalness: 0.7 });
+        for (let s = -1; s <= 1; s += 2) {
+          const col = new THREE.Mesh(new THREE.CylinderGeometry(5, 7, 55, 8), archMat);
+          col.position.set(s * 20, 27, -420);
+          this.horizonGroup.add(col);
+          this.horizonMeshes.push(col);
+        }
+        // Lumière bleue lointaine
+        const pl = new THREE.PointLight(0x00c8ff, 1.4, 200);
+        pl.position.set(0, 30, -380);
+        this.horizonGroup.add(pl);
+        this.horizonLights.push(pl);
+      },
+      // 1 Terre : buttes et mesas telluriques
+      () => {
+        const buttes = [
+          { x: -110, w: 55, h: 62 }, { x: -55, w: 38, h: 48 }, { x: -10, w: 28, h: 70 },
+          { x: 40, w: 45, h: 55 }, { x: 95, w: 50, h: 65 }
+        ];
+        buttes.forEach(b => {
+          const geo = new THREE.CylinderGeometry(b.w * 0.5, b.w * 0.65, b.h, 6, 1, false);
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(b.x, b.h * 0.42, -400);
+          this.horizonGroup.add(mesh);
+          this.horizonMeshes.push(mesh);
+          // Capuchon plat (plateau)
+          const cap = new THREE.Mesh(new THREE.CylinderGeometry(b.w * 0.52, b.w * 0.52, 3, 6), mat);
+          cap.position.set(b.x, b.h + 1.5, -400);
+          this.horizonGroup.add(cap);
+          this.horizonMeshes.push(cap);
+        });
+        const pl = new THREE.PointLight(0xf59e0b, 0.8, 180);
+        pl.position.set(0, 20, -380);
+        this.horizonGroup.add(pl);
+        this.horizonLights.push(pl);
+      },
+      // 2 Feu : volcans incandescents & caldeiras
+      () => {
+        const volcs = [
+          { x: -100, rBase: 30, rTop: 8, h: 85 }, { x: -32, rBase: 22, rTop: 5, h: 68 },
+          { x: 20, rBase: 18, rTop: 4, h: 58 }, { x: 75, rBase: 28, rTop: 7, h: 78 }
+        ];
+        volcs.forEach(v => {
+          const geo = new THREE.ConeGeometry(v.rBase, v.h, 8);
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(v.x, v.h * 0.5, -395);
+          this.horizonGroup.add(mesh);
+          this.horizonMeshes.push(mesh);
+          // Lueur de cratère
+          const glowMat = new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.6 });
+          const glow = new THREE.Mesh(new THREE.CircleGeometry(v.rTop * 2, 16), glowMat);
+          glow.rotation.x = -Math.PI / 2;
+          glow.position.set(v.x, v.h, -395);
+          this.horizonGroup.add(glow);
+          this.horizonMeshes.push(glow);
+        });
+        // Lumières de lave
+        const pl1 = new THREE.PointLight(0xff3300, 2.0, 220);
+        pl1.position.set(-60, 40, -370);
+        this.horizonGroup.add(pl1);
+        this.horizonLights.push(pl1);
+        const pl2 = new THREE.PointLight(0xff8800, 1.5, 180);
+        pl2.position.set(55, 30, -370);
+        this.horizonGroup.add(pl2);
+        this.horizonLights.push(pl2);
+      },
+      // 3 Électricité : skyline cyberpunk — tours métalliques à néons
+      () => {
+        const towers = [
+          { x: -105, w: 12, h: 95 }, { x: -80, w: 8, h: 72 }, { x: -55, w: 14, h: 110 },
+          { x: -30, w: 10, h: 80 }, { x: 0, w: 18, h: 120 }, { x: 30, w: 10, h: 85 },
+          { x: 55, w: 14, h: 105 }, { x: 80, w: 8, h: 70 }, { x: 105, w: 12, h: 90 }
+        ];
+        towers.forEach(t => {
+          const geo = new THREE.BoxGeometry(t.w, t.h, t.w * 0.8);
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(t.x, t.h * 0.5, -380);
+          this.horizonGroup.add(mesh);
+          this.horizonMeshes.push(mesh);
+          // Barre néon sommitale
+          const neonMat = new THREE.MeshBasicMaterial({ color: 0xfde047 });
+          const neon = new THREE.Mesh(new THREE.BoxGeometry(t.w + 2, 1.5, t.w * 0.85), neonMat);
+          neon.position.set(t.x, t.h + 0.75, -380);
+          this.horizonGroup.add(neon);
+          this.horizonMeshes.push(neon);
+        });
+        const pl = new THREE.PointLight(0xfde047, 2.5, 280);
+        pl.position.set(0, 60, -360);
+        this.horizonGroup.add(pl);
+        this.horizonLights.push(pl);
+        const pl2 = new THREE.PointLight(0x38bdf8, 1.5, 200);
+        pl2.position.set(-70, 30, -370);
+        this.horizonGroup.add(pl2);
+        this.horizonLights.push(pl2);
+      },
+      // 4 Lumière : temple céleste & piliers de cristal de lumière
+      () => {
+        const pillarsMat = new THREE.MeshStandardMaterial({
+          color: 0xf8fafc, emissive: 0xfef08a, emissiveIntensity: 0.45, roughness: 0.1, metalness: 0.3
+        });
+        const pillars = [
+          { x: -90, r: 8, h: 90 }, { x: -55, r: 5, h: 70 }, { x: -22, r: 10, h: 105 },
+          { x: 22, r: 10, h: 105 }, { x: 55, r: 5, h: 70 }, { x: 90, r: 8, h: 90 }
+        ];
+        pillars.forEach(p => {
+          const geo = new THREE.CylinderGeometry(p.r * 0.5, p.r * 0.65, p.h, 16);
+          const mesh = new THREE.Mesh(geo, pillarsMat);
+          mesh.position.set(p.x, p.h * 0.5, -400);
+          this.horizonGroup.add(mesh);
+          this.horizonMeshes.push(mesh);
+          // Apex doré
+          const apex = new THREE.Mesh(new THREE.ConeGeometry(p.r * 0.55, p.r * 1.4, 8), pillarsMat);
+          apex.position.set(p.x, p.h + p.r * 0.7, -400);
+          this.horizonGroup.add(apex);
+          this.horizonMeshes.push(apex);
+        });
+        const pl = new THREE.PointLight(0xfef08a, 2.0, 300);
+        pl.position.set(0, 80, -360);
+        this.horizonGroup.add(pl);
+        this.horizonLights.push(pl);
+      },
+      // 5 Chaos : ruines déchiquetées & silhouettes fracturées
+      () => {
+        const frags = [
+          { x: -110, w: 22, h: 60, rz: 0.08 }, { x: -70, w: 14, h: 45, rz: -0.12 },
+          { x: -38, w: 18, h: 75, rz: 0.06 }, { x: 5, w: 20, h: 65, rz: -0.07 },
+          { x: 45, w: 16, h: 55, rz: 0.10 }, { x: 85, w: 24, h: 70, rz: -0.05 }
+        ];
+        frags.forEach(f => {
+          const geo = new THREE.BoxGeometry(f.w, f.h, f.w * 0.7);
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(f.x, f.h * 0.5, -395);
+          mesh.rotation.z = f.rz;
+          this.horizonGroup.add(mesh);
+          this.horizonMeshes.push(mesh);
+        });
+        const pl = new THREE.PointLight(0xd1d5db, 0.9, 200);
+        pl.position.set(0, 40, -370);
+        this.horizonGroup.add(pl);
+        this.horizonLights.push(pl);
+      },
+      // 6 Vent : canyons aériens & aiguilles supersoniques
+      () => {
+        const needles = [
+          { x: -100, r: 5, h: 110 }, { x: -65, r: 3, h: 85 }, { x: -30, r: 6, h: 130 },
+          { x: 10, r: 4, h: 95 }, { x: 45, r: 3, h: 80 }, { x: 75, r: 5, h: 115 }, { x: 105, r: 4, h: 100 }
+        ];
+        needles.forEach(n => {
+          const geo = new THREE.ConeGeometry(n.r, n.h, 5);
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(n.x, n.h * 0.5, -400);
+          this.horizonGroup.add(mesh);
+          this.horizonMeshes.push(mesh);
+        });
+        const pl = new THREE.PointLight(0x38bdf8, 1.8, 260);
+        pl.position.set(0, 70, -370);
+        this.horizonGroup.add(pl);
+        this.horizonLights.push(pl);
+      },
+      // 7 Cosmos : structures extra-dimensionnelles & nébuleuse de fond
+      () => {
+        const structs = [
+          { x: -95, r: 14, h: 90 }, { x: -50, r: 10, h: 72 }, { x: 0, r: 18, h: 105 },
+          { x: 50, r: 10, h: 72 }, { x: 95, r: 14, h: 90 }
+        ];
+        structs.forEach(s => {
+          const geo = new THREE.OctahedronGeometry(s.r, 0);
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(s.x, s.h * 0.5 + 10, -410);
+          mesh.rotation.y = Math.random() * Math.PI;
+          this.horizonGroup.add(mesh);
+          this.horizonMeshes.push(mesh);
+
+          // Anneau gravitationnel
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0xc084fc, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+          const ring = new THREE.Mesh(new THREE.RingGeometry(s.r * 1.2, s.r * 1.5, 24), ringMat);
+          ring.rotation.x = Math.PI / 2.8;
+          ring.position.set(s.x, s.h * 0.5 + 10, -410);
+          this.horizonGroup.add(ring);
+          this.horizonMeshes.push(ring);
+        });
+        const pl1 = new THREE.PointLight(0xe879f9, 2.2, 300);
+        pl1.position.set(-50, 60, -380);
+        this.horizonGroup.add(pl1);
+        this.horizonLights.push(pl1);
+        const pl2 = new THREE.PointLight(0x818cf8, 1.5, 250);
+        pl2.position.set(55, 45, -385);
+        this.horizonGroup.add(pl2);
+        this.horizonLights.push(pl2);
+      }
+    ];
+
+    if (configs[cycleIdx]) configs[cycleIdx]();
+  }
+
+  updateHorizonSkyline(cycleIdx) {
+    if (this._horizonCycleIdx !== cycleIdx) {
+      this._horizonCycleIdx = cycleIdx;
+      this._buildHorizonForCycle(cycleIdx);
+    }
+    // Animation légère des lumières
+    const time = performance.now() * 0.001;
+    for (let i = 0; i < this.horizonLights.length; i++) {
+      const l = this.horizonLights[i];
+      l.intensity = l.intensity * 0.95 + (1.0 + Math.sin(time * 1.2 + i) * 0.3) * (l.intensity * 0.05);
+    }
+    // Rotation lente des structures cosmiques (cycle 7)
+    if (cycleIdx === 7) {
+      for (const m of this.horizonMeshes) {
+        if (m.geometry && m.geometry.type === 'OctahedronGeometry') {
+          m.rotation.y += 0.003;
+        }
+      }
+    }
+  }
+
+  // ─── PARTICULES ATMOSPHÉRIQUES VOLUMÉTRIQUES ────────────────────────────────
+  setupAtmosphericParticles() {
+    // Motes flottants (poussière, brume, photons) visibles dans toute la piste
+    this.atmosGroup = new THREE.Group();
+    this.scene.add(this.atmosGroup);
+
+    const count = 600;
+    const geo = new THREE.BufferGeometry();
+    this.atmosPos = new Float32Array(count * 3);
+    this.atmosCols = new Float32Array(count * 3);
+    this.atmosSpeeds = new Float32Array(count);
+    this.atmosPhases = new Float32Array(count);
+
+    for (let i = 0; i < count; i++) {
+      this.atmosPos[i * 3]     = (Math.random() - 0.5) * 80;
+      this.atmosPos[i * 3 + 1] = 0.5 + Math.random() * 22;
+      this.atmosPos[i * 3 + 2] = -Math.random() * 260 + 10;
+      this.atmosSpeeds[i]  = 0.3 + Math.random() * 0.8;
+      this.atmosPhases[i]  = Math.random() * Math.PI * 2;
+      // Teinte gris-blanc de base, sera surteintée par cycle dans l'update
+      const b = 0.55 + Math.random() * 0.45;
+      this.atmosCols[i * 3] = b; this.atmosCols[i * 3 + 1] = b; this.atmosCols[i * 3 + 2] = b;
+    }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(this.atmosPos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(this.atmosCols, 3));
+
+    this.atmosMat = new THREE.PointsMaterial({
+      size: 1.1,
+      map: getSoftGlowTexture(),
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.35,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+
+    this.atmosPoints = new THREE.Points(geo, this.atmosMat);
+    this.atmosGroup.add(this.atmosPoints);
+  }
+
+  updateAtmosphericParticles(dt, speed, deltaZ, cycleIdx, bassEnergy, time) {
+    if (!this.atmosPoints) return;
+
+    // Teinte et opacité par cycle
+    const cycleColors = [
+      [0.06, 0.55, 0.85],   // Eau : bleu-cyan
+      [0.55, 0.35, 0.18],   // Terre : ocre
+      [0.95, 0.35, 0.08],   // Feu : orange
+      [0.98, 0.90, 0.20],   // Électricité : jaune
+      [1.00, 1.00, 0.95],   // Lumière : blanc
+      [0.45, 0.48, 0.52],   // Chaos : gris
+      [0.18, 0.72, 0.95],   // Vent : bleu ciel
+      [0.80, 0.42, 0.96]    // Cosmos : violet
+    ];
+    const targetOpacity = [0.30, 0.20, 0.38, 0.32, 0.28, 0.22, 0.35, 0.40][cycleIdx] || 0.28;
+    this.atmosMat.opacity += (targetOpacity - this.atmosMat.opacity) * 3.0 * dt;
+
+    const [cr, cg, cb] = cycleColors[cycleIdx] || [0.7, 0.7, 0.7];
+    const pos = this.atmosPos;
+    const cols = this.atmosCols;
+    const count = pos.length / 3;
+
+    for (let i = 0; i < count; i++) {
+      // Dérive lente horizontale sinusoïdale + avancement avec le terrain
+      pos[i * 3] += Math.sin(time * this.atmosSpeeds[i] + this.atmosPhases[i]) * 0.5 * dt;
+      pos[i * 3 + 1] += Math.cos(time * this.atmosSpeeds[i] * 0.7 + this.atmosPhases[i] + 1.2) * 0.4 * dt;
+      pos[i * 3 + 2] += deltaZ * 0.55; // Se déplace mais plus lentement (parallaxe)
+
+      // Recyclage
+      if (pos[i * 3 + 2] > 18) {
+        pos[i * 3]     = (Math.random() - 0.5) * 80;
+        pos[i * 3 + 1] = 0.5 + Math.random() * 22;
+        pos[i * 3 + 2] = -260 + Math.random() * 20;
+      }
+
+      // Couleur cycle + scintillement musical léger
+      const pulse = 0.75 + Math.sin(time * 4.0 + this.atmosPhases[i]) * 0.25 + bassEnergy * 0.3;
+      cols[i * 3]     = cr * pulse;
+      cols[i * 3 + 1] = cg * pulse;
+      cols[i * 3 + 2] = cb * pulse;
+    }
+
+    this.atmosPoints.geometry.attributes.position.needsUpdate = true;
+    this.atmosPoints.geometry.attributes.color.needsUpdate = true;
+  }
+
   reset() {
     if (this.transitionPortal) {
       this.transitionPortal.dispose(this.scene);
@@ -4728,6 +5129,7 @@ export class World {
     }
     for (const obs of this.obstacles) {
       this.scene.remove(obs.mesh);
+      if (obs._pl) this.scene.remove(obs._pl);
     }
     this.obstacles = [];
     this.obstacleTimer = 0;
