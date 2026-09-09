@@ -513,6 +513,10 @@ html, body {
   font-weight: 600;
 }
 
+.telemetry-mini-icon {
+  display: none;
+}
+
 .telemetry-value {
   font-size: 1.05rem;
   letter-spacing: 0.1em;
@@ -2920,16 +2924,288 @@ html, body {
   display: none; /* Actif sur mobile */
 }
 
-@media (hover: none) or (pointer: coarse), (max-width: 900px) {
-  .mobile-controls-layer {
-    display: block;
-  }
-  .hud-footer {
+/* ==========================================================================
+   EXPÉRIENCE MOBILE NATIVE & MODE PORTRAIT ÉPURÉ (ZÉRO POLLUTION VISUELLE)
+   ========================================================================== */
+@media (hover: none) or (pointer: coarse), (max-width: 900px), (orientation: portrait) {
+  /* 1. Suppression radicale de toutes les écritures et bandeaux superflus en vol */
+  .hud-footer,
+  .hud-controls-hint,
+  .start-controls-hint,
+  .menu-controls-hint,
+  .intro-hint,
+  .touch-hint-pill,
+  .touch-action-label,
+  .blaster-heat-label,
+  .mobile-portrait-banner,
+  .telemetry-tag,
+  .hud-title,
+  .hud-header .hud-title,
+  .item-secondary {
     display: none !important;
   }
-  .hud-stats {
-    transform: scale(0.80);
-    transform-origin: top left;
+
+  /* 2. Affichage des contrôles tactiles */
+  .mobile-controls-layer {
+    display: block !important;
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+  }
+
+  /* 3. Zone de pilotage tactile (pleine hauteur gauche/centre) */
+  .touch-joystick-zone {
+    width: 75% !important;
+    height: 75% !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    padding: 0 !important;
+  }
+
+  .touch-joystick-base {
+    width: 105px !important;
+    height: 105px !important;
+    border-radius: 50% !important;
+    background: radial-gradient(circle, rgba(0, 240, 255, 0.12) 0%, rgba(15, 23, 42, 0.4) 75%, transparent 100%) !important;
+    border: 1.5px solid rgba(0, 240, 255, 0.45) !important;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.25) !important;
+  }
+
+  .touch-joystick-knob {
+    width: 42px !important;
+    height: 42px !important;
+    box-shadow: 0 0 16px rgba(0, 240, 255, 0.85) !important;
+  }
+
+  /* 4. Boutons d'action tactiles minimalistes (sans texte, icônes pures) */
+  .mobile-action-buttons {
+    bottom: max(20px, env(safe-area-inset-bottom, 20px)) !important;
+    right: max(16px, env(safe-area-inset-right, 16px)) !important;
+    gap: 12px !important;
+  }
+
+  .btn-touch-action {
+    width: 66px !important;
+    height: 66px !important;
+    border-radius: 50% !important;
+    font-size: 1.5rem !important;
+    padding: 0 !important;
+    background: rgba(15, 23, 42, 0.78) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 240, 255, 0.3) !important;
+  }
+
+  .btn-touch-boost {
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 1.3rem !important;
+    align-self: center !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 20px rgba(168, 85, 247, 0.3) !important;
+  }
+
+  /* 5. Bouton Pause mobile discret en haut à droite */
+  .btn-mobile-pause {
+    top: max(12px, env(safe-area-inset-top, 12px)) !important;
+    right: max(12px, env(safe-area-inset-right, 12px)) !important;
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 1.05rem !important;
+    z-index: 95 !important;
+  }
+
+  /* 6. En-tête HUD épuré : jauge d'énergie bord-à-bord au sommet */
+  .hud-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding: 0 !important;
+    z-index: 85 !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .hud-heart-gauge {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .hud-heart-gauge .gauge-label {
+    display: none !important;
+  }
+
+  .hud-heart-gauge .gauge-bar {
+    width: 100% !important;
+    height: 5px !important;
+    border-radius: 0 !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+    border: none !important;
+    box-shadow: 0 2px 10px rgba(0, 240, 255, 0.4) !important;
+  }
+
+  .hud-heart-gauge .gauge-fill {
+    height: 100% !important;
+    border-radius: 0 !important;
+  }
+
+  .hud-brand {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin-top: 8px !important;
+  }
+
+  .hud-cycle-selector {
+    transform: scale(0.85) !important;
+  }
+
+  .btn-audio {
+    display: none !important;
+  }
+
+  /* 7. Bandeau télémétrique flottant horizontal compact */
+  .hud-telemetry {
+    position: absolute !important;
+    top: max(40px, env(safe-area-inset-top, 40px)) !important;
+    left: 10px !important;
+    right: 58px !important;
+    bottom: auto !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    pointer-events: none !important;
+    z-index: 75 !important;
+  }
+
+  .telemetry-item {
+    padding: 3px 8px !important;
+    border-radius: 12px !important;
+    border-left: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    background: rgba(8, 14, 28, 0.68) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  .telemetry-mini-icon {
+    display: inline-block !important;
+    font-size: 0.72rem !important;
+    line-height: 1 !important;
+  }
+
+  .telemetry-value {
+    font-size: 0.76rem !important;
+    letter-spacing: 0.04em !important;
+  }
+
+  /* Masquer le bouclier si inactif sur mobile */
+  .telemetry-item.item-shield.is-inactive {
+    display: none !important;
+  }
+
+  /* 8. Réticule de visée compact */
+  .starfox-reticle {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .blaster-heat-container {
+    width: 48px !important;
+    top: calc(100% + 4px) !important;
+  }
+
+  /* 9. Menu d'accueil ergonomique en Mode Portrait */
+  .start-menu {
+    padding: max(16px, env(safe-area-inset-top, 16px)) 16px max(24px, env(safe-area-inset-bottom, 24px)) 16px !important;
+    gap: 16px !important;
+    justify-content: center !important;
+  }
+
+  .menu-header {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  .game-title {
+    font-size: clamp(2.2rem, 9vw, 3.4rem) !important;
+    line-height: 1.1 !important;
+  }
+
+  .btn-play-giant {
+    padding: 16px 20px !important;
+    border-radius: 18px !important;
+  }
+
+  .btn-play-text {
+    font-size: 1.25rem !important;
+  }
+
+  .btn-play-sub {
+    font-size: 0.62rem !important;
+  }
+
+  .menu-actions-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .btn-menu-action {
+    padding: 9px 14px !important;
+    font-size: 0.72rem !important;
+    flex: 1 1 calc(50% - 10px) !important;
+    max-width: 180px !important;
+  }
+
+  /* 10. Modals adaptés à l'écran portrait (Pas de débordement, défilement fluide) */
+  .modal-overlay {
+    padding: 10px !important;
+  }
+
+  .modal-card {
+    max-width: 96vw !important;
+    max-height: 90vh !important;
+    padding: 20px 14px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .modal-stats-hero {
+    gap: 10px !important;
+  }
+
+  .stat-hero-col {
+    padding: 10px 14px !important;
+  }
+
+  .stat-hero-val {
+    font-size: 1.4rem !important;
+  }
+
+  .rank-badge {
+    font-size: 1.6rem !important;
+    padding: 8px 18px !important;
+  }
+
+  /* Carrousel des cycles dans le menu principal */
+  .menu-cycle-selector {
+    padding: 6px 14px !important;
+    transform: scale(0.95) !important;
   }
 }
 
@@ -3091,66 +3367,6 @@ html, body {
   background: rgba(168, 85, 247, 0.35);
   border-color: #c084fc;
   box-shadow: 0 0 32px rgba(168, 85, 247, 0.8), inset 0 0 12px rgba(255, 255, 255, 0.4);
-}
-
-/* Bannière d'orientation paysage sur mobile */
-.mobile-portrait-banner {
-  position: absolute;
-  top: max(16px, env(safe-area-inset-top, 16px));
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.92);
-  border: 1px solid rgba(0, 240, 255, 0.4);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 240, 255, 0.2);
-  border-radius: 26px;
-  padding: 8px 16px 8px 18px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #e2e8f0;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  z-index: 95;
-  pointer-events: auto;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  animation: bannerSlideDown 0.35s ease-out;
-  white-space: nowrap;
-}
-
-.btn-dismiss-portrait {
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  color: #94a3b8;
-  font-size: 0.85rem;
-  font-weight: bold;
-  cursor: pointer;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  transition: color 0.15s ease, background 0.15s ease;
-}
-
-.btn-dismiss-portrait:hover,
-.btn-dismiss-portrait:active {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.2);
-}
-
-@keyframes bannerSlideDown {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -16px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
 }
 
 /* ==========================================================================

@@ -962,12 +962,9 @@ export class UIManager {
   }
 
   checkOrientation(isMobile, isPortrait) {
-    if (!this.mobilePortraitBanner) return;
-    const dismissed = sessionStorage.getItem('dismiss_portrait_banner') === '1';
-    if (isMobile && isPortrait && !dismissed) {
-      this.mobilePortraitBanner.classList.remove('hidden');
-    } else {
-      this.mobilePortraitBanner.classList.add('hidden');
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.toggle('is-mobile', !!isMobile);
+      document.body.classList.toggle('is-portrait', !!isPortrait);
     }
   }
 
@@ -1453,13 +1450,19 @@ export class UIManager {
   updateShield(hasShield, armorCount = 0) {
     if (this.hudShield) {
       if (hasShield) {
-        this.hudShield.textContent = `🛡️ ${t('hud_shield_active', 'ACTIF')} (${armorCount})`;
+        this.hudShield.textContent = `${t('hud_shield_active', 'ACTIF')} (${armorCount})`;
         this.hudShield.style.color = '#00f0ff';
         this.hudShield.style.textShadow = '0 0 12px rgba(0, 240, 255, 0.8)';
+        if (this.hudShield.parentElement) {
+          this.hudShield.parentElement.classList.remove('is-inactive');
+        }
       } else {
         this.hudShield.textContent = t('hud_shield_inactive', 'INACTIF');
         this.hudShield.style.color = '#64748b';
         this.hudShield.style.textShadow = 'none';
+        if (this.hudShield.parentElement) {
+          this.hudShield.parentElement.classList.add('is-inactive');
+        }
       }
     }
   }

@@ -720,7 +720,8 @@ class GameApp {
               const curved = Math.pow(scaledNorm, 1.25);
               const dirX = currentDist > 0 ? (dx / currentDist) : 0;
               const dirY = currentDist > 0 ? (dy / currentDist) : 0;
-              this.inputAxisX = dirX * curved;
+              const portMult = this.isPortrait ? 1.2 : 1.0;
+              this.inputAxisX = dirX * curved * portMult;
               this.inputAxisY = -dirY * curved; // Glisser vers le haut élève l'altitude
             }
 
@@ -1179,9 +1180,9 @@ class GameApp {
       // Suivi caméra 3e personne cinématographique (désactivé pendant la cinématique de fin)
       if (!this.target || !this.target.isClimaxCinematicActive) {
         const isPortrait = window.innerHeight > window.innerWidth;
-        const tCamX = playerPos.x * 0.36;
-        const tCamY = Math.max(2.2, playerPos.y + (isPortrait ? 3.4 : 2.7) + profileCamY);
-        const tCamZ = playerPos.z + (isPortrait ? 10.8 : 8.8);
+        const tCamX = playerPos.x * (isPortrait ? 0.28 : 0.36);
+        const tCamY = Math.max(2.4, playerPos.y + (isPortrait ? 3.6 : 2.7) + profileCamY);
+        const tCamZ = playerPos.z + (isPortrait ? 11.0 : 8.8);
 
         this.camera.position.x += (tCamX - this.camera.position.x) * 6.0 * dt;
         this.camera.position.y += (tCamY - this.camera.position.y) * 5.0 * dt;
@@ -1190,7 +1191,7 @@ class GameApp {
         // La caméra vise en avant avec l'inclinaison propre à l'élément (piqué, droit, montée)
         this.cameraTarget.set(
           playerPos.x * 0.22 + profileTargetX,
-          Math.max(1.0, playerPos.y * 0.45 + 1.8 + profileTargetY),
+          Math.max(1.1, playerPos.y * 0.45 + (isPortrait ? 2.1 : 1.8) + profileTargetY),
           -52
         );
         this.camera.lookAt(this.cameraTarget);
@@ -1199,7 +1200,7 @@ class GameApp {
         this.camera.rotation.z += profileRoll;
 
         // Champ de vision (FOV) dynamique adapté portrait / paysage
-        const baseFov = isPortrait ? 88 : 74;
+        const baseFov = isPortrait ? 86 : 74;
         const speedFov = (this.currentSpeed > 80) ? (this.currentSpeed - 80) * 0.14 : 0;
         const targetFov = Math.max(55, Math.min(100, baseFov + speedFov + profileFov));
         if (Math.abs(this.camera.fov - targetFov) > 0.08) {

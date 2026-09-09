@@ -246,35 +246,39 @@
 
       <!-- Télémétrie de vol -->
       <aside class="hud-telemetry">
-        <div class="telemetry-item">
+        <div class="telemetry-item item-secondary">
           <span class="telemetry-tag" data-i18n="hud_time_loop">BOUCLE TEMPORELLE</span>
           <span id="hud-loop" class="telemetry-value highlight-loop">∞ 1</span>
         </div>
-        <div class="telemetry-item">
+        <div class="telemetry-item item-dist">
           <span class="telemetry-tag" data-i18n="hud_distance">DISTANCE</span>
+          <span class="telemetry-mini-icon">📍</span>
           <span id="hud-distance" class="telemetry-value">0 M</span>
         </div>
-        <div class="telemetry-item">
+        <div class="telemetry-item item-speed">
           <span class="telemetry-tag" data-i18n="hud_speed">VITESSE</span>
+          <span class="telemetry-mini-icon">🚀</span>
           <span id="hud-speed" class="telemetry-value">245 KM/H</span>
         </div>
-        <div class="telemetry-item">
+        <div class="telemetry-item item-score">
           <span class="telemetry-tag" data-i18n="hud_live_score">SCORE EN DIRECT</span>
+          <span class="telemetry-mini-icon">🏆</span>
           <span id="hud-score" class="telemetry-value highlight-score">0 PTS</span>
         </div>
-        <div class="telemetry-item">
+        <div class="telemetry-item item-secondary">
           <span class="telemetry-tag" data-i18n="hud_destroyed">OBSTACLES BROYÉS</span>
           <span id="hud-destroyed" class="telemetry-value highlight-destroyed">💥 0</span>
         </div>
-        <div class="telemetry-item">
+        <div class="telemetry-item item-shield">
           <span class="telemetry-tag" data-i18n="hud_shield">BOUCLIER ARMURE</span>
+          <span class="telemetry-mini-icon">🛡️</span>
           <span id="hud-shield" class="telemetry-value highlight-shield">INACTIF</span>
         </div>
-        <div class="telemetry-item">
+        <div class="telemetry-item item-hearts">
           <span class="telemetry-tag" data-i18n="hud_hearts">CŒURS</span>
           <span id="hud-hearts" class="telemetry-value highlight-heart">♥ 0</span>
         </div>
-        <div class="telemetry-item">
+        <div class="telemetry-item item-secondary">
           <span class="telemetry-tag" data-i18n="hud_target">CIBLE HORIZON</span>
           <span class="telemetry-target" data-i18n="hud_target_val">NITY &bull; TROU NOIR</span>
         </div>
@@ -412,12 +416,6 @@
           🔫
           <span class="touch-action-label" data-i18n="touch_blaster">BLASTER</span>
         </button>
-      </div>
-
-      <!-- Bannière conseil rotation paysage sur mobile -->
-      <div id="mobile-portrait-banner" class="mobile-portrait-banner hidden">
-        <span data-i18n="mobile_portrait_tip">🔄 Pivotez en paysage pour une vision panoramique</span>
-        <button id="btn-dismiss-portrait" class="btn-dismiss-portrait" type="button">✕</button>
       </div>
     </div>
 
