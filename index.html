@@ -228,6 +228,23 @@
         <div id="sayan-timer-text" class="sayan-timer-text">20.0S</div>
       </div>
 
+      <!-- Bannière d'Événement Cosmique Global en Temps Réel (Éclipse / Vortex) -->
+      <div id="event-hud-banner" class="event-hud-banner hidden">
+        <div class="event-hud-core">
+          <span id="event-hud-icon" class="event-hud-icon">🌘</span>
+          <div class="event-hud-info">
+            <div class="event-hud-tag">// ÉVÉNEMENT COSMIQUE GLOBAL</div>
+            <div id="event-hud-title" class="event-hud-title">ÉCLIPSE TOTALE</div>
+          </div>
+          <div class="event-hud-countdown-box">
+            <span id="event-hud-timer" class="event-hud-timer">00:00</span>
+          </div>
+        </div>
+        <div class="event-hud-track">
+          <div id="event-hud-progress" class="event-hud-fill"></div>
+        </div>
+      </div>
+
       <!-- Toast / Bannière de Transition de Cycle (Glide) -->
       <div id="cycle-toast" class="cycle-toast hidden">
         <div class="cycle-toast-header" data-i18n="cycle_progress">PROGRESSION DE L'ALBUM &bull; GLIDE FLUIDE</div>
@@ -948,6 +965,7 @@
 
         <!-- Onglets du Panel -->
         <div class="founder-tabs-nav">
+          <button id="ftab-btn-events" class="founder-tab-btn founder-tab-highlight" type="button">⚡ Événements &amp; Annonces</button>
           <button id="ftab-btn-maintenance" class="founder-tab-btn active" type="button" data-i18n="founder_tab_maint">🔧 Maintenance</button>
           <button id="ftab-btn-leaderboard" class="founder-tab-btn" type="button" data-i18n="founder_tab_lb">🏆 Classement</button>
           <button id="ftab-btn-users" class="founder-tab-btn" type="button" data-i18n="founder_tab_users">👤 Utilisateurs</button>
@@ -1029,6 +1047,93 @@
             </div>
           </div>
         </div>
+
+        <!-- Onglet 5 : Événements Cosmiques & Annonces en Direct -->
+        <div id="ftab-events" class="founder-tab-view hidden">
+          <div class="founder-section">
+            <h3 class="founder-section-title">⚡ DÉCLENCHEUR D'ÉVÉNEMENTS COSMIQUES GLOBAUX</h3>
+            <p class="founder-section-desc">Déclenchez un cataclysme stellaire synchronisé en direct pour TOUS les joueurs connectés. Vous pouvez choisir l'événement, définir la durée précise et l'interrompre à tout moment.</p>
+
+            <!-- Grille de sélection d'événement -->
+            <div class="event-picker-label">SÉLECTIONNEZ LE CATACLYSME :</div>
+            <div class="event-cards-grid">
+              <div class="event-card selected" data-event="eclipse" id="ev-card-eclipse">
+                <div class="event-card-top">
+                  <span class="event-card-icon">🌘</span>
+                  <span class="event-card-badge">OBSCURITÉ &amp; CORONA</span>
+                </div>
+                <div class="event-card-title">ÉCLIPSE TOTALE</div>
+                <div class="event-card-desc">Plonge le monde dans l'obscurité cosmique. Soleil éclipsé par un astre noir entouré d'une couronne solaire d'or incandescent. Les lasers et néons ressortent avec intensité.</div>
+              </div>
+              <div class="event-card" data-event="vortex" id="ev-card-vortex">
+                <div class="event-card-top">
+                  <span class="event-card-icon">🌀</span>
+                  <span class="event-card-badge">VORTEX 3D MULTIPLES</span>
+                </div>
+                <div class="event-card-title">SINGULARITÉS VORTEX</div>
+                <div class="event-card-desc">Fait apparaître une armada de vortex 3D dimensionnels tourbillonnants sur la piste, avec anneaux d'accrétion, particules stellaires spirales et aspiration spatiale.</div>
+              </div>
+            </div>
+
+            <!-- Sélection de la durée -->
+            <div class="event-duration-section">
+              <div class="event-picker-label">DURÉE DE L'ÉVÉNEMENT :</div>
+              <div class="event-duration-chips">
+                <button type="button" class="btn-duration-chip" data-seconds="15">15s</button>
+                <button type="button" class="btn-duration-chip active" data-seconds="30">30s</button>
+                <button type="button" class="btn-duration-chip" data-seconds="60">1m</button>
+                <button type="button" class="btn-duration-chip" data-seconds="120">2m</button>
+                <button type="button" class="btn-duration-chip" data-seconds="300">5m</button>
+              </div>
+              <div class="event-custom-duration-row">
+                <label for="input-event-duration">Durée personnalisée (secondes) :</label>
+                <input id="input-event-duration" type="number" min="5" max="1800" value="30" />
+              </div>
+            </div>
+
+            <!-- Statut en direct et contrôles -->
+            <div id="event-live-status-box" class="event-live-status-box">
+              <div class="event-status-indicator">
+                <span id="event-status-dot" class="event-status-dot idle"></span>
+                <span id="event-status-label" class="event-status-label">AUCUN ÉVÉNEMENT ACTIF</span>
+              </div>
+              <div id="event-timer-display" class="event-timer-display">--:--</div>
+            </div>
+
+            <div class="event-actions-row">
+              <button id="btn-trigger-event" type="button" class="btn-founder-primary">
+                ⚡ DÉCLENCHER L'ÉVÉNEMENT MONDIAL
+              </button>
+              <button id="btn-stop-event" type="button" class="btn-founder-abort hidden">
+                ⏹️ ARRÊTER L'ÉVÉNEMENT EN COURS
+              </button>
+            </div>
+          </div>
+
+          <!-- Section Annonce Fondateur en Direct -->
+          <div class="founder-section" style="margin-top:24px; border-top:1px solid rgba(255,215,0,0.15); padding-top:20px;">
+            <h3 class="founder-section-title">📢 DIFFUSER UNE ANNONCE OFFICIELLE FONDATEUR</h3>
+            <p class="founder-section-desc">Diffusez un message holographique officiel signé @zanioxx_off en temps réel sur les écrans de tous les joueurs connectés.</p>
+            <div class="form-field">
+              <label for="input-broadcast-message">MESSAGE DE L'ANNONCE</label>
+              <input id="input-broadcast-message" type="text" maxlength="160" placeholder="Ex: Tournoi interstellaire dans 5 minutes ! Préparez vos réacteurs..." value="" />
+            </div>
+            <div class="broadcast-options-row">
+              <div class="form-field broadcast-duration-field">
+                <label for="select-broadcast-duration">DURÉE À L'ÉCRAN</label>
+                <select id="select-broadcast-duration">
+                  <option value="6">Court (6 secondes)</option>
+                  <option value="10" selected>Standard (10 secondes)</option>
+                  <option value="15">Prolongé (15 secondes)</option>
+                  <option value="25">Important (25 secondes)</option>
+                </select>
+              </div>
+              <button id="btn-send-broadcast" type="button" class="btn-founder-broadcast">
+                📣 ENVOYER L'ANNONCE EN DIRECT
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1060,6 +1165,24 @@
         </div>
       </div>
       <div class="maintenance-scanlines"></div>
+    </div>
+
+    <!-- BANNIÈRE D'ANNONCE OFFICIELLE FONDATEUR EN DIRECT -->
+    <div id="founder-announcement-overlay" class="founder-announcement-overlay hidden">
+      <div class="founder-announcement-card">
+        <div class="founder-announcement-glow"></div>
+        <div class="founder-announcement-header">
+          <div class="founder-crown-badge">👑 MESSAGE DU FONDATEUR</div>
+          <span class="founder-author-tag">@zanioxx_off</span>
+          <button id="btn-dismiss-announcement" class="announcement-close-btn" type="button" title="Fermer">✕</button>
+        </div>
+        <div id="founder-announcement-text" class="founder-announcement-text">
+          <!-- Message text dynamically inserted -->
+        </div>
+        <div class="founder-announcement-bar">
+          <div id="founder-announcement-fill" class="founder-announcement-fill"></div>
+        </div>
+      </div>
     </div>
 
   <!-- Point d'entrée ES6 modulaire officiel -->

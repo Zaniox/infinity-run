@@ -311,6 +311,41 @@ export class UIManager {
     this.btnClearLogs = document.getElementById('btn-clear-logs');
     this.founderLogsConsole = document.getElementById('founder-logs-console');
 
+    // Onglet 5 : Événements Cosmiques & Annonces
+    this.ftabBtnEvents = document.getElementById('ftab-btn-events');
+    this.ftabEvents = document.getElementById('ftab-events');
+    this.evCardEclipse = document.getElementById('ev-card-eclipse');
+    this.evCardVortex = document.getElementById('ev-card-vortex');
+    this.eventDurationChips = document.querySelectorAll('.btn-duration-chip');
+    this.inputEventDuration = document.getElementById('input-event-duration');
+    this.eventStatusDot = document.getElementById('event-status-dot');
+    this.eventStatusLabel = document.getElementById('event-status-label');
+    this.eventTimerDisplay = document.getElementById('event-timer-display');
+    this.btnTriggerEvent = document.getElementById('btn-trigger-event');
+    this.btnStopEvent = document.getElementById('btn-stop-event');
+    this.inputBroadcastMessage = document.getElementById('input-broadcast-message');
+    this.selectBroadcastDuration = document.getElementById('select-broadcast-duration');
+    this.btnSendBroadcast = document.getElementById('btn-send-broadcast');
+
+    // HUD en vol : Bannière d'Événement Cosmique
+    this.eventHudBanner = document.getElementById('event-hud-banner');
+    this.eventHudIcon = document.getElementById('event-hud-icon');
+    this.eventHudTitle = document.getElementById('event-hud-title');
+    this.eventHudTimer = document.getElementById('event-hud-timer');
+    this.eventHudProgress = document.getElementById('event-hud-progress');
+
+    // Bannière d'Annonce Officielle Fondateur en Direct
+    this.founderAnnouncementOverlay = document.getElementById('founder-announcement-overlay');
+    this.founderAnnouncementText = document.getElementById('founder-announcement-text');
+    this.founderAnnouncementFill = document.getElementById('founder-announcement-fill');
+    this.btnDismissAnnouncement = document.getElementById('btn-dismiss-announcement');
+
+    this.selectedEventType = 'eclipse';
+    this.selectedEventDuration = 30;
+    this.eventCountdownInterval = null;
+    this.announcementDismissTimeout = null;
+    this.announcementInterval = null;
+
     // Écran de Maintenance Globale
     this.maintenanceOverlay = document.getElementById('maintenance-overlay');
     this.maintenanceReasonDisplay = document.getElementById('maintenance-reason-display');
@@ -976,9 +1011,9 @@ export class UIManager {
       });
     }
 
-    // Navigation des 4 onglets du panel fondateur
-    const founderTabBtns = [this.ftabBtnMaintenance, this.ftabBtnLeaderboard, this.ftabBtnUsers, this.ftabBtnLogs];
-    const founderTabViews = [this.ftabMaintenance, this.ftabLeaderboard, this.ftabUsers, this.ftabLogs];
+    // Navigation des 5 onglets du panel fondateur
+    const founderTabBtns = [this.ftabBtnEvents, this.ftabBtnMaintenance, this.ftabBtnLeaderboard, this.ftabBtnUsers, this.ftabBtnLogs];
+    const founderTabViews = [this.ftabEvents, this.ftabMaintenance, this.ftabLeaderboard, this.ftabUsers, this.ftabLogs];
     founderTabBtns.forEach((btn, idx) => {
       if (btn) {
         btn.addEventListener('click', () => {
@@ -986,11 +1021,85 @@ export class UIManager {
           founderTabViews.forEach(v => { if (v) v.classList.add('hidden'); });
           btn.classList.add('active');
           if (founderTabViews[idx]) founderTabViews[idx].classList.remove('hidden');
-          if (idx === 2) this.populateUserRegistry();
-          if (idx === 3) this.refreshAuditLogs();
+          if (btn === this.ftabBtnUsers) this.populateUserRegistry();
+          if (btn === this.ftabBtnLogs) this.refreshAuditLogs();
         });
       }
     });
+
+    // Sélection d'événement cosmique (Éclipse vs Vortex)
+    if (this.evCardEclipse) {
+      this.evCardEclipse.addEventListener('click', () => {
+        this.selectedEventType = 'eclipse';
+        this.evCardEclipse.classList.add('selected');
+        if (this.evCardVortex) this.evCardVortex.classList.remove('selected');
+      });
+    }
+    if (this.evCardVortex) {
+      this.evCardVortex.addEventListener('click', () => {
+        this.selectedEventType = 'vortex';
+        this.evCardVortex.classList.add('selected');
+        if (this.evCardEclipse) this.evCardEclipse.classList.remove('selected');
+      });
+    }
+
+    // Durée de l'événement (chips prédéfinies)
+    if (this.eventDurationChips) {
+      this.eventDurationChips.forEach((chip) => {
+        chip.addEventListener('click', () => {
+          this.eventDurationChips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          const sec = parseInt(chip.getAttribute('data-seconds'), 10) || 30;
+          this.selectedEventDuration = sec;
+          if (this.inputEventDuration) this.inputEventDuration.value = sec;
+        });
+      });
+    }
+
+    // Saisie durée personnalisée
+    if (this.inputEventDuration) {
+      this.inputEventDuration.addEventListener('input', () => {
+        const val = parseInt(this.inputEventDuration.value, 10);
+        if (!isNaN(val) && val > 0) {
+          this.selectedEventDuration = Math.min(Math.max(val, 5), 1800);
+          if (this.eventDurationChips) {
+            this.eventDurationChips.forEach(c => {
+              if (parseInt(c.getAttribute('data-seconds'), 10) === val) {
+                c.classList.add('active');
+              } else {
+                c.classList.remove('active');
+              }
+            });
+          }
+        }
+      });
+    }
+
+    // Déclenchement & Arrêt d'événement cosmique
+    if (this.btnTriggerEvent) {
+      this.btnTriggerEvent.addEventListener('click', () => this.handleTriggerEvent());
+    }
+    if (this.btnStopEvent) {
+      this.btnStopEvent.addEventListener('click', () => this.handleStopEvent());
+    }
+
+    // Diffusion d'annonce officielle fondateur
+    if (this.btnSendBroadcast) {
+      this.btnSendBroadcast.addEventListener('click', () => this.handleSendBroadcast());
+    }
+    if (this.inputBroadcastMessage) {
+      this.inputBroadcastMessage.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.handleSendBroadcast();
+        }
+      });
+    }
+
+    // Fermeture manuelle de l'annonce officielle
+    if (this.btnDismissAnnouncement) {
+      this.btnDismissAnnouncement.addEventListener('click', () => this.hideFounderAnnouncement());
+    }
 
     // Basculement Mode Maintenance
     if (this.toggleMaintenanceMode) {
@@ -2332,8 +2441,15 @@ export class UIManager {
       this.system.onLeaderboardReset(() => {
         this.refreshLeaderboard();
       });
-      // Vérification initiale de la maintenance au chargement
+      this.system.onEventChanged((eventState) => {
+        this.handleEventChanged(eventState);
+      });
+      this.system.onAnnouncementReceived((announcement) => {
+        this.showFounderAnnouncement(announcement);
+      });
+      // Vérification initiale de la maintenance et des événements au chargement
       this.handleMaintenanceStateUpdate(this.system.getMaintenanceState());
+      this.handleEventChanged(this.system.getActiveEvent());
     }
   }
 
@@ -2364,6 +2480,11 @@ export class UIManager {
     this.populateUserRegistry();
     this.refreshAuditLogs();
 
+    // Synchronisation de l'état de l'événement actif
+    if (this.system) {
+      this.handleEventChanged(this.system.getActiveEvent());
+    }
+
     // Synchronisation du commutateur de maintenance
     if (this.system && this.toggleMaintenanceMode) {
       const state = this.system.getMaintenanceState();
@@ -2372,6 +2493,234 @@ export class UIManager {
       if (this.inputMaintenanceReason && state.reason) {
         this.inputMaintenanceReason.value = state.reason;
       }
+    }
+  }
+
+  // --- Gestion des Événements Cosmiques & Annonces Officielles ---
+
+  async handleTriggerEvent() {
+    if (!this.system || !this.auth) return;
+    const user = this.auth.getUser();
+    if (!user || (!user.isFounder && user.role !== 'FONDATEUR')) {
+      alert('Accès refusé : Seul le Fondateur officiel @zanioxx_off peut déclencher des événements mondiaux.');
+      return;
+    }
+
+    const eventType = this.selectedEventType || 'eclipse';
+    const duration = this.selectedEventDuration || 30;
+
+    try {
+      if (this.btnTriggerEvent) this.btnTriggerEvent.disabled = true;
+      const res = await this.system.triggerEvent(eventType, duration, user);
+      if (res && res.success) {
+        this.showToast(`⚡ Cataclysme ${eventType.toUpperCase()} déclenché pour ${duration}s !`, 3500);
+      }
+    } catch (err) {
+      console.error('[Founder] Erreur déclenchement événement :', err);
+      alert(err.message || 'Impossible de déclencher l\'événement.');
+    } finally {
+      if (this.btnTriggerEvent) this.btnTriggerEvent.disabled = false;
+    }
+  }
+
+  async handleStopEvent() {
+    if (!this.system || !this.auth) return;
+    const user = this.auth.getUser();
+    try {
+      if (this.btnStopEvent) this.btnStopEvent.disabled = true;
+      await this.system.triggerEvent('none', 0, user);
+      this.showToast('⏹️ Événement cosmique interrompu.', 3000);
+    } catch (err) {
+      console.error('[Founder] Erreur arrêt événement :', err);
+      alert(err.message || 'Impossible d\'arrêter l\'événement.');
+    } finally {
+      if (this.btnStopEvent) this.btnStopEvent.disabled = false;
+    }
+  }
+
+  async handleSendBroadcast() {
+    if (!this.system || !this.auth) return;
+    const user = this.auth.getUser();
+    if (!user || (!user.isFounder && user.role !== 'FONDATEUR')) {
+      alert('Accès refusé : Seul le Fondateur officiel @zanioxx_off peut diffuser des annonces mondiales.');
+      return;
+    }
+
+    const message = this.inputBroadcastMessage ? this.inputBroadcastMessage.value.trim() : '';
+    if (!message) {
+      if (this.inputBroadcastMessage) this.inputBroadcastMessage.focus();
+      return;
+    }
+
+    const duration = this.selectBroadcastDuration ? parseInt(this.selectBroadcastDuration.value, 10) || 10 : 10;
+
+    try {
+      if (this.btnSendBroadcast) this.btnSendBroadcast.disabled = true;
+      const res = await this.system.broadcastAnnouncement(message, duration, user);
+      if (res && res.success) {
+        if (this.inputBroadcastMessage) this.inputBroadcastMessage.value = '';
+        this.showToast('📢 Annonce officielle diffusée avec succès à tous les joueurs !', 3500);
+      }
+    } catch (err) {
+      console.error('[Founder] Erreur diffusion annonce :', err);
+      alert(err.message || 'Impossible de diffuser l\'annonce.');
+    } finally {
+      if (this.btnSendBroadcast) this.btnSendBroadcast.disabled = false;
+    }
+  }
+
+  handleEventChanged(eventState) {
+    if (this.eventCountdownInterval) {
+      clearInterval(this.eventCountdownInterval);
+      this.eventCountdownInterval = null;
+    }
+
+    const isRunning = eventState && eventState.active && (eventState.type === 'eclipse' || eventState.type === 'vortex') && eventState.endsAt > Date.now();
+
+    // 1. Mise à jour du Panel Fondateur
+    if (this.eventStatusDot) {
+      this.eventStatusDot.className = isRunning ? 'event-status-dot active' : 'event-status-dot idle';
+    }
+    if (this.eventStatusLabel) {
+      if (isRunning) {
+        const typeLabel = eventState.type === 'eclipse' ? 'ÉCLIPSE TOTALE EN COURS' : 'VORTEX DIMENSIONNELS ACTIFS';
+        this.eventStatusLabel.textContent = `🟢 ${typeLabel}`;
+      } else {
+        this.eventStatusLabel.textContent = 'AUCUN ÉVÉNEMENT ACTIF';
+      }
+    }
+
+    if (this.btnTriggerEvent) {
+      this.btnTriggerEvent.classList.toggle('hidden', isRunning);
+    }
+    if (this.btnStopEvent) {
+      this.btnStopEvent.classList.toggle('hidden', !isRunning);
+    }
+
+    // 2. Mise à jour du HUD en Vol
+    if (isRunning) {
+      const isEclipse = eventState.type === 'eclipse';
+      if (this.eventHudIcon) this.eventHudIcon.textContent = isEclipse ? '🌘' : '🌀';
+      if (this.eventHudTitle) this.eventHudTitle.textContent = isEclipse ? 'ÉCLIPSE TOTALE' : 'SINGULARITÉS VORTEX';
+      if (this.eventHudBanner) this.eventHudBanner.classList.remove('hidden');
+
+      this.updateEventCountdownDisplay(eventState);
+      this.eventCountdownInterval = setInterval(() => {
+        const remaining = Math.max(0, eventState.endsAt - Date.now());
+        if (remaining <= 0) {
+          clearInterval(this.eventCountdownInterval);
+          this.eventCountdownInterval = null;
+          this.handleEventChanged({ type: 'none', active: false });
+        } else {
+          this.updateEventCountdownDisplay(eventState);
+        }
+      }, 250);
+    } else {
+      if (this.eventTimerDisplay) this.eventTimerDisplay.textContent = '--:--';
+      if (this.eventHudTimer) this.eventHudTimer.textContent = '00:00';
+      if (this.eventHudProgress) this.eventHudProgress.style.width = '0%';
+      if (this.eventHudBanner) this.eventHudBanner.classList.add('hidden');
+    }
+  }
+
+  updateEventCountdownDisplay(eventState) {
+    if (!eventState || !eventState.endsAt) return;
+    const remainingMs = Math.max(0, eventState.endsAt - Date.now());
+    const totalMs = (eventState.duration || 30) * 1000;
+    const pct = Math.max(0, Math.min(100, (remainingMs / totalMs) * 100));
+
+    const totalSeconds = Math.ceil(remainingMs / 1000);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    const timeFormatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+    if (this.eventTimerDisplay) this.eventTimerDisplay.textContent = timeFormatted;
+    if (this.eventHudTimer) this.eventHudTimer.textContent = timeFormatted;
+    if (this.eventHudProgress) this.eventHudProgress.style.width = `${pct}%`;
+  }
+
+  showFounderAnnouncement(announcement) {
+    if (!announcement || !announcement.message) return;
+
+    if (this.announcementDismissTimeout) {
+      clearTimeout(this.announcementDismissTimeout);
+      this.announcementDismissTimeout = null;
+    }
+    if (this.announcementInterval) {
+      clearInterval(this.announcementInterval);
+      this.announcementInterval = null;
+    }
+
+    if (this.founderAnnouncementText) {
+      this.founderAnnouncementText.textContent = announcement.message;
+    }
+
+    const durationSec = Math.max(4, Math.min(35, announcement.duration || 10));
+    const durationMs = durationSec * 1000;
+    const startTime = Date.now();
+
+    if (this.founderAnnouncementFill) {
+      this.founderAnnouncementFill.style.width = '100%';
+    }
+
+    if (this.founderAnnouncementOverlay) {
+      this.founderAnnouncementOverlay.classList.remove('hidden');
+    }
+
+    // Carillon audio mélodieux Web Audio
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        const actx = new AudioCtx();
+        const now = actx.currentTime;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 - E5 - G5 - C6
+        notes.forEach((freq, idx) => {
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.08, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.35);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.4);
+        });
+      }
+    } catch (e) {
+      // Audio autoplay policy pass-through
+    }
+
+    // Animation de la jauge
+    this.announcementInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const remainingPct = Math.max(0, 100 - (elapsed / durationMs) * 100);
+      if (this.founderAnnouncementFill) {
+        this.founderAnnouncementFill.style.width = `${remainingPct}%`;
+      }
+      if (elapsed >= durationMs) {
+        clearInterval(this.announcementInterval);
+        this.announcementInterval = null;
+        this.hideFounderAnnouncement();
+      }
+    }, 50);
+
+    this.announcementDismissTimeout = setTimeout(() => {
+      this.hideFounderAnnouncement();
+    }, durationMs);
+  }
+
+  hideFounderAnnouncement() {
+    if (this.announcementDismissTimeout) {
+      clearTimeout(this.announcementDismissTimeout);
+      this.announcementDismissTimeout = null;
+    }
+    if (this.announcementInterval) {
+      clearInterval(this.announcementInterval);
+      this.announcementInterval = null;
+    }
+    if (this.founderAnnouncementOverlay) {
+      this.founderAnnouncementOverlay.classList.add('hidden');
     }
   }
 

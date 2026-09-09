@@ -95,6 +95,18 @@ class GameApp {
       this.ui.setSystemManager(this.system);
     }
 
+    // Connexion des événements cosmiques globaux (Éclipse & Vortex) au monde 3D
+    if (this.system) {
+      this.system.onEventChanged((eventState) => {
+        if (this.world && this.world.setEvent) {
+          this.world.setEvent(eventState);
+        }
+      });
+      if (this.world && this.world.setEvent && this.system.getActiveEvent) {
+        this.world.setEvent(this.system.getActiveEvent());
+      }
+    }
+
     // Initialisation des volumes et qualité graphique selon les réglages
     if (this.audio) {
       this.audio.setMusicVolume(settings.get('musicVolume'));
@@ -1051,6 +1063,22 @@ class GameApp {
           }
         }
       }, playerPos);
+
+      // Détection de proximité spatiale avec les Singularités Vortex (Événement Cosmique Fondateur)
+      if (this.world && this.world.checkVortexCollisions) {
+        this.world.checkVortexCollisions(playerPos, (vortexPos, dist) => {
+          if (!this._lastVortexWarpTime || Date.now() - this._lastVortexWarpTime > 1200) {
+            this._lastVortexWarpTime = Date.now();
+            if (this.audio && this.audio.playSaiyanHum) {
+              this.audio.playSaiyanHum();
+            }
+            if (this.ui) {
+              this.ui.showFloatingScore(75, false, 'DISTORSION VORTEX !');
+            }
+            this.triggerHaptic(22);
+          }
+        });
+      }
 
       // Mise à jour dynamique des lignes de vitesse Hyperdrive 3D
       if (this.world.updateSpeedLines) {

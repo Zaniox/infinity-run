@@ -394,6 +394,166 @@ export class PortalGate {
   }
 }
 
+/**
+ * Faille Dimensionnelle 3D (Vortex Spatial)
+ * Apparaît en grand nombre le long de la piste lors de l'Événement Vortex
+ */
+export class DimensionalVortex {
+  constructor(x, y, z, colorPrimary = 0x8b5cf6, colorSecondary = 0x00f0ff) {
+    this.group = new THREE.Group();
+    this.active = true;
+    this.radius = 4.2;
+    this.hasBeenTriggered = false;
+
+    // 1. Anneau extérieur d'accrétion (Torus fluide)
+    const outerGeo = new THREE.TorusGeometry(4.2, 0.45, 16, 32);
+    const outerMat = new THREE.MeshStandardMaterial({
+      color: 0x0f0b1e,
+      emissive: new THREE.Color(colorPrimary),
+      emissiveIntensity: 1.4,
+      roughness: 0.2,
+      metalness: 0.8
+    });
+    this.outerRing = new THREE.Mesh(outerGeo, outerMat);
+    this.group.add(this.outerRing);
+
+    // 2. Anneau intérieur tournant en sens inverse
+    const innerGeo = new THREE.TorusGeometry(3.3, 0.22, 12, 24);
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: colorSecondary,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.75
+    });
+    this.innerRing = new THREE.Mesh(innerGeo, innerMat);
+    this.group.add(this.innerRing);
+
+    // 3. Horizon des événements (Disque tourbillonnant)
+    const diskGeo = new THREE.CircleGeometry(3.2, 32);
+    const diskMat = new THREE.MeshBasicMaterial({
+      color: colorPrimary,
+      transparent: true,
+      opacity: 0.65,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.disk = new THREE.Mesh(diskGeo, diskMat);
+    this.group.add(this.disk);
+
+    // 4. Pilier d'énergie gravitationnel vertical
+    const beamGeo = new THREE.CylinderGeometry(0.5, 1.8, 48, 12, 1, true);
+    const beamMat = new THREE.MeshBasicMaterial({
+      color: colorSecondary,
+      transparent: true,
+      opacity: 0.25,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    this.beam = new THREE.Mesh(beamGeo, beamMat);
+    this.beam.position.y = 20;
+    this.group.add(this.beam);
+
+    // 5. Particules d'accrétion en spirale
+    this.pCount = 28;
+    const pGeo = new THREE.BufferGeometry();
+    this.pPos = new Float32Array(this.pCount * 3);
+    this.pSeeds = [];
+    for (let i = 0; i < this.pCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 2.0 + Math.random() * 3.5;
+      this.pSeeds.push({
+        angle,
+        radius: r,
+        baseRadius: r,
+        speed: 2.0 + Math.random() * 2.5,
+        z: (Math.random() - 0.5) * 6
+      });
+      this.pPos[i * 3] = Math.cos(angle) * r;
+      this.pPos[i * 3 + 1] = Math.sin(angle) * r;
+      this.pPos[i * 3 + 2] = this.pSeeds[i].z;
+    }
+    pGeo.setAttribute('position', new THREE.BufferAttribute(this.pPos, 3));
+    this.pMat = new THREE.PointsMaterial({
+      size: 1.2,
+      map: getSoftGlowTexture(),
+      color: colorSecondary,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.particles = new THREE.Points(pGeo, this.pMat);
+    this.group.add(this.particles);
+
+    // 6. Source lumineuse d'ambiance
+    this.light = new THREE.PointLight(colorPrimary, 2.2, 28);
+    this.group.add(this.light);
+
+    this.group.position.set(x, y, z);
+  }
+
+  update(dt, deltaZ, time, audioPulse = 0) {
+    this.group.position.z += deltaZ;
+
+    // Rotations hypnotiques
+    this.outerRing.rotation.z += 1.8 * dt;
+    this.innerRing.rotation.z -= 2.6 * dt;
+    this.disk.rotation.z += 3.2 * dt;
+    this.beam.rotation.y += 1.2 * dt;
+
+    // Pulsation dimensionnelle
+    const pulse = 1.0 + Math.sin(time * 6.0) * 0.15 + audioPulse * 0.2;
+    this.disk.scale.set(pulse, pulse, 1.0);
+    this.light.intensity = 2.2 * pulse;
+
+    // Mouvement d'aspiration spirale
+    for (let i = 0; i < this.pCount; i++) {
+      const s = this.pSeeds[i];
+      s.radius -= s.speed * 2.5 * dt;
+      s.angle += s.speed * 2.0 * dt;
+      if (s.radius < 0.5) {
+        s.radius = s.baseRadius;
+        s.z = (Math.random() - 0.5) * 6;
+      }
+      this.pPos[i * 3] = Math.cos(s.angle) * s.radius;
+      this.pPos[i * 3 + 1] = Math.sin(s.angle) * s.radius;
+      this.pPos[i * 3 + 2] = s.z;
+    }
+    this.particles.geometry.attributes.position.needsUpdate = true;
+  }
+
+  checkProximity(playerPos, radius = 2.0) {
+    if (this.hasBeenTriggered) return false;
+    const dz = Math.abs(this.group.position.z - playerPos.z);
+    if (dz < 3.2) {
+      const dx = this.group.position.x - playerPos.x;
+      const dy = this.group.position.y - playerPos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < (this.radius + radius)) {
+        this.hasBeenTriggered = true;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  dispose(scene) {
+    scene.remove(this.group);
+    this.outerRing.geometry.dispose();
+    this.outerRing.material.dispose();
+    this.innerRing.geometry.dispose();
+    this.innerRing.material.dispose();
+    this.disk.geometry.dispose();
+    this.disk.material.dispose();
+    this.beam.geometry.dispose();
+    this.beam.material.dispose();
+    this.particles.geometry.dispose();
+    this.particles.material.dispose();
+    this.light.dispose();
+  }
+}
 
 /**
  * Générateur des textures de sol procédurales haute définition des 8 cycles
@@ -896,6 +1056,14 @@ export class World {
     // Système de Portail de Transition 3D monumental
     this.transitionPortal = null;
     this.cyclesData = CYCLES_DATA;
+
+    // Système d'Événements Cosmiques Fondateur (Éclipse Totale & Failles Vortex)
+    this.activeEvent = { type: 'none', endsAt: 0 };
+    this.isEclipseActive = false;
+    this.eclipseProgress = 0.0;
+    this.isVortexActive = false;
+    this.activeVortexes = [];
+    this.vortexSpawnTimer = 0.0;
   }
 
   // Configuration de l'éclairage cinématographique réaliste avec PCFSoftShadowMap & Fill Light
@@ -931,6 +1099,9 @@ export class World {
     this.fillLight = new THREE.DirectionalLight(this.cycle.secondary, 0.30);
     this.fillLight.position.set(-35, 30, -25);
     this.scene.add(this.fillLight);
+
+    // 4. Astre céleste d'Éclipse (Disque noir + couronne dorée incandescente)
+    this.setupEclipseCelestialBody();
   }
 
   // Terrain solide avec textures procédurales haute définition des 8 cycles
@@ -2240,6 +2411,75 @@ export class World {
     this.groundMaterial.metalness = this.getMetalnessForElement(cycle.element);
 
     this.updateActiveElement(this.currentCycleIndex);
+  }
+
+  // --- SYSTÈME D'ÉVÉNEMENTS COSMIQUES FONDATEUR (ÉCLIPSE & VORTEX) ---
+  setupEclipseCelestialBody() {
+    if (this.eclipseSunGroup) return;
+    this.eclipseSunGroup = new THREE.Group();
+    this.eclipseSunGroup.position.set(0, 110, -360);
+
+    // Disque noir céleste occultant (Lune / Astre noir)
+    const occultGeo = new THREE.SphereGeometry(18, 32, 32);
+    const occultMat = new THREE.MeshBasicMaterial({ color: 0x010103 });
+    this.eclipseOccultBody = new THREE.Mesh(occultGeo, occultMat);
+    this.eclipseSunGroup.add(this.eclipseOccultBody);
+
+    // Couronne solaire dorée incandescente (RingGeometry)
+    const coronaGeo = new THREE.RingGeometry(17.8, 34, 48);
+    const coronaMat = new THREE.MeshBasicMaterial({
+      color: 0xfef08a,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.eclipseCorona = new THREE.Mesh(coronaGeo, coronaMat);
+    this.eclipseSunGroup.add(this.eclipseCorona);
+
+    // Voile nébuleux extérieur
+    const haloGeo = new THREE.RingGeometry(32, 54, 36);
+    const haloMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.35,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.eclipseHalo = new THREE.Mesh(haloGeo, haloMat);
+    this.eclipseSunGroup.add(this.eclipseHalo);
+
+    this.eclipseSunGroup.visible = false;
+    this.scene.add(this.eclipseSunGroup);
+  }
+
+  setEvent(eventState) {
+    this.activeEvent = eventState || { type: 'none', endsAt: 0 };
+    const now = Date.now();
+    const isNowEclipse = (this.activeEvent.type === 'eclipse' && (!this.activeEvent.endsAt || now < this.activeEvent.endsAt));
+    const isNowVortex = (this.activeEvent.type === 'vortex' && (!this.activeEvent.endsAt || now < this.activeEvent.endsAt));
+
+    this.isEclipseActive = isNowEclipse;
+    this.isVortexActive = isNowVortex;
+
+    if (!isNowVortex && this.activeVortexes && this.activeVortexes.length > 0) {
+      this.activeVortexes.forEach(v => v.dispose(this.scene));
+      this.activeVortexes = [];
+    }
+  }
+
+  checkVortexCollisions(playerPos, onProximityCallback) {
+    if (!this.activeVortexes || this.activeVortexes.length === 0) return;
+    for (let i = 0; i < this.activeVortexes.length; i++) {
+      const v = this.activeVortexes[i];
+      if (v.checkProximity(playerPos)) {
+        if (onProximityCallback) {
+          onProximityCallback(v.group.position);
+        }
+      }
+    }
   }
 
   // Transition fluide vers un cycle donné (Glide sans coupure, obstacles préservés)
@@ -4035,6 +4275,77 @@ export class World {
     }
     this.sunLight.target.position.z = -deltaZ;
 
+    // --- EFFETS SPÉCIAUX ÉVÉNEMENTIELS DU FONDATEUR ---
+    // 1. Événement ÉCLIPSE TOTALE (Ciel noir absolu, couronne dorée & ombres cosmiques)
+    if (this.isEclipseActive) {
+      this.eclipseProgress = Math.min(1.0, (this.eclipseProgress || 0) + dt * 1.6);
+    } else if (this.eclipseProgress > 0) {
+      this.eclipseProgress = Math.max(0.0, this.eclipseProgress - dt * 1.6);
+    }
+
+    if (this.eclipseProgress > 0) {
+      const eT = this.eclipseProgress * this.eclipseProgress * (3 - 2 * this.eclipseProgress);
+      const blackSky = new THREE.Color(0x020108);
+      const blackFog = new THREE.Color(0x030209);
+      const currentSky = new THREE.Color(this.cycle.sky);
+      const currentFog = new THREE.Color(this.cycle.fog);
+
+      this.scene.background.lerpColors(currentSky, blackSky, eT);
+      this.scene.fog.color.lerpColors(currentFog, blackFog, eT);
+
+      // Assombrissement progressif des lumières (ombres nettes conservées, néons sublimés)
+      this.sunLight.intensity = THREE.MathUtils.lerp(this.sunLight.intensity, 0.12 * audioLightBoost, eT);
+      this.hemiLight.intensity = THREE.MathUtils.lerp(this.hemiLight.intensity, 0.08 * (1.0 + audioPulse * 0.1), eT);
+      if (this.fillLight) {
+        this.fillLight.intensity = THREE.MathUtils.lerp(this.fillLight.intensity, 0.05, eT);
+      }
+
+      if (this.eclipseSunGroup) {
+        this.eclipseSunGroup.visible = true;
+        this.eclipseSunGroup.position.z = -deltaZ - 340;
+        const coronaPulse = 1.0 + Math.sin(time * 3.5) * 0.08 + audioPulse * 0.14;
+        if (this.eclipseCorona) {
+          this.eclipseCorona.scale.set(coronaPulse, coronaPulse, 1.0);
+          this.eclipseCorona.rotation.z += dt * 0.25;
+        }
+        if (this.eclipseHalo) {
+          this.eclipseHalo.rotation.z -= dt * 0.15;
+        }
+      }
+    } else if (this.eclipseSunGroup && this.eclipseSunGroup.visible) {
+      this.eclipseSunGroup.visible = false;
+      this.scene.background.set(this.cycle.sky);
+      this.scene.fog.color.set(this.cycle.fog);
+    }
+
+    // 2. Événement FAILLE VORTEX (Failles dimensionnelles tourbillonnantes)
+    if (this.isVortexActive) {
+      this.vortexSpawnTimer = (this.vortexSpawnTimer || 0) - dt;
+      if (this.vortexSpawnTimer <= 0 && (!this.activeVortexes || this.activeVortexes.length < 8)) {
+        if (!this.activeVortexes) this.activeVortexes = [];
+        const pColor = (Math.random() > 0.5) ? this.cycle.primary : 0x8b5cf6;
+        const sColor = (Math.random() > 0.5) ? this.cycle.secondary : 0x00f0ff;
+        const rx = (Math.random() - 0.5) * 54;
+        const ry = 2.5 + Math.random() * 4.5;
+        const rz = -260 - Math.random() * 40;
+        const vortex = new DimensionalVortex(rx, ry, rz, pColor, sColor);
+        this.activeVortexes.push(vortex);
+        this.scene.add(vortex.group);
+        this.vortexSpawnTimer = 0.9 + Math.random() * 0.8;
+      }
+    }
+
+    if (this.activeVortexes && this.activeVortexes.length > 0) {
+      for (let vIdx = this.activeVortexes.length - 1; vIdx >= 0; vIdx--) {
+        const v = this.activeVortexes[vIdx];
+        v.update(dt, deltaZ, time, audioPulse);
+        if (v.group.position.z > 25) {
+          v.dispose(this.scene);
+          this.activeVortexes.splice(vIdx, 1);
+        }
+      }
+    }
+
     // 3. Animation de l'élément environnemental actif et des décors latéraux
     this.updateElements(dt, speed, audioPulse, time);
     if (this.updateSideProps) {
@@ -4441,6 +4752,14 @@ export class World {
     }
     if (this.speedLinesMesh) {
       this.speedLinesMesh.visible = false;
+    }
+
+    // Nettoyage des vortex résiduels
+    if (this.activeVortexes) {
+      for (const v of this.activeVortexes) {
+        v.dispose(this.scene);
+      }
+      this.activeVortexes = [];
     }
   }
 }
