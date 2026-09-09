@@ -315,6 +315,9 @@ export class UIManager {
     this.maintenanceOverlay = document.getElementById('maintenance-overlay');
     this.maintenanceReasonDisplay = document.getElementById('maintenance-reason-display');
     this.maintenanceByDisplay = document.getElementById('maintenance-by-display');
+    this.btnMaintOpenFounder = document.getElementById('btn-maint-open-founder');
+    this.btnMaintTestFlight = document.getElementById('btn-maint-test-flight');
+    this.isFounderSessionBypassed = false;
   }
 
   bindEvents() {
@@ -322,6 +325,13 @@ export class UIManager {
     if (this.btnPlayGame) {
       const handlePlayClick = (e) => {
         if (e) e.preventDefault();
+
+        // Blocage absolu si Mode Maintenance actif (sauf vol privé autorisé)
+        if (this.system && this.system.isMaintenanceActive() && !this.isFounderSessionBypassed) {
+          if (this.maintenanceOverlay) this.maintenanceOverlay.classList.remove('hidden');
+          document.documentElement.classList.add('maintenance-active');
+          return;
+        }
 
         // Si non connecté -> activer la session invité
         if (!this.auth || !this.auth.isAuthenticated()) {
@@ -1007,6 +1017,18 @@ export class UIManager {
       this.btnClearLogs.addEventListener('click', () => this.handleClearLogs());
     }
 
+    // Boutons de l'écran de Maintenance Globale
+    if (this.btnMaintOpenFounder) {
+      this.btnMaintOpenFounder.addEventListener('click', () => {
+        this.openFounderPanel();
+      });
+    }
+    if (this.btnMaintTestFlight) {
+      this.btnMaintTestFlight.addEventListener('click', () => {
+        this.bypassMaintenanceForFounderSession();
+      });
+    }
+
     // 15. Raccourcis clavier (Espace / Entrée / Échap)
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Escape') {
@@ -1020,6 +1042,12 @@ export class UIManager {
       }
 
       if (e.code === 'Space' || e.code === 'Enter') {
+        // Bloquer immédiatement si le mode maintenance est actif
+        if (this.system && this.system.isMaintenanceActive() && !this.isFounderSessionBypassed) {
+          e.preventDefault();
+          return;
+        }
+
         if (this.isStartMenuVisible() && !this.isAnyModalOpen()) {
           e.preventDefault();
           if (!this.auth || !this.auth.isAuthenticated()) {
@@ -2389,22 +2417,33 @@ export class UIManager {
     const isFounder = !!(this.auth && typeof this.auth.isFounder === 'function' && this.auth.isFounder());
 
     if (state.active) {
-      if (!isFounder) {
-        // Blocage total et affichage de l'animation de maintenance pour tous les non-fondateurs
+      // 1. Verrouillage du Mode Maintenance (Persistant au rechargement F5 pour tous les utilisateurs)
+      if (!this.isFounderSessionBypassed) {
+        document.documentElement.classList.add('maintenance-active');
         if (this.maintenanceOverlay) this.maintenanceOverlay.classList.remove('hidden');
         if (this.startMenu) this.startMenu.style.display = 'none';
         if (this.hudOverlay) this.hudOverlay.classList.add('hidden');
-      } else {
-        // Le fondateur est prévenu par un bandeau discret mais continue d'avoir accès au jeu
-        this.showFounderBypassBanner(state.reason);
-        if (this.maintenanceOverlay) this.maintenanceOverlay.classList.add('hidden');
-        if (this.startMenu) this.startMenu.style.display = '';
+        if (this.gameOverScreen) this.gameOverScreen.classList.add('hidden');
+        if (this.pauseMenu) this.pauseMenu.classList.add('hidden');
       }
 
       if (this.maintenanceReasonDisplay) this.maintenanceReasonDisplay.textContent = state.reason || '';
       if (this.maintenanceByDisplay) this.maintenanceByDisplay.textContent = state.by || 'zanioxx_off';
+
+      // Bouton de Vol Privé disponible pour le Fondateur sur l'écran de maintenance
+      if (this.btnMaintTestFlight) {
+        this.btnMaintTestFlight.classList.toggle('hidden', !isFounder);
+      }
+
+      if (isFounder && this.isFounderSessionBypassed) {
+        this.showFounderBypassBanner(state.reason);
+      } else {
+        this.removeFounderBypassBanner();
+      }
     } else {
-      // Fin de maintenance : réouverture pour tout le monde
+      // 2. Fin de Maintenance : Réouverture mondiale instantanée
+      this.isFounderSessionBypassed = false;
+      document.documentElement.classList.remove('maintenance-active');
       if (this.maintenanceOverlay) this.maintenanceOverlay.classList.add('hidden');
       if (this.startMenu) this.startMenu.style.display = '';
       this.removeFounderBypassBanner();
@@ -2412,6 +2451,17 @@ export class UIManager {
 
     if (this.toggleMaintenanceMode) this.toggleMaintenanceMode.checked = !!state.active;
     this.updateMaintenanceLabel(!!state.active);
+  }
+
+  bypassMaintenanceForFounderSession() {
+    if (!this.auth || !this.auth.isFounder || !this.auth.isFounder()) return;
+    this.isFounderSessionBypassed = true;
+    document.documentElement.classList.remove('maintenance-active');
+    if (this.maintenanceOverlay) this.maintenanceOverlay.classList.add('hidden');
+    if (this.startMenu) this.startMenu.style.display = '';
+    const state = this.system ? this.system.getMaintenanceState() : null;
+    this.showFounderBypassBanner(state ? state.reason : '');
+    this.showToast('👑 Session privée Fondateur active — Les autres joueurs restent bloqués en maintenance', 4000);
   }
 
   showFounderBypassBanner(reason) {

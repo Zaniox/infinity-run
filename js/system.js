@@ -31,8 +31,10 @@ export class SystemManager {
       }
     });
 
-    // Souscription globale en temps réel (Server-Sent Events via ntfy.sh)
+    // Souscription globale en temps réel (Server-Sent Events via ntfy.sh uniquement les futurs messages)
     this.initGlobalSSE();
+    // Synchronisation cloud initiale du dernier état valide
+    this.fetchInitialCloudState();
 
     // Journaliser le démarrage de la session
     this.logEvent('SYSTEM', 'Initialisation du moteur système SOUNDRISE');
@@ -115,11 +117,43 @@ export class SystemManager {
     return updatedState;
   }
 
-  // Souscription SSE temps réel cross-devices
+  // Récupérer le dernier état cloud au démarrage sans rejouer les vieux messages expirés
+  async fetchInitialCloudState() {
+    try {
+      const res = await fetch(`${this.ntfyEndpoint}/json?poll=1`);
+      if (!res.ok) return;
+      const text = await res.text();
+      const lines = text.trim().split('\n');
+      for (let i = lines.length - 1; i >= 0; i--) {
+        try {
+          const item = JSON.parse(lines[i]);
+          if (item && item.message) {
+            const data = typeof item.message === 'string' ? JSON.parse(item.message) : item.message;
+            if (data && data.type === 'maintenance_update' && data.state) {
+              const cloudTimestamp = Number(data.state.timestamp) || 0;
+              const localTimestamp = Number(this.maintenanceState && this.maintenanceState.timestamp) || 0;
+              if (cloudTimestamp > localTimestamp) {
+                this.maintenanceState = data.state;
+                try {
+                  localStorage.setItem(this.storageKeyMaintenance, JSON.stringify(data.state));
+                } catch (_) {}
+                this.notifyMaintenanceChanged();
+              }
+              break;
+            }
+          }
+        } catch (_) {}
+      }
+    } catch (e) {
+      console.warn('[System] Impossible de vérifier l\'état cloud initial :', e);
+    }
+  }
+
+  // Souscription SSE temps réel cross-devices (exclusivement les nouveaux événements en direct avec ?since=now)
   initGlobalSSE() {
     if (typeof EventSource === 'undefined') return;
     try {
-      this.sse = new EventSource(`${this.ntfyEndpoint}/sse`);
+      this.sse = new EventSource(`${this.ntfyEndpoint}/sse?since=now`);
       this.sse.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
@@ -141,9 +175,14 @@ export class SystemManager {
     if (!data || !data.type) return;
 
     if (data.type === 'maintenance_update' && data.state) {
-      if (this.maintenanceState && this.maintenanceState.timestamp && data.state.timestamp && data.state.timestamp < this.maintenanceState.timestamp) {
+      const incomingTime = Number(data.state.timestamp) || 0;
+      const currentTime = Number(this.maintenanceState && this.maintenanceState.timestamp) || 0;
+
+      // Rejet strict : le message doit avoir un timestamp valide et strictement plus récent
+      if (incomingTime <= 0 || (currentTime > 0 && incomingTime <= currentTime)) {
         return;
       }
+
       this.maintenanceState = data.state;
       try {
         localStorage.setItem(this.storageKeyMaintenance, JSON.stringify(data.state));

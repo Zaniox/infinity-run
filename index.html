@@ -17,6 +17,15 @@
   </script>
   <!-- PeerJS WebRTC P2P pour Duels Multijoueur réels entre tous appareils et sessions -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <!-- Détection synchrone immédiate du Mode Maintenance (Persistance absolue au rafraîchissement) -->
+  <script>
+    try {
+      var _mState = JSON.parse(localStorage.getItem('soundrise_maintenance_state_v1') || '{}');
+      if (_mState && _mState.active) {
+        document.documentElement.classList.add('maintenance-active');
+      }
+    } catch(e) {}
+  </script>
 </head>
 <body>
   <!-- Détection automatique d'ouverture locale directe (file://) -->
@@ -1039,6 +1048,16 @@
           <span data-i18n="maint_soon">SOUNDRISE : INFINITY RUN sera de retour très bientôt</span>
         </div>
         <p class="maintenance-founder-credit">// Système géré par @<span id="maintenance-by-display">zanioxx_off</span></p>
+
+        <!-- Espace d'Administration & Déverrouillage Sécurisé Fondateur -->
+        <div id="maintenance-founder-actions" class="maintenance-founder-actions">
+          <button id="btn-maint-open-founder" type="button" class="btn-maint-founder" title="Ouvrir le Panel Fondateur pour gérer la maintenance ou le serveur">
+            👑 Espace Fondateur @zanioxx_off
+          </button>
+          <button id="btn-maint-test-flight" type="button" class="btn-maint-founder btn-maint-flight hidden" title="Lancer un vol de test sans rouvrir le jeu au public">
+            🎮 Vol Privé Fondateur
+          </button>
+        </div>
       </div>
       <div class="maintenance-scanlines"></div>
     </div>
