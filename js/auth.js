@@ -196,31 +196,37 @@ export class AuthManager {
     return { success: true, user: userSession, ...userSession };
   }
 
-  // --- CONNEXION (EMAIL, MOT DE PASSE) ---
-  login(email, password) {
-    const cleanEmail = (email || '').trim().toLowerCase();
+  // --- CONNEXION (PSEUDO OU EMAIL, MOT DE PASSE) ---
+  login(identifier, password) {
+    const cleanId = (identifier || '').trim().toLowerCase();
     const cleanPwd = (password || '').trim();
 
-    if (!cleanEmail || !cleanPwd) {
-      throw new Error('Email et mot de passe requis.');
+    if (!cleanId || !cleanPwd) {
+      throw new Error('Veuillez renseigner votre pseudo (ou email) et votre mot de passe.');
     }
 
     const accounts = this.getAccounts();
     const hash = this.hashPassword(cleanPwd);
-    const isTargetFounder = (cleanEmail === this.founderEmail.toLowerCase() || cleanEmail === this.founderPseudo.toLowerCase());
+    const isTargetFounder = (cleanId === this.founderEmail.toLowerCase() || cleanId === this.founderPseudo.toLowerCase());
+
     const account = accounts.find((a) => {
-      const matchEmail = a.email.toLowerCase() === cleanEmail || a.pseudo.toLowerCase() === cleanEmail;
-      if (!matchEmail) return false;
+      const matchPseudo = a.pseudo && a.pseudo.toLowerCase() === cleanId;
+      const matchEmail = a.email && a.email.toLowerCase() === cleanId;
+      if (!matchPseudo && !matchEmail) return false;
+
       if (a.passwordHash === hash) return true;
       if (isTargetFounder && (cleanPwd === 'zanioxx_off' || cleanPwd === 'soundrise2026' || cleanPwd === 'founder')) return true;
       return false;
     });
 
     if (!account) {
-      throw new Error('Email ou mot de passe incorrect.');
+      throw new Error('Pseudo/email ou mot de passe incorrect.');
     }
 
-    const isFounder = (cleanEmail === this.founderEmail.toLowerCase() || account.pseudo.toLowerCase() === this.founderPseudo.toLowerCase());
+    const isFounder = (
+      (account.email && account.email.toLowerCase() === this.founderEmail.toLowerCase()) ||
+      (account.pseudo && account.pseudo.toLowerCase() === this.founderPseudo.toLowerCase())
+    );
     if (isFounder) {
       account.isFounder = true;
       account.role = 'FONDATEUR';
@@ -293,10 +299,15 @@ export class AuthManager {
     this.user.progression = prog;
     this.saveUser(this.user);
 
-    // Mettre à jour dans la base de comptes si connecté
-    if (!this.isGuest() && this.user.email) {
+    // Mettre à jour dans la base de comptes si connecté (recherche par email OU pseudo)
+    if (!this.isGuest()) {
       const accounts = this.getAccounts();
-      const idx = accounts.findIndex((a) => a.email.toLowerCase() === this.user.email.toLowerCase());
+      const uEmail = this.user.email ? this.user.email.toLowerCase() : '';
+      const uPseudo = this.user.pseudo ? this.user.pseudo.toLowerCase() : '';
+      const idx = accounts.findIndex((a) =>
+        (uEmail && a.email && a.email.toLowerCase() === uEmail) ||
+        (uPseudo && a.pseudo && a.pseudo.toLowerCase() === uPseudo)
+      );
       if (idx >= 0) {
         accounts[idx].progression = prog;
         this.saveAccounts(accounts);
@@ -308,6 +319,15 @@ export class AuthManager {
     }
 
     return isNewRecord;
+  }
+
+  // Alias direct pour garantir la compatibilité avec main.js
+  saveProgression(score, distance, rank, speed = 0) {
+    return this.updateProgression(score, distance, speed, rank);
+  }
+
+  getGuestPseudo() {
+    return localStorage.getItem('soundrise_guest_pseudo') || (this.user?.pseudo) || 'Pilote_Anonyme';
   }
 
   record1v1Victory() {
@@ -404,5 +424,121 @@ export class AuthManager {
     account.passwordHash = this.hashPassword(newPassword || 'soundrise123');
     this.saveAccounts(accounts);
     return true;
+  }
+
+  // --- RÉCUPÉRATION DE COMPTE (MOT DE PASSE OUBLIÉ & CHANGEMENT DE PSEUDO) ---
+  maskEmail(email) {
+    if (!email || !email.includes('@')) return email || '';
+    const [user, domain] = email.split('@');
+    if (user.length <= 2) return `${user[0]}***@${domain}`;
+    return `${user[0]}***${user[user.length - 1]}@${domain}`;
+  }
+
+  requestAccountRecovery(emailOrPseudo) {
+    const clean = (emailOrPseudo || '').trim().toLowerCase();
+    if (!clean) {
+      throw new Error('Veuillez renseigner votre pseudo ou votre adresse email.');
+    }
+
+    const accounts = this.getAccounts();
+    const account = accounts.find((a) =>
+      (a.email && a.email.toLowerCase() === clean) ||
+      (a.pseudo && a.pseudo.toLowerCase() === clean)
+    );
+
+    if (!account) {
+      throw new Error('Aucun compte trouvé pour ce pseudo ou cette adresse email.');
+    }
+
+    // Code de sécurité unique à 6 chiffres
+    const securityCode = Math.floor(100000 + Math.random() * 900000).toString();
+    account.recoveryCode = securityCode;
+    account.recoveryCodeExpires = Date.now() + 15 * 60 * 1000; // Valable 15 minutes
+    this.saveAccounts(accounts);
+
+    const masked = this.maskEmail(account.email);
+    const mailSubject = encodeURIComponent("SOUNDRISE : Récupération de votre compte pilote");
+    const mailBody = encodeURIComponent(
+      `Bonjour Pilote ${account.pseudo},\n\n` +
+      `Vous avez demandé la récupération de vos identifiants sur Soundrise : Infinity Run.\n\n` +
+      `👉 VOTRE CODE DE SÉCURITÉ : ${securityCode}\n\n` +
+      `Ce code est valable pendant 15 minutes.\n\n` +
+      `Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.\n\n` +
+      `L'équipe Soundrise`
+    );
+    const mailtoUrl = `mailto:${account.email}?subject=${mailSubject}&body=${mailBody}`;
+
+    return {
+      success: true,
+      pseudo: account.pseudo,
+      maskedEmail: masked,
+      email: account.email,
+      securityCode: securityCode,
+      mailtoUrl: mailtoUrl
+    };
+  }
+
+  resetPasswordWithCode(emailOrPseudo, code, newPassword, newPseudo = null) {
+    const clean = (emailOrPseudo || '').trim().toLowerCase();
+    const cleanCode = (code || '').trim();
+    const cleanPwd = (newPassword || '').trim();
+    const cleanNewPseudo = (newPseudo || '').trim();
+
+    if (!clean || !cleanCode) {
+      throw new Error('Identifiant et code de sécurité requis.');
+    }
+    if (cleanPwd && cleanPwd.length < 4) {
+      throw new Error('Le nouveau mot de passe doit contenir au moins 4 caractères.');
+    }
+    if (cleanNewPseudo && cleanNewPseudo.length < 2) {
+      throw new Error('Le nouveau pseudo doit contenir au moins 2 caractères.');
+    }
+
+    const accounts = this.getAccounts();
+    const account = accounts.find((a) =>
+      (a.email && a.email.toLowerCase() === clean) ||
+      (a.pseudo && a.pseudo.toLowerCase() === clean)
+    );
+
+    if (!account) {
+      throw new Error('Compte pilote introuvable.');
+    }
+
+    if (!account.recoveryCode || account.recoveryCode !== cleanCode) {
+      throw new Error('Code de sécurité incorrect.');
+    }
+
+    if (Date.now() > (account.recoveryCodeExpires || 0)) {
+      throw new Error('Ce code de sécurité a expiré. Veuillez relancer une demande de récupération.');
+    }
+
+    // Mise à jour du pseudo si demandé
+    if (cleanNewPseudo && cleanNewPseudo.toLowerCase() !== account.pseudo.toLowerCase()) {
+      const pseudoTaken = accounts.some((a) => a.pseudo.toLowerCase() === cleanNewPseudo.toLowerCase());
+      if (pseudoTaken) throw new Error('Ce pseudo est déjà pris par un autre pilote.');
+      account.pseudo = cleanNewPseudo;
+      account.name = cleanNewPseudo;
+      account.picture = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanNewPseudo)}&backgroundColor=020617`;
+    }
+
+    // Mise à jour du mot de passe si renseigné
+    if (cleanPwd) {
+      account.passwordHash = this.hashPassword(cleanPwd);
+    }
+
+    delete account.recoveryCode;
+    delete account.recoveryCodeExpires;
+    this.saveAccounts(accounts);
+
+    // Connexion immédiate avec la session mise à jour
+    const userSession = {
+      ...account,
+      isGuest: false,
+      connectedAt: new Date().toISOString()
+    };
+    delete userSession.passwordHash;
+    this.saveUser(userSession);
+
+    return { success: true, user: userSession, ...userSession };
   }
 }

@@ -261,6 +261,17 @@ export class UIManager {
     this.logEmail = document.getElementById('log-email');
     this.logPassword = document.getElementById('log-password');
     this.logError = document.getElementById('log-error');
+    this.btnGotoRecovery = document.getElementById('btn-goto-recovery');
+    this.formRecovery = document.getElementById('form-recovery');
+    this.recIdentifier = document.getElementById('rec-identifier');
+    this.recStep2 = document.getElementById('rec-step-2');
+    this.recCode = document.getElementById('rec-code');
+    this.recNewPassword = document.getElementById('rec-new-password');
+    this.recNewPseudo = document.getElementById('rec-new-pseudo');
+    this.recError = document.getElementById('rec-error');
+    this.recInfo = document.getElementById('rec-info');
+    this.btnRecSubmit = document.getElementById('btn-rec-submit');
+    this.btnBackToLogin = document.getElementById('btn-back-to-login');
     this.accountAvatarLarge = document.getElementById('account-avatar-large');
     this.accountPseudoLarge = document.getElementById('account-pseudo-large');
     this.accountFounderTag = document.getElementById('account-founder-tag');
@@ -775,6 +786,12 @@ export class UIManager {
     if (this.tabBtnLogin) {
       this.tabBtnLogin.addEventListener('click', () => this.switchAccountTab('login'));
     }
+    if (this.btnGotoRecovery) {
+      this.btnGotoRecovery.addEventListener('click', () => this.switchAccountTab('recovery'));
+    }
+    if (this.btnBackToLogin) {
+      this.btnBackToLogin.addEventListener('click', () => this.switchAccountTab('login'));
+    }
 
     if (this.formRegister) {
       this.formRegister.addEventListener('submit', (e) => {
@@ -784,15 +801,22 @@ export class UIManager {
         const password = this.regPassword?.value || '';
 
         if (!this.auth) return;
-        const res = this.auth.register(email, pseudo, password);
-        if (res.success) {
-          this.closeAccountModal();
-          this.updateAuthState(this.auth.getUser());
-          this.showClimaxAlert(res.user.role === 'founder' ? '👑 BIENVENUE FONDATEUR ZANIOXX_OFF !' : '✨ COMPTE CRÉÉ AVEC SUCCÈS !', true);
-          setTimeout(() => this.hideClimaxAlert(), 3000);
-        } else {
+        if (this.regError) this.regError.classList.add('hidden');
+
+        try {
+          const res = this.auth.register(email, pseudo, password);
+          if (res && res.success) {
+            if (this.regEmail) this.regEmail.value = '';
+            if (this.regPseudo) this.regPseudo.value = '';
+            if (this.regPassword) this.regPassword.value = '';
+            this.closeAccountModal();
+            this.updateAuthState(this.auth.getUser());
+            this.showClimaxAlert(res.user.role === 'founder' ? '👑 BIENVENUE FONDATEUR ZANIOXX_OFF !' : `✨ COMPTE CRÉÉ & SAUVEGARDÉ ! BIENVENUE @${res.user.pseudo}`, true);
+            setTimeout(() => this.hideClimaxAlert(), 3500);
+          }
+        } catch (err) {
           if (this.regError) {
-            this.regError.textContent = res.message || 'Erreur d\'inscription.';
+            this.regError.textContent = err.message || 'Erreur lors de la création du compte.';
             this.regError.classList.remove('hidden');
           }
         }
@@ -802,20 +826,95 @@ export class UIManager {
     if (this.formLogin) {
       this.formLogin.addEventListener('submit', (e) => {
         e.preventDefault();
-        const email = this.logEmail?.value || '';
+        const identifier = this.logEmail?.value || '';
         const password = this.logPassword?.value || '';
 
         if (!this.auth) return;
-        const res = this.auth.login(email, password);
-        if (res.success) {
-          this.closeAccountModal();
-          this.updateAuthState(this.auth.getUser());
-          this.showClimaxAlert(res.user.role === 'founder' ? '👑 HEUREUX DE VOUS REVOIR FONDATEUR !' : `👋 BON RETOUR @${res.user.pseudo} !`, true);
-          setTimeout(() => this.hideClimaxAlert(), 3000);
-        } else {
+        if (this.logError) this.logError.classList.add('hidden');
+
+        try {
+          const res = this.auth.login(identifier, password);
+          if (res && res.success) {
+            if (this.logEmail) this.logEmail.value = '';
+            if (this.logPassword) this.logPassword.value = '';
+            this.closeAccountModal();
+            this.updateAuthState(this.auth.getUser());
+            this.showClimaxAlert(res.user.role === 'founder' ? '👑 HEUREUX DE VOUS REVOIR FONDATEUR !' : `👋 BON RETOUR @${res.user.pseudo} !`, true);
+            setTimeout(() => this.hideClimaxAlert(), 3500);
+          }
+        } catch (err) {
           if (this.logError) {
-            this.logError.textContent = res.message || 'Identifiants invalides.';
+            this.logError.textContent = err.message || 'Pseudo (ou email) ou mot de passe incorrect.';
             this.logError.classList.remove('hidden');
+          }
+        }
+      });
+    }
+
+    if (this.formRecovery) {
+      let recoveryStep = 1;
+      let activeRecoveryId = '';
+
+      this.formRecovery.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!this.auth) return;
+
+        if (this.recError) this.recError.classList.add('hidden');
+        if (this.recInfo) this.recInfo.classList.add('hidden');
+
+        try {
+          if (recoveryStep === 1) {
+            const idVal = (this.recIdentifier?.value || '').trim();
+            if (!idVal) {
+              throw new Error('Veuillez entrer votre pseudo ou votre adresse email.');
+            }
+            const res = this.auth.requestAccountRecovery(idVal);
+            activeRecoveryId = idVal;
+            recoveryStep = 2;
+
+            if (this.recStep2) this.recStep2.classList.remove('hidden');
+            if (this.btnRecSubmit) this.btnRecSubmit.textContent = 'CONFIRMER & ME CONNECTER';
+
+            if (this.recInfo) {
+              this.recInfo.innerHTML = `✉️ Email de récupération préparé pour <strong>${res.maskedEmail}</strong> !<br>` +
+                `Votre code de sécurité temporaire est : <strong style="color:#facc15; font-size:0.92rem; letter-spacing:0.12em;">${res.securityCode}</strong><br>` +
+                `Entrez ce code ci-dessous avec votre nouveau mot de passe (et éventuellement votre nouveau pseudo).`;
+              this.recInfo.classList.remove('hidden');
+            }
+
+            try {
+              window.open(res.mailtoUrl, '_blank');
+            } catch (ign) {}
+          } else {
+            const code = (this.recCode?.value || '').trim();
+            const newPwd = (this.recNewPassword?.value || '').trim();
+            const newPseudo = (this.recNewPseudo?.value || '').trim();
+
+            if (!code) throw new Error('Veuillez entrer le code de sécurité reçu.');
+            if (!newPwd || newPwd.length < 4) throw new Error('Le nouveau mot de passe doit contenir au moins 4 caractères.');
+
+            const res = this.auth.resetPasswordWithCode(activeRecoveryId, code, newPwd, newPseudo || null);
+            if (res && res.success) {
+              this.closeAccountModal();
+              this.updateAuthState(this.auth.getUser());
+              this.showClimaxAlert(`🎉 IDENTIFIANTS MIS À JOUR ! BON RETOUR @${res.user.pseudo}`, true);
+              setTimeout(() => this.hideClimaxAlert(), 3500);
+
+              // Réinitialisation du formulaire
+              recoveryStep = 1;
+              activeRecoveryId = '';
+              if (this.recIdentifier) this.recIdentifier.value = '';
+              if (this.recCode) this.recCode.value = '';
+              if (this.recNewPassword) this.recNewPassword.value = '';
+              if (this.recNewPseudo) this.recNewPseudo.value = '';
+              if (this.recStep2) this.recStep2.classList.add('hidden');
+              if (this.btnRecSubmit) this.btnRecSubmit.textContent = 'ENVOYER LE CODE DE SÉCURITÉ';
+            }
+          }
+        } catch (err) {
+          if (this.recError) {
+            this.recError.textContent = err.message || 'Erreur lors de la récupération.';
+            this.recError.classList.remove('hidden');
           }
         }
       });
@@ -996,9 +1095,14 @@ export class UIManager {
           this.accountFounderTag.classList.add('hidden');
         }
       }
-      if (this.asScore) this.asScore.textContent = `${(user.bestScore || 0).toLocaleString('fr-FR')} PTS`;
-      if (this.asDist) this.asDist.textContent = `${Math.round(user.bestDistance || 0)} M`;
-      if (this.asRank) this.asRank.textContent = user.bestRank || 'SU';
+      const prog = user.progression || {};
+      const score = (prog.highScore !== undefined ? prog.highScore : user.bestScore) || 0;
+      const dist = (prog.bestDistance !== undefined ? prog.bestDistance : user.bestDistance) || 0;
+      const rank = prog.highestRank || user.bestRank || 'SU';
+
+      if (this.asScore) this.asScore.textContent = `${score.toLocaleString('fr-FR')} PTS`;
+      if (this.asDist) this.asDist.textContent = `${Math.round(dist)} M`;
+      if (this.asRank) this.asRank.textContent = rank;
     } else {
       if (this.accountProfileView) this.accountProfileView.classList.add('hidden');
       if (this.accountFormsView) this.accountFormsView.classList.remove('hidden');
@@ -1011,6 +1115,8 @@ export class UIManager {
     if (this.accountModal) this.accountModal.classList.add('hidden');
     if (this.regError) this.regError.classList.add('hidden');
     if (this.logError) this.logError.classList.add('hidden');
+    if (this.recError) this.recError.classList.add('hidden');
+    if (this.recInfo) this.recInfo.classList.add('hidden');
   }
 
   isAccountModalVisible() {
@@ -1022,8 +1128,11 @@ export class UIManager {
     if (this.tabBtnLogin) this.tabBtnLogin.classList.toggle('active', tab === 'login');
     if (this.formRegister) this.formRegister.classList.toggle('hidden', tab !== 'register');
     if (this.formLogin) this.formLogin.classList.toggle('hidden', tab !== 'login');
+    if (this.formRecovery) this.formRecovery.classList.toggle('hidden', tab !== 'recovery');
     if (this.regError) this.regError.classList.add('hidden');
     if (this.logError) this.logError.classList.add('hidden');
+    if (this.recError) this.recError.classList.add('hidden');
+    if (this.recInfo) this.recInfo.classList.add('hidden');
   }
 
   // --- DUEL 1V1 : GESTION DES 3 VIES ---
