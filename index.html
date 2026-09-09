@@ -7,7 +7,67 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>// SOUNDRISE : INFINITY RUN - by zanioxx_off</title>
-  <link rel="stylesheet" href="style.css?v=2.5" />
+  <link id="main-stylesheet" rel="stylesheet" href="style.css?v=3.2.0" />
+  <script>
+    // Cache buster automatique synchrone : garantit que le dernier style.css AA Studio est toujours chargé
+    (function() {
+      var link = document.getElementById('main-stylesheet');
+      if (link) {
+        link.href = 'style.css?v=3.2.0&t=' + Date.now();
+      }
+    })();
+  </script>
+  <style>
+    /* Styles critiques prioritaires : Verrouillage absolu des dimensions d'avatars et du layout AA */
+    #user-avatar-img,
+    .pilot-avatar-img,
+    .pilot-avatar-frame,
+    .guest-frame,
+    .logged-frame {
+      width: 38px !important;
+      height: 38px !important;
+      max-width: 38px !important;
+      max-height: 38px !important;
+      object-fit: cover !important;
+      border-radius: 10px !important;
+      overflow: hidden !important;
+      flex-shrink: 0 !important;
+      display: block !important;
+    }
+    .lobby-avatar {
+      width: 44px !important;
+      height: 44px !important;
+      max-width: 44px !important;
+      max-height: 44px !important;
+      object-fit: cover !important;
+      border-radius: 12px !important;
+    }
+    .pseudo-avatar-img {
+      width: 80px !important;
+      height: 80px !important;
+      max-width: 80px !important;
+      max-height: 80px !important;
+      object-fit: cover !important;
+      border-radius: 16px !important;
+    }
+    .account-avatar-large {
+      width: 90px !important;
+      height: 90px !important;
+      max-width: 90px !important;
+      max-height: 90px !important;
+      object-fit: cover !important;
+      border-radius: 16px !important;
+    }
+    #start-menu,
+    .start-menu-overlay {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 45 !important;
+      box-sizing: border-box !important;
+    }
+  </style>
 
   <!-- Importmap Three.js ES6 officiel -->
   <script type="importmap">
@@ -152,8 +212,8 @@
 
             <!-- Mode Connecté -->
             <div id="auth-logged" class="auth-card-logged hidden">
-              <div class="pilot-avatar-frame logged-frame">
-                <img id="user-avatar-img" class="pilot-avatar-img" src="" alt="Avatar" />
+              <div class="pilot-avatar-frame logged-frame" style="width: 38px; height: 38px; max-width: 38px; max-height: 38px; overflow: hidden; flex-shrink: 0; border-radius: 10px;">
+                <img id="user-avatar-img" class="pilot-avatar-img" src="" alt="Avatar" width="38" height="38" style="width: 38px !important; height: 38px !important; max-width: 38px !important; max-height: 38px !important; object-fit: cover !important; border-radius: 10px !important; display: block !important;" />
                 <span id="user-founder-badge" class="badge-founder-crown hidden" title="Fondateur Officiel">👑</span>
               </div>
               <div class="pilot-info-col">
