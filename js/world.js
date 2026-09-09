@@ -100,17 +100,17 @@ export const CYCLES_DATA = [
   {
     id: 6,
     name: "Chaos",
-    subtitle: "Obsidienne & Cendres • Néant d'Améthyste",
+    subtitle: "Gris Cendre & Graphite • Fractures Monochromes",
     element: "Ombre",
-    colorName: "Violet Noir & Cendres",
-    troll: "SÉISME D'OMBRES : Piliers silhouettes gris cendre tremblant violemment sur les basses",
-    sky: 0x110d1c,
-    fog: 0x201733,
-    ground: 0x171224,
-    monolith: 0x261d3b,
-    primary: 0xa855f7,
-    secondary: 0x64748b,
-    lightIntensity: 1.7,
+    colorName: "Gris Cendre & Argent",
+    troll: "SÉISME D'OMBRES : Piliers silhouettes gris acier tremblant violemment sur les basses",
+    sky: 0x16181c,
+    fog: 0x272c33,
+    ground: 0x181a1f,
+    monolith: 0x3f4752,
+    primary: 0xd1d5db,
+    secondary: 0x6b7280,
+    lightIntensity: 1.8,
     style: "quake"
   },
   {
@@ -706,11 +706,11 @@ function createCycleGroundTextures() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Base obsidienne sombre
-    ctx.fillStyle = '#08080c';
+    // Base obsidienne et basalte gris sombre
+    ctx.fillStyle = '#141619';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Facettes géométriques cristallines
+    // Facettes géométriques cristallines en nuances de gris graphite
     const imgData = ctx.createImageData(512, 512);
     const d = imgData.data;
     for (let y = 0; y < 512; y++) {
@@ -722,9 +722,9 @@ function createCycleGroundTextures() {
         const facet = (f1 * f2 > 0 ? 1 : 0) * 18;
 
         const idx = (y * 512 + x) * 4;
-        d[idx] = 12 + facet;
-        d[idx + 1] = 14 + facet;
-        d[idx + 2] = 20 + facet;
+        d[idx] = 18 + facet;
+        d[idx + 1] = 20 + facet;
+        d[idx + 2] = 22 + facet;
         d[idx + 3] = 255;
       }
     }
@@ -1419,23 +1419,23 @@ export class World {
         }
         break;
       }
-      case 5: { // Cycle 6 : Chaos / Ombre (Aiguilles d'Obsidienne, Arches du Néant & Piliers Fracturés)
-        const obsMat = new THREE.MeshStandardMaterial({ color: 0x08060c, roughness: 0.08, metalness: 0.95, flatShading: true });
-        const runeMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x9333ea, emissiveIntensity: 1.25, roughness: 0.2 });
+      case 5: { // Cycle 6 : Chaos / Ombre (Aiguilles de Graphite Minéral, Monolithes Gris Acier & Anneaux d'Argent)
+        const obsMat = new THREE.MeshStandardMaterial({ color: 0x1e232a, roughness: 0.45, metalness: 0.75, flatShading: true });
+        const silverMat = new THREE.MeshStandardMaterial({ color: 0xe5e7eb, emissive: 0x9ca3af, emissiveIntensity: 1.5, roughness: 0.15, metalness: 0.9 });
 
         if (variant === 0) {
-          // Aiguille monolithique tranchante facettée avec anneau de runes violettes
+          // Aiguille monolithique tranchante facettée en graphite avec anneau d'argent chromé
           const spike = new THREE.Mesh(new THREE.ConeGeometry(3.6, 36, 4), obsMat);
           spike.position.y = 18;
           spike.rotation.y = Math.PI / 4;
           group.add(spike);
 
-          const runeRing = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.25, 8, 20), runeMat);
-          runeRing.position.y = 22;
-          runeRing.rotation.x = Math.PI / 2.2;
-          group.add(runeRing);
+          const silverRing = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.25, 8, 20), silverMat);
+          silverRing.position.y = 22;
+          silverRing.rotation.x = Math.PI / 2.2;
+          group.add(silverRing);
         } else if (variant === 1) {
-          // Piliers jumeaux d'obsidienne avec nexus d'énergie violette
+          // Piliers jumeaux gris acier avec nexus d'énergie d'argent
           const p1 = new THREE.Mesh(new THREE.BoxGeometry(3.0, 30.0, 3.0), obsMat);
           p1.position.set(-2.2, 15, 0);
           group.add(p1);
@@ -1444,17 +1444,17 @@ export class World {
           p2.position.set(2.2, 12, 0);
           group.add(p2);
 
-          const nexus = new THREE.Mesh(new THREE.IcosahedronGeometry(1.8, 0), runeMat);
+          const nexus = new THREE.Mesh(new THREE.IcosahedronGeometry(1.8, 0), silverMat);
           nexus.position.set(0, 26, 0);
           group.add(nexus);
         } else {
-          // Mégalithe géométrique fracturé avec fissure d'énergie du néant
+          // Mégalithe géométrique fracturé avec fissure d'énergie argentée
           const block = new THREE.Mesh(new THREE.BoxGeometry(4.8, 30.0, 4.8), obsMat);
           block.position.y = 15;
           block.rotation.set(0.1, 0.4, 0.05);
           group.add(block);
 
-          const fissure = new THREE.Mesh(new THREE.BoxGeometry(0.7, 26.0, 5.0), runeMat);
+          const fissure = new THREE.Mesh(new THREE.BoxGeometry(0.7, 26.0, 5.0), silverMat);
           fissure.position.y = 15;
           fissure.rotation.set(0.1, 0.4, 0.05);
           group.add(fissure);
@@ -1882,8 +1882,8 @@ export class World {
       pos[i * 3] = (Math.random() - 0.5) * 75;
       pos[i * 3 + 1] = 0.5 + Math.random() * 24;
       pos[i * 3 + 2] = -Math.random() * 240 + 10;
-      const shade = 0.08 + Math.random() * 0.18;
-      cols[i * 3] = shade; cols[i * 3 + 1] = shade; cols[i * 3 + 2] = shade * 1.1;
+      const shade = 0.09 + Math.random() * 0.20;
+      cols[i * 3] = shade; cols[i * 3 + 1] = shade; cols[i * 3 + 2] = shade;
     }
 
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -3215,16 +3215,17 @@ export class World {
   spawnVoidSpikes(x) {
     const group = new THREE.Group();
     const mat = new THREE.MeshStandardMaterial({
-      color: 0x08060c,
-      roughness: 0.08,
-      metalness: 0.95,
+      color: 0x1f242d,
+      roughness: 0.35,
+      metalness: 0.75,
       flatShading: true
     });
     const runeMat = new THREE.MeshStandardMaterial({
-      color: 0xa855f7,
-      emissive: 0x9333ea,
-      emissiveIntensity: 1.25,
-      roughness: 0.2
+      color: 0xe5e7eb,
+      emissive: 0x9ca3af,
+      emissiveIntensity: 1.5,
+      roughness: 0.15,
+      metalness: 0.9
     });
     const subBoxes = [];
 
@@ -3728,12 +3729,12 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Cycle 6 (Ombre) : Murailles d'obsidienne mouvantes avec gravures de runes du néant
+  // Cycle 6 (Ombre / Chaos) : Murailles de graphite mouvantes avec gravures argentées
   spawnShadowMonoliths(gapX) {
     const group = new THREE.Group();
     const subBoxes = [];
-    const mat = new THREE.MeshStandardMaterial({ color: 0x08060c, roughness: 0.08, metalness: 0.95, flatShading: true });
-    const runeMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x9333ea, emissiveIntensity: 1.25, roughness: 0.2 });
+    const mat = new THREE.MeshStandardMaterial({ color: 0x1a1e24, roughness: 0.45, metalness: 0.75, flatShading: true });
+    const silverMat = new THREE.MeshStandardMaterial({ color: 0xe5e7eb, emissive: 0x9ca3af, emissiveIntensity: 1.5, roughness: 0.15, metalness: 0.9 });
     const h = 28.0;
 
     const mL = new THREE.Mesh(new THREE.BoxGeometry(7.0, h, 4.0), mat);
@@ -3742,7 +3743,7 @@ export class World {
     group.add(mL);
     subBoxes.push({ mesh: mL, box: new THREE.Box3() });
 
-    const runeL = new THREE.Mesh(new THREE.BoxGeometry(1.2, h * 0.7, 4.2), runeMat);
+    const runeL = new THREE.Mesh(new THREE.BoxGeometry(1.2, h * 0.7, 4.2), silverMat);
     runeL.position.set(-9.0, h / 2, 0);
     group.add(runeL);
 
@@ -3752,7 +3753,7 @@ export class World {
     group.add(mR);
     subBoxes.push({ mesh: mR, box: new THREE.Box3() });
 
-    const runeR = new THREE.Mesh(new THREE.BoxGeometry(1.2, h * 0.7, 4.2), runeMat);
+    const runeR = new THREE.Mesh(new THREE.BoxGeometry(1.2, h * 0.7, 4.2), silverMat);
     runeR.position.set(9.0, h / 2, 0);
     group.add(runeR);
 
@@ -3762,22 +3763,23 @@ export class World {
     this.obstacles.push(obj);
   }
 
-  // Cycle 6 (Ombre) : Singularité d'ombre avec disque d'accrétion d'énergie violette
+  // Cycle 6 (Ombre / Chaos) : Singularité d'ombre avec disque d'accrétion argenté
   spawnDarkVortex(x) {
     const group = new THREE.Group();
     const subBoxes = [];
     const mat = new THREE.MeshStandardMaterial({
-      color: 0x7c3aed,
-      emissive: 0xa855f7,
-      emissiveIntensity: 1.4,
+      color: 0xd1d5db,
+      emissive: 0x9ca3af,
+      emissiveIntensity: 1.5,
+      metalness: 0.9,
       wireframe: true
     });
     const coreMat = new THREE.MeshStandardMaterial({
-      color: 0x050508,
-      emissive: 0x4c1d95,
-      emissiveIntensity: 0.6,
-      roughness: 0.05,
-      metalness: 0.95
+      color: 0x111317,
+      emissive: 0x272b33,
+      emissiveIntensity: 0.8,
+      roughness: 0.1,
+      metalness: 0.9
     });
 
     const core = new THREE.Mesh(new THREE.SphereGeometry(3.0, 16, 16), coreMat);
