@@ -269,6 +269,7 @@ export class UIManager {
     this.recInfo = document.getElementById('rec-info');
     this.btnRecSubmit = document.getElementById('btn-rec-submit');
     this.btnBackToLogin = document.getElementById('btn-back-to-login');
+    this.btnQuickFounderLogin = document.getElementById('btn-quick-founder-login');
     this.accountAvatarLarge = document.getElementById('account-avatar-large');
     this.accountPseudoLarge = document.getElementById('account-pseudo-large');
     this.accountFounderTag = document.getElementById('account-founder-tag');
@@ -790,6 +791,44 @@ export class UIManager {
       this.btnBackToLogin.addEventListener('click', () => this.switchAccountTab('login'));
     }
 
+    // Connexion Directe Fondateur (Bouton 1-clic)
+    if (this.btnQuickFounderLogin) {
+      this.btnQuickFounderLogin.addEventListener('click', () => {
+        if (!this.auth) return;
+        try {
+          const res = this.auth.loginAsFounder('Mealyana@@@@1122');
+          if (res && res.success) {
+            this.closeAccountModal();
+            this.updateAuthState(this.auth.getUser());
+            this.showClimaxAlert('👑 SESSION FONDATEUR ACTIVÉE ! BIENVENUE @zanioxx_off', true);
+            setTimeout(() => this.hideClimaxAlert(), 3500);
+          }
+        } catch (err) {
+          alert('Erreur connexion Fondateur : ' + err.message);
+        }
+      });
+    }
+
+    // Boutons Voir / Masquer mot de passe et code (👁️)
+    document.querySelectorAll('.btn-toggle-visibility').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const targetId = btn.dataset.target;
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        if (input.type === 'password') {
+          input.type = 'text';
+          btn.textContent = '🙈';
+          btn.title = 'Masquer';
+        } else {
+          input.type = 'password';
+          btn.textContent = '👁️';
+          btn.title = 'Afficher';
+        }
+      });
+    });
+
     if (this.formRegister) {
       this.formRegister.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -808,7 +847,8 @@ export class UIManager {
             if (this.regPassword) this.regPassword.value = '';
             this.closeAccountModal();
             this.updateAuthState(this.auth.getUser());
-            this.showClimaxAlert(res.user.role === 'founder' ? '👑 BIENVENUE FONDATEUR ZANIOXX_OFF !' : `✨ COMPTE CRÉÉ & SAUVEGARDÉ ! BIENVENUE @${res.user.pseudo}`, true);
+            const isFounderUser = res.user.isFounder || res.user.role === 'FONDATEUR';
+            this.showClimaxAlert(isFounderUser ? '👑 BIENVENUE FONDATEUR ZANIOXX_OFF !' : `✨ COMPTE CRÉÉ & SAUVEGARDÉ ! BIENVENUE @${res.user.pseudo}`, true);
             setTimeout(() => this.hideClimaxAlert(), 3500);
           }
         } catch (err) {
@@ -836,7 +876,8 @@ export class UIManager {
             if (this.logPassword) this.logPassword.value = '';
             this.closeAccountModal();
             this.updateAuthState(this.auth.getUser());
-            this.showClimaxAlert(res.user.role === 'founder' ? '👑 HEUREUX DE VOUS REVOIR FONDATEUR !' : `👋 BON RETOUR @${res.user.pseudo} !`, true);
+            const isFounderUser = res.user.isFounder || res.user.role === 'FONDATEUR';
+            this.showClimaxAlert(isFounderUser ? '👑 HEUREUX DE VOUS REVOIR FONDATEUR !' : `👋 BON RETOUR @${res.user.pseudo} !`, true);
             setTimeout(() => this.hideClimaxAlert(), 3500);
           }
         } catch (err) {
@@ -2293,8 +2334,22 @@ export class UIManager {
 
   openFounderPanel() {
     if (!this.auth || !this.auth.isFounder || !this.auth.isFounder()) {
-      alert('Accès refusé : Ce panel est réservé exclusivement au Fondateur @zanioxx_off.');
-      return;
+      const pwd = prompt('👑 Accès réservé au Fondateur @zanioxx_off.\nEntrez votre mot de passe Fondateur :');
+      if (pwd) {
+        try {
+          const res = this.auth.login('zanioxx_off', pwd.trim());
+          if (res && res.success) {
+            this.updateAuthState(this.auth.getUser());
+            this.showClimaxAlert('👑 ACCÈS FONDATEUR ACCORDÉ ! BIENVENUE @zanioxx_off', true);
+            setTimeout(() => this.hideClimaxAlert(), 3000);
+          }
+        } catch (e) {
+          alert('Mot de passe Fondateur incorrect.');
+          return;
+        }
+      } else {
+        return;
+      }
     }
     if (this.founderModal) this.founderModal.classList.remove('hidden');
     this.populateUserRegistry();

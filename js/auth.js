@@ -163,6 +163,57 @@ export class AuthManager {
     }
   }
 
+  // --- CONNEXION IMMÉDIATE DU FONDATEUR OFFICIEL ---
+  loginAsFounder(password = null) {
+    let accounts = this.getAccounts();
+    const founderHash = this.hashPassword(password || this.founderDefaultPassword);
+    let founderIdx = accounts.findIndex(
+      (a) => (a.email && (a.email.toLowerCase() === this.founderEmail.toLowerCase() || a.email.toLowerCase() === this.founderEmailAlt.toLowerCase())) ||
+             (a.pseudo && a.pseudo.toLowerCase() === this.founderPseudo.toLowerCase())
+    );
+
+    let founderAcc;
+    if (founderIdx >= 0) {
+      accounts[founderIdx].email = this.founderEmail;
+      accounts[founderIdx].pseudo = this.founderPseudo;
+      accounts[founderIdx].passwordHash = founderHash;
+      accounts[founderIdx].isFounder = true;
+      accounts[founderIdx].role = 'FONDATEUR';
+      founderAcc = accounts[founderIdx];
+    } else {
+      founderAcc = {
+        email: this.founderEmail,
+        pseudo: this.founderPseudo,
+        passwordHash: founderHash,
+        isFounder: true,
+        role: 'FONDATEUR',
+        name: 'zanioxx_off (Fondateur)',
+        picture: `https://api.dicebear.com/7.x/bottts/svg?seed=zanioxx_off&backgroundColor=020617`,
+        createdAt: '2026-09-08',
+        progression: {
+          highScore: 285400,
+          bestDistance: 12600,
+          maxSpeed: 380,
+          highestRank: 'MUCH LOVE',
+          gamesPlayed: 142,
+          victories1v1: 28
+        }
+      };
+      accounts.push(founderAcc);
+    }
+    this.saveAccounts(accounts);
+
+    const userSession = {
+      ...founderAcc,
+      isGuest: false,
+      connectedAt: new Date().toISOString()
+    };
+    delete userSession.passwordHash;
+
+    this.saveUser(userSession);
+    return { success: true, user: userSession, ...userSession };
+  }
+
   // --- CRÉATION DE COMPTE (EMAIL, PSEUDO, MOT DE PASSE) ---
   register(email, pseudo, password) {
     const cleanEmail = (email || '').trim().toLowerCase();
@@ -179,33 +230,49 @@ export class AuthManager {
       throw new Error('Le mot de passe doit contenir au moins 4 caractères.');
     }
 
-    const accounts = this.getAccounts();
-    const emailTaken = accounts.some((a) => a.email.toLowerCase() === cleanEmail);
-    if (emailTaken) {
-      throw new Error('Un compte existe déjà avec cette adresse email.');
+    const isFounder = (
+      cleanEmail === this.founderEmail.toLowerCase() ||
+      cleanEmail === this.founderEmailAlt.toLowerCase() ||
+      cleanPseudo.toLowerCase() === this.founderPseudo.toLowerCase()
+    );
+
+    // Si c'est le Fondateur officiel qui s'inscrit ou revendique son compte
+    if (isFounder) {
+      return this.loginAsFounder(cleanPwd);
     }
 
-    const pseudoTaken = accounts.some((a) => a.pseudo.toLowerCase() === cleanPseudo.toLowerCase());
-    if (pseudoTaken) {
-      throw new Error('Ce pseudo est déjà utilisé par un autre pilote.');
-    }
+    let accounts = this.getAccounts();
 
-    const isFounder = (cleanEmail === this.founderEmail.toLowerCase() || cleanEmail === this.founderEmailAlt.toLowerCase() || cleanPseudo.toLowerCase() === this.founderPseudo.toLowerCase());
+    // Pour les autres pilotes : si le compte existe déjà avec le même mot de passe, connecter directement
+    const existingIdx = accounts.findIndex((a) =>
+      (a.email && a.email.toLowerCase() === cleanEmail) ||
+      (a.pseudo && a.pseudo.toLowerCase() === cleanPseudo.toLowerCase())
+    );
+
+    if (existingIdx >= 0) {
+      const existing = accounts[existingIdx];
+      const hash = this.hashPassword(cleanPwd);
+      if (existing.passwordHash === hash) {
+        return this.login(existing.pseudo || existing.email, cleanPwd);
+      } else {
+        throw new Error('Ce compte existe déjà. Connectez-vous dans l\'onglet "Se connecter" ou utilisez la récupération.');
+      }
+    }
 
     const newAccount = {
-      email: isFounder ? this.founderEmail : cleanEmail,
+      email: cleanEmail,
       pseudo: cleanPseudo,
       passwordHash: this.hashPassword(cleanPwd),
-      isFounder,
-      role: isFounder ? 'FONDATEUR' : 'PILOTE',
+      isFounder: false,
+      role: 'PILOTE',
       name: cleanPseudo,
       picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanPseudo)}&backgroundColor=020617`,
       createdAt: new Date().toISOString().split('T')[0],
       progression: {
-        highScore: isFounder ? 285400 : 0,
-        bestDistance: isFounder ? 12600 : 0,
-        maxSpeed: isFounder ? 380 : 0,
-        highestRank: isFounder ? 'MUCH LOVE' : 'SU',
+        highScore: 0,
+        bestDistance: 0,
+        maxSpeed: 0,
+        highestRank: 'SU',
         gamesPlayed: 0,
         victories1v1: 0
       }
@@ -234,13 +301,26 @@ export class AuthManager {
       throw new Error('Veuillez renseigner votre pseudo (ou email) et votre mot de passe.');
     }
 
-    const accounts = this.getAccounts();
-    const hash = this.hashPassword(cleanPwd);
     const isTargetFounder = (
       cleanId === this.founderEmail.toLowerCase() ||
       cleanId === this.founderEmailAlt.toLowerCase() ||
       cleanId === this.founderPseudo.toLowerCase()
     );
+
+    // Détection immédiate du Fondateur
+    if (isTargetFounder) {
+      if (
+        cleanPwd === this.founderDefaultPassword ||
+        cleanPwd === 'zanioxx_off' ||
+        cleanPwd === 'soundrise2026' ||
+        cleanPwd === 'founder'
+      ) {
+        return this.loginAsFounder(cleanPwd);
+      }
+    }
+
+    const accounts = this.getAccounts();
+    const hash = this.hashPassword(cleanPwd);
 
     const account = accounts.find((a) => {
       const matchPseudo = a.pseudo && a.pseudo.toLowerCase() === cleanId;

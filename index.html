@@ -848,6 +848,12 @@
             <button id="tab-btn-login" class="account-tab" type="button" data-i18n="account_tab_login">Se connecter</button>
           </div>
 
+          <div class="founder-quick-bar">
+            <button id="btn-quick-founder-login" type="button" class="btn-founder-quick" title="Connexion instantanée avec votre compte Fondateur @zanioxx_off">
+              👑 Connexion Directe Fondateur (@zanioxx_off)
+            </button>
+          </div>
+
           <form id="form-register" class="account-form">
             <div class="form-group">
               <label data-i18n="account_label_pseudo">PSEUDO DE PILOTE</label>
@@ -859,7 +865,10 @@
             </div>
             <div class="form-group">
               <label data-i18n="account_label_password">MOT DE PASSE</label>
-              <input id="reg-password" type="password" placeholder="••••••••" required autocomplete="new-password" />
+              <div class="password-wrapper">
+                <input id="reg-password" type="password" placeholder="••••••••" required autocomplete="new-password" />
+                <button type="button" class="btn-toggle-visibility" data-target="reg-password" title="Afficher/Masquer le mot de passe">👁️</button>
+              </div>
             </div>
             <div id="reg-error" class="account-error hidden"></div>
             <button type="submit" class="btn-account-submit" data-i18n="account_btn_register">CRÉER MON COMPTE & SAUVEGARDER</button>
@@ -872,7 +881,10 @@
             </div>
             <div class="form-group">
               <label data-i18n="account_label_password">MOT DE PASSE</label>
-              <input id="log-password" type="password" placeholder="••••••••" required autocomplete="current-password" />
+              <div class="password-wrapper">
+                <input id="log-password" type="password" placeholder="••••••••" required autocomplete="current-password" />
+                <button type="button" class="btn-toggle-visibility" data-target="log-password" title="Afficher/Masquer le mot de passe">👁️</button>
+              </div>
             </div>
             <div id="log-error" class="account-error hidden"></div>
             <button type="submit" class="btn-account-submit" data-i18n="account_btn_login">SE CONNECTER</button>
@@ -895,11 +907,17 @@
             <div id="rec-step-2" class="hidden">
               <div class="form-group">
                 <label>CODE DE SÉCURITÉ REÇU</label>
-                <input id="rec-code" type="text" placeholder="Code à 6 chiffres (ex: 482910)" maxlength="6" autocomplete="one-time-code" />
+                <div class="password-wrapper">
+                  <input id="rec-code" type="text" placeholder="Code à 6 chiffres (ex: 482910)" maxlength="6" autocomplete="one-time-code" />
+                  <button type="button" class="btn-toggle-visibility" data-target="rec-code" title="Afficher/Masquer le code">👁️</button>
+                </div>
               </div>
               <div class="form-group">
                 <label>NOUVEAU MOT DE PASSE (MIN. 4 CARACTÈRES)</label>
-                <input id="rec-new-password" type="password" placeholder="••••••••" autocomplete="new-password" />
+                <div class="password-wrapper">
+                  <input id="rec-new-password" type="password" placeholder="••••••••" autocomplete="new-password" />
+                  <button type="button" class="btn-toggle-visibility" data-target="rec-new-password" title="Afficher/Masquer le mot de passe">👁️</button>
+                </div>
               </div>
               <div class="form-group">
                 <label>NOUVEAU PSEUDO (FACULTATIF)</label>
